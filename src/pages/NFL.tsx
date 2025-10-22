@@ -31,9 +31,16 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
             <CardTitle className="text-lg font-bold">{team.name}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{team.division} Division</p>
           </div>
-          <Badge variant={team.win_pct >= 0.5 ? "default" : "secondary"}>
-            {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
-          </Badge>
+          <Badge
+  className={`${
+    team.win_pct >= 0.5
+      ? 'bg-green-500 text-white hover:bg-green-700'
+      : 'bg-red-500 text-white hover:bg-red-700'
+  }`}
+>
+  {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
+</Badge>
+
         </div>
       </CardHeader>
       <CardContent>
