@@ -4,6 +4,11 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link, useLocation } from 'react-router-dom';
 
+const currentDate = new Date();
+const month = currentDate.toLocaleString('default', { month: 'long' }); // e.g. "October"
+const year = currentDate.getFullYear(); // e.g. 2025
+
+
 const FootballIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M20.5 8.5C21.5 10.5 21.5 13.5 20.5 15.5L15.5 20.5C13.5 21.5 10.5 21.5 8.5 20.5L3.5 15.5C2.5 13.5 2.5 10.5 3.5 8.5L8.5 3.5C10.5 2.5 13.5 2.5 15.5 3.5L20.5 8.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -91,8 +96,8 @@ export function Sidebar({ className }: SidebarProps) {
       
       <div className="p-2 border-t border-sidebar-border">
         <div className="rounded-md bg-sidebar-accent/50 p-2 text-[10px] text-sidebar-accent-foreground text-center">
-          <p className="font-medium">Week 7</p>
-          <p className="text-[9px]">2024-25</p>
+          <p className="font-medium">{month}</p>
+          <p className="text-[9px]">{year}</p>
         </div>
       </div>
     </aside>
