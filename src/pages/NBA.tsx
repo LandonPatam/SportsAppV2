@@ -7,6 +7,8 @@ import { X } from 'lucide-react';
 import nbaData from '../nba_team_stats.json';
 import nbaPlayerData from '../nba_player_stats.json';
 
+
+
 interface NBATeam {
   TEAM_ID: number;
   TEAM_NAME: string;
@@ -84,7 +86,7 @@ const teamConferences: Record<string, { conference: string; division: string }> 
 const teamColors: Record<string, { primary: string; secondary: string }> = {
   ATL: { primary: '#E03A3E', secondary: '#C1D32F' }, // Hawks
   BOS: { primary: '#007A33', secondary: '#BA9653' }, // Celtics
-  BKN: { primary: '#000000', secondary: '#FFFFFF' }, // Nets
+  BKN: { primary: '#000000', secondary: '#000000ff' }, // Nets
   CHA: { primary: '#1D1160', secondary: '#00788C' }, // Hornets
   CHI: { primary: '#CE1141', secondary: '#000000' }, // Bulls
   CLE: { primary: '#6F263D', secondary: '#FFB81C' }, // Cavs
@@ -98,7 +100,7 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   LAL: { primary: '#552583', secondary: '#FDB927' }, // Lakers
   MEM: { primary: '#5D76A9', secondary: '#12173F' }, // Grizzlies
   MIA: { primary: '#98002E', secondary: '#F9A01B' }, // Heat
-  MIL: { primary: '#00471B', secondary: '#EEE1C6' }, // Bucks
+  MIL: { primary: '#00471B', secondary: '#edc87fff' }, // Bucks
   MIN: { primary: '#0C2340', secondary: '#236192' }, // Timberwolves
   NOP: { primary: '#0C2340', secondary: '#C8102E' }, // Pelicans
   NYK: { primary: '#006BB6', secondary: '#F58426' }, // Knicks
@@ -115,6 +117,40 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
 };
 
 
+const teamAbbreviations: Record<string, string> = {
+  'Atlanta Hawks': 'ATL',
+  'Boston Celtics': 'BOS',
+  'Brooklyn Nets': 'BKN',
+  'Charlotte Hornets': 'CHA',
+  'Chicago Bulls': 'CHI',
+  'Cleveland Cavaliers': 'CLE',
+  'Dallas Mavericks': 'DAL',
+  'Denver Nuggets': 'DEN',
+  'Detroit Pistons': 'DET',
+  'Golden State Warriors': 'GSW',
+  'Houston Rockets': 'HOU',
+  'Indiana Pacers': 'IND',
+  'LA Clippers': 'LAC',
+  'Los Angeles Lakers': 'LAL',
+  'Memphis Grizzlies': 'MEM',
+  'Miami Heat': 'MIA',
+  'Milwaukee Bucks': 'MIL',
+  'Minnesota Timberwolves': 'MIN',
+  'New Orleans Pelicans': 'NOP',
+  'New York Knicks': 'NYK',
+  'Oklahoma City Thunder': 'OKC',
+  'Orlando Magic': 'ORL',
+  'Philadelphia 76ers': 'PHI',
+  'Phoenix Suns': 'PHX',
+  'Portland Trail Blazers': 'POR',
+  'Sacramento Kings': 'SAC',
+  'San Antonio Spurs': 'SAS',
+  'Toronto Raptors': 'TOR',
+  'Utah Jazz': 'UTA',
+  'Washington Wizards': 'WAS',
+};
+
+
 const PlayerCard = ({ player, index }: { player: Player; index: number }) => {
   return (
     <Card 
@@ -127,7 +163,20 @@ const PlayerCard = ({ player, index }: { player: Player; index: number }) => {
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg font-bold">{player.PLAYER_NAME}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">{player.TEAM_ABBREVIATION}</p>
+<Badge
+  variant="outline"
+  className="text-xs font-semibold border mt-1"
+  style={{
+    backgroundColor: 'transparent',
+    color: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#fff',
+    borderColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#888',
+    borderWidth: '2px',
+    padding: '0.25rem 0.5rem',
+    letterSpacing: '0.5px',
+  }}
+>
+  {player.TEAM_ABBREVIATION}
+</Badge>
           </div>
           <Badge variant="outline">
             #{player.JERSEY_NUMBER}
@@ -272,23 +321,44 @@ const PlayerModal = ({ team, onClose }: { team: NBATeam; onClose: () => void }) 
 
 const TeamCard = ({ team, onClick }: { team: NBATeam; onClick?: () => void }) => {
   const winPercentage = (team.WIN_PCT * 100).toFixed(1);
-  
+
+  // Get team abbreviation using explicit mapping
+  const teamAbbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
+  const teamColor = teamColors[teamAbbr as keyof typeof teamColors];
+
   return (
-    <Card 
-      className={`overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm ${onClick ? 'cursor-pointer' : ''}`}
+    <Card
+      className={`overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm ${
+        onClick ? 'cursor-pointer' : ''
+      }`}
       onClick={onClick}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg font-bold">{team.TEAM_NAME}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">{team.division} Division</p>
+            <Badge
+              variant="outline"
+              className="text-xs font-semibold border mt-1"
+              style={{
+                backgroundColor: 'transparent',
+                color: teamColor?.secondary || '#ccc',
+                borderColor: teamColor?.primary || '#888',
+                borderWidth: '2px',
+                padding: '0.25rem 0.5rem',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {teamAbbr}
+            </Badge>
           </div>
-          <Badge variant={team.W > team.L ? "default" : "secondary"}>
+
+          <Badge variant={team.W > team.L ? 'default' : 'secondary'}>
             {team.W}-{team.L}
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -305,6 +375,7 @@ const TeamCard = ({ team, onClick }: { team: NBATeam; onClick?: () => void }) =>
               <span className="font-semibold">{team.REB.toFixed(1)}</span>
             </div>
           </div>
+
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">APG</span>
@@ -324,6 +395,8 @@ const TeamCard = ({ team, onClick }: { team: NBATeam; onClick?: () => void }) =>
     </Card>
   );
 };
+
+
 
 const NBA = () => {
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
