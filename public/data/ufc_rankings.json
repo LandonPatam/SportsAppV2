@@ -1,0 +1,651 @@
+{
+  "Mens Heavyweight 265 Pounds": {
+    "total_fighters": 36,
+    "top_ranked": [
+      {
+        "name": "Tom Aspinall",
+        "nationality": "EN",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/23273/preview/Tom_Aspinall.jpg?1642734776",
+        "flag_url": "https://www.tapology.com/assets/flags/EN-8827659e8d7420a63b539ec01ff4896ba38924164abd5a09457325e7b0bdf0fe.gif",
+        "rank": 1
+      },
+      {
+        "name": "Alexander Volkov",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/3992/tiny/Alexander_Volkov-hs.png?1612673228",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 2
+      },
+      {
+        "name": "Jailton Almeida",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/151690/tiny/Screenshot.png?1696877883",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 3
+      },
+      {
+        "name": "Sergei Pavlovich",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/89112/tiny/Sergey_Pavlovich-hs.jpg?1539891382",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 4
+      },
+      {
+        "name": "Ciryl Gane",
+        "nationality": "FR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/187819/tiny/IMG_20190825_204842.jpg?1566758965",
+        "flag_url": "https://www.tapology.com/assets/flags/FR-248b89ba2ff4082e66fda00d7c9f83f14758c838c0abd9fd0e4943ee402be29b.gif",
+        "rank": 5
+      },
+      {
+        "name": "Waldo Cortes-Acosta",
+        "nationality": "DO",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/92314/tiny/Screenshot_%282%29.png?1741583500",
+        "flag_url": "https://www.tapology.com/assets/flags/DO-d333175daa8c7a4f506a87c10f25fc10c23e17b78eb451434a38a3ca51b0b7e4.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Light Heavyweight 205 Pounds": {
+    "total_fighters": 39,
+    "top_ranked": [
+      {
+        "name": "Alex Pereira",
+        "nationality": "BR",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/117305/preview/Screenshot_%281%29.png?1727291881",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 1
+      },
+      {
+        "name": "Magomed Ankalaev",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/83405/tiny/Magomed-Ankalaev.jpg?1670645565",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 2
+      },
+      {
+        "name": "Jiří Procházka",
+        "nationality": "CZ",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/34779/tiny/jiri-prochazka.jpg?1591644710",
+        "flag_url": "https://www.tapology.com/assets/flags/CZ-fd39f029c844a50bb34633031ad34bbb46908989ad2ac072dbc2ee7a22da95e3.gif",
+        "rank": 3
+      },
+      {
+        "name": "Carlos Ulberg",
+        "nationality": "NZ",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/203365/tiny/Carlos_Ulberg-hs.png?1614918872",
+        "flag_url": "https://www.tapology.com/assets/flags/NZ-2b0f973b2c46f6dbfeb8bd4c60d6c7478a55de6c1aefc758488174df394b3a59.gif",
+        "rank": 4
+      },
+      {
+        "name": "Jamahal Hill",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/120815/tiny/47263906db33404c84bc36261998b458.jpg?1651726976",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 5
+      },
+      {
+        "name": "Jan Błachowicz",
+        "nationality": "PL",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/11301/tiny/Jan-Blachowicz.jpg?1437018172",
+        "flag_url": "https://www.tapology.com/assets/flags/PL-6bfbe1335d2bffff514135a578895add253182687b5e5a81ded6bbf986755f29.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Middleweight 185 Pounds": {
+    "total_fighters": 72,
+    "top_ranked": [
+      {
+        "name": "Khamzat Chimaev",
+        "nationality": "AE",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/188143/preview/Khamzat_Chimaev.jpg?1595426975",
+        "flag_url": "https://www.tapology.com/assets/flags/AE-3935dbf4ea09c65904c93739db9137e36ac82d06d642b0ce4cb29c0f9d3a43e4.gif",
+        "rank": 1
+      },
+      {
+        "name": "Dricus Du Plessis",
+        "nationality": "ZA",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/51267/tiny/Screenshot.png?1705821636",
+        "flag_url": "https://www.tapology.com/assets/flags/ZA-a3aa7d83bdd9ca94a47166eeecda2c86a48ab09e142151026ae91a2b876efd29.gif",
+        "rank": 2
+      },
+      {
+        "name": "Nassourdine Imavov",
+        "nationality": "FR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/125404/tiny/IMG_20201021_074458.jpg?1603259229",
+        "flag_url": "https://www.tapology.com/assets/flags/FR-248b89ba2ff4082e66fda00d7c9f83f14758c838c0abd9fd0e4943ee402be29b.gif",
+        "rank": 3
+      },
+      {
+        "name": "Sean Strickland",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/6055/tiny/Screenshot.png?1705617252",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 4
+      },
+      {
+        "name": "Anthony Hernandez",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/41538/tiny/anthony-hernandez_hs.jpg?1760984136",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 5
+      },
+      {
+        "name": "Brendan Allen",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/91516/tiny/Screenshot.png?1693322054",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Welterweight 170 Pounds": {
+    "total_fighters": 77,
+    "top_ranked": [
+      {
+        "name": "Jack Della Maddalena",
+        "nationality": "AU",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/119831/preview/Screenshot.png?1746453030",
+        "flag_url": "https://www.tapology.com/assets/flags/AU-429ed070b76f87de04728ef13b9d68e308be36cf4444bb32eb97564ae7016ff1.gif",
+        "rank": 1
+      },
+      {
+        "name": "Belal Muhammad",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/32797/tiny/Screenshot.png?1728761260",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 2
+      },
+      {
+        "name": "Leon Edwards",
+        "nationality": "GB",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/21429/tiny/IMG_20200901_093627.jpg?1598949528",
+        "flag_url": "https://www.tapology.com/assets/flags/GB-9ce2b73eb216fa090d2c8e018cad6c78ec081db738902213828d303c19fa104f.gif",
+        "rank": 3
+      },
+      {
+        "name": "Kamaru Usman",
+        "nationality": "NG",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/39265/tiny/Kamaru_Usman-hs.jpg?1543185226",
+        "flag_url": "https://www.tapology.com/assets/flags/NG-575bf37322d2ac63f8fb2c5d191599dcf13fc4dace1a6699945bdc7feb3793b4.gif",
+        "rank": 4
+      },
+      {
+        "name": "Joaquin Buckley",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/55022/tiny/Screenshot.png?1730499087",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 5
+      },
+      {
+        "name": "Sean Brady",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/32242/tiny/Screenshot.png?1725649518",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Lightweight 155 Pounds": {
+    "total_fighters": 95,
+    "top_ranked": [
+      {
+        "name": "Ilia Topuria",
+        "nationality": "GE",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/129278/preview/Topuria-Hero.jpg?1659102670",
+        "flag_url": "https://www.tapology.com/assets/flags/GE-46e71ebd13f4e3f14b56f61538a1d026361bee9e3a68ed169cf30520d087c2fa.gif",
+        "rank": 1
+      },
+      {
+        "name": "Islam Makhachev",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/40148/tiny/islam-makhachev_hs.jpg?1716558700",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 2
+      },
+      {
+        "name": "Arman Tsarukyan",
+        "nationality": "AM",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/115752/tiny/Screenshot_%283%29.png?1712456355",
+        "flag_url": "https://www.tapology.com/assets/flags/AM-516a70af86bd7510658c855019089644109af051613e276a4e4db4854a47f621.gif",
+        "rank": 3
+      },
+      {
+        "name": "Charles Oliveira",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/1613/tiny/Screenshot.png?1759762443",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 4
+      },
+      {
+        "name": "Max Holloway",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/12723/tiny/Holloway-Max-UFC155-1.jpg?1543771905",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 5
+      },
+      {
+        "name": "Justin Gaethje",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/16421/tiny/Justin-Gaethje.jpg?1427131924",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Featherweight 145 Pounds": {
+    "total_fighters": 80,
+    "top_ranked": [
+      {
+        "name": "Alexander Volkanovski",
+        "nationality": "AU",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/41705/preview/Screenshot_%281%29.png?1751298431",
+        "flag_url": "https://www.tapology.com/assets/flags/AU-429ed070b76f87de04728ef13b9d68e308be36cf4444bb32eb97564ae7016ff1.gif",
+        "rank": 1
+      },
+      {
+        "name": "Ilia Topuria",
+        "nationality": "GE",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/129278/tiny/Topuria-Hero.jpg?1659102670",
+        "flag_url": "https://www.tapology.com/assets/flags/GE-46e71ebd13f4e3f14b56f61538a1d026361bee9e3a68ed169cf30520d087c2fa.gif",
+        "rank": 2
+      },
+      {
+        "name": "Max Holloway",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/12723/tiny/Holloway-Max-UFC155-1.jpg?1543771905",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 3
+      },
+      {
+        "name": "Diego Lopes",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/85643/tiny/Diego_Lopes.jpg?1629768877",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 4
+      },
+      {
+        "name": "Yair Rodriguez",
+        "nationality": "MX",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/70995/tiny/Yair-Rodriguez.jpg?1466043842",
+        "flag_url": "https://www.tapology.com/assets/flags/MX-1cc0876e76b73a2195de1b68812ac8c0812fe99c7ada8a43db91b6f1d28cd113.gif",
+        "rank": 5
+      },
+      {
+        "name": "Movsar Evloev",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/85897/tiny/Movsar_Evloev-hs.jpg?1552573825",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Bantamweight 135 Pounds": {
+    "total_fighters": 82,
+    "top_ranked": [
+      {
+        "name": "Merab Dvalishvili",
+        "nationality": "GE",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/47934/preview/Screenshot_%283%29.png?1746475540",
+        "flag_url": "https://www.tapology.com/assets/flags/GE-46e71ebd13f4e3f14b56f61538a1d026361bee9e3a68ed169cf30520d087c2fa.gif",
+        "rank": 1
+      },
+      {
+        "name": "Sean O'Malley",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/68186/tiny/Screenshot.png?1709705222",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 2
+      },
+      {
+        "name": "Umar Nurmagomedov",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/134206/tiny/https___fansided.com_files_2022_03_ABC06592-hs.jpg?1656222100",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 3
+      },
+      {
+        "name": "Cory Sandhagen",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/32931/tiny/Cory_Sandhagen-hs.jpg?1573705989",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 4
+      },
+      {
+        "name": "Yadong Song",
+        "nationality": "CN",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/47836/tiny/Screenshot_%281%29.png?1739772574",
+        "flag_url": "https://www.tapology.com/assets/flags/CN-39a4cba872f45e48783a6aa2584da07957177092136272167f4965b759420e9e.gif",
+        "rank": 5
+      },
+      {
+        "name": "Petr Yan",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/90075/tiny/Petr_Yan.jpg?1536076102",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Mens Flyweight 125 Pounds": {
+    "total_fighters": 48,
+    "top_ranked": [
+      {
+        "name": "Alexandre Pantoja",
+        "nationality": "BR",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/12767/preview/Screenshot_%283%29.png?1751300845",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 1
+      },
+      {
+        "name": "Brandon Royval",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/25031/tiny/Screenshot_%281%29.png?1734752015",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 2
+      },
+      {
+        "name": "Brandon Moreno",
+        "nationality": "MX",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/27833/tiny/Brandon_Moreno.jpg?1562880379",
+        "flag_url": "https://www.tapology.com/assets/flags/MX-1cc0876e76b73a2195de1b68812ac8c0812fe99c7ada8a43db91b6f1d28cd113.gif",
+        "rank": 3
+      },
+      {
+        "name": "Joshua Van",
+        "nationality": "MM",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/254261/tiny/Screenshot_%285%29.png?1751300947",
+        "flag_url": "https://www.tapology.com/assets/flags/MM-0ac8442d412a5bcbdd73568859a65683472d5c59ac8b356dbc1c6dc7922ce637.gif",
+        "rank": 4
+      },
+      {
+        "name": "Steve Erceg",
+        "nationality": "AU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/132326/tiny/Screenshot.png?1712637181",
+        "flag_url": "https://www.tapology.com/assets/flags/AU-429ed070b76f87de04728ef13b9d68e308be36cf4444bb32eb97564ae7016ff1.gif",
+        "rank": 5
+      },
+      {
+        "name": "Tatsuro Taira",
+        "nationality": "JP",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/145595/tiny/Screenshot_%281%29.png?1718171042",
+        "flag_url": "https://www.tapology.com/assets/flags/JP-9a8638bb4ad16191d186a0ecfb4a896adc79ecd2829785ed00e32d6537ae88e3.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Womens Bantamweight 135 Pounds": {
+    "total_fighters": 31,
+    "top_ranked": [
+      {
+        "name": "Kayla Harrison",
+        "nationality": "US",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/34265/preview/Screenshot_%281%29.png?1712456257",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 1
+      },
+      {
+        "name": "Julianna Peña",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/1576/tiny/Julianna-Pena.jpg?1438730149",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 2
+      },
+      {
+        "name": "Raquel Pennington",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/26224/tiny/Raquel-Pennington-hs.jpg?1424739141",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 3
+      },
+      {
+        "name": "Ketlen Vieira",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/99972/tiny/Ketlen_Vieira-hs.jpg?1632965253",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 4
+      },
+      {
+        "name": "Norma Dumont",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/139271/tiny/Screenshot_%281%29.png?1752079614",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 5
+      },
+      {
+        "name": "Yana Santos",
+        "nationality": "RU",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/19820/tiny/Yana_Kunitskaya-hs.jpg?1518044241",
+        "flag_url": "https://www.tapology.com/assets/flags/RU-3ce9ca248b0d428f663c68cea5b91068d901c71d77fcb4be147e8d0e7500d724.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Womens Flyweight 125 Pounds": {
+    "total_fighters": 30,
+    "top_ranked": [
+      {
+        "name": "Valentina Shevchenko",
+        "nationality": "KG",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/11614/preview/Shev_%282%29.jpg?1515954752",
+        "flag_url": "https://www.tapology.com/assets/flags/KG-e82d667ad628d5c54faf7005581782432a868fed670c526bbd17e98405205cdb.gif",
+        "rank": 1
+      },
+      {
+        "name": "Manon Fiorot",
+        "nationality": "FR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/136168/tiny/Manon_Fiorot.jpg?1614784829",
+        "flag_url": "https://www.tapology.com/assets/flags/FR-248b89ba2ff4082e66fda00d7c9f83f14758c838c0abd9fd0e4943ee402be29b.gif",
+        "rank": 2
+      },
+      {
+        "name": "Erin Blanchfield",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/167460/tiny/Erin_Blanchfield-hs.jpg?1676302976",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 3
+      },
+      {
+        "name": "Natália Silva",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/99885/tiny/nataliasilvaimage-hs.webp?1692487835",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 4
+      },
+      {
+        "name": "Alexa Grasso",
+        "nationality": "MX",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/68972/tiny/Alexa-Grasso-hs.jpg?1519691468",
+        "flag_url": "https://www.tapology.com/assets/flags/MX-1cc0876e76b73a2195de1b68812ac8c0812fe99c7ada8a43db91b6f1d28cd113.gif",
+        "rank": 5
+      },
+      {
+        "name": "Maycee Barber",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/143925/tiny/Maycee-Barber.jpg?1634081883",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 6
+      }
+    ]
+  },
+  "Womens Strawweight 115 Pounds": {
+    "total_fighters": 40,
+    "top_ranked": [
+      {
+        "name": "Weili Zhang",
+        "nationality": "CN",
+        "champion": true,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/83443/preview/Weili_Zhang.jpg?1567273318",
+        "flag_url": "https://www.tapology.com/assets/flags/CN-39a4cba872f45e48783a6aa2584da07957177092136272167f4965b759420e9e.gif",
+        "rank": 1
+      },
+      {
+        "name": "Xiaonan Yan",
+        "nationality": "CN",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/12602/tiny/Screenshot.png?1712587488",
+        "flag_url": "https://www.tapology.com/assets/flags/CN-39a4cba872f45e48783a6aa2584da07957177092136272167f4965b759420e9e.gif",
+        "rank": 2
+      },
+      {
+        "name": "Virna Jandiroba",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/56622/tiny/Screenshot.png?1715698564",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 3
+      },
+      {
+        "name": "Tatiana Suarez",
+        "nationality": "US",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/63005/tiny/Tatiana_Suarez.jpg?1536471258",
+        "flag_url": "https://www.tapology.com/assets/flags/US-a475dadb4ff06978c183ce83b21741c1785beee26da55853490373f5eb2ca9b0.gif",
+        "rank": 4
+      },
+      {
+        "name": "Iasmin Lucindo",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/166360/tiny/Screenshot_%281%29.png?1733890089",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 5
+      },
+      {
+        "name": "Amanda Lemos",
+        "nationality": "BR",
+        "champion": false,
+        "url": "",
+        "headshot_url": "https://images.tapology.com/headshot_images/87845/tiny/Amanda_Lemos-hs.jpg?1650211920",
+        "flag_url": "https://www.tapology.com/assets/flags/BR-45af1ab77cd750eff617a8b71f64b318c9a4ecf06c863a2c63cff71550930fe7.gif",
+        "rank": 6
+      }
+    ]
+  }
+}
