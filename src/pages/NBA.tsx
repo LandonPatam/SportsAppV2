@@ -86,7 +86,7 @@ const teamConferences: Record<string, { conference: string; division: string }> 
 const teamColors: Record<string, { primary: string; secondary: string }> = {
   ATL: { primary: '#E03A3E', secondary: '#C1D32F' }, // Hawks
   BOS: { primary: '#007A33', secondary: '#BA9653' }, // Celtics
-  BKN: { primary: '#000000', secondary: '#000000ff' }, // Nets
+  BKN: { primary: '#000000', secondary: '#ffffffff' }, // Nets
   CHA: { primary: '#1D1160', secondary: '#00788C' }, // Hornets
   CHI: { primary: '#CE1141', secondary: '#000000' }, // Bulls
   CLE: { primary: '#6F263D', secondary: '#FFB81C' }, // Cavs
@@ -167,11 +167,12 @@ const PlayerCard = ({ player, index }: { player: Player; index: number }) => {
   variant="outline"
   className="text-xs font-semibold border mt-1"
   style={{
-    backgroundColor: 'transparent',
-    color: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#fff',
-    borderColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#888',
+    color: teamColors[player.TEAM_ABBREVIATION]?.secondary,
+    backgroundColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#fff',
+    borderColor: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#888',
     borderWidth: '2px',
-    padding: '0.25rem 0.5rem',
+    padding: '0.25rem 0.55rem',
+    borderRadius: '0.4rem',
     letterSpacing: '0.5px',
   }}
 >
@@ -337,20 +338,22 @@ const TeamCard = ({ team, onClick }: { team: NBATeam; onClick?: () => void }) =>
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg font-bold">{team.TEAM_NAME}</CardTitle>
-            <Badge
-              variant="outline"
-              className="text-xs font-semibold border mt-1"
-              style={{
-                backgroundColor: 'transparent',
-                color: teamColor?.secondary || '#ccc',
-                borderColor: teamColor?.primary || '#888',
-                borderWidth: '2px',
-                padding: '0.25rem 0.5rem',
-                letterSpacing: '0.5px',
-              }}
-            >
-              {teamAbbr}
-            </Badge>
+           <Badge
+  className="text-xs font-semibold border mt-1"
+  style={{
+    backgroundColor: teamColor?.primary || '#555',  // main fill color
+    color: teamColor?.secondary || '#fff',          // text color
+    borderColor: teamColor?.secondary || '#fff',    // subtle accent outline
+    borderWidth: '2px',
+    padding: '0.25rem 0.55rem',
+    borderRadius: '0.4rem',
+    letterSpacing: '0.5px',
+  }}
+>
+  {teamAbbr}
+</Badge>
+
+
           </div>
 
           <Badge variant={team.W > team.L ? 'default' : 'secondary'}>
@@ -396,6 +399,42 @@ const TeamCard = ({ team, onClick }: { team: NBATeam; onClick?: () => void }) =>
   );
 };
 
+import { Sun, Moon } from 'lucide-react';
+
+const DarkModeToggle = () => {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Load preference from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = stored === 'dark' || (!stored && prefersDark);
+    setDarkMode(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  // When user toggles it
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    document.documentElement.classList.toggle('dark', newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  };
+
+  return (
+    <button
+      onClick={toggleDarkMode}
+      className="p-2 rounded-md transition-all duration-200 hover:bg-accent flex items-center justify-center"
+      title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    >
+      {darkMode ? (
+        <Sun className="w-5 h-5 text-yellow-400" />
+      ) : (
+        <Moon className="w-5 h-5 text-blue-400" />
+      )}
+    </button>
+  );
+};
 
 
 const NBA = () => {
@@ -442,6 +481,9 @@ const NBA = () => {
 
   return (
     <PageLayout title="NBA Team Standings - 2024-25 Season">
+      <div className="flex justify-end">
+  <DarkModeToggle />
+</div>
       <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setSelectedConference(value as any)}>
           <TabsList className="grid w-full max-w-lg grid-cols-4 mb-6">
           <TabsTrigger value="all">All Teams</TabsTrigger>
@@ -518,15 +560,16 @@ const NBA = () => {
       <CardTitle className="text-lg font-bold">
         #{index + 1} {player.PLAYER_NAME}
       </CardTitle>
-      <Badge
+<Badge
   variant="outline"
   className="text-xs font-semibold border mt-1"
   style={{
-    backgroundColor: 'transparent',
-    color: teamColors[player.TEAM_ABBREVIATION]?.secondary || 'inherit',
-    borderColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#ccc',
+    color: teamColors[player.TEAM_ABBREVIATION]?.secondary,
+    backgroundColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#fff',
+    borderColor: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#888',
     borderWidth: '2px',
-    padding: '0.25rem 0.5rem',
+    padding: '0.25rem 0.55rem',
+    borderRadius: '0.4rem',
     letterSpacing: '0.5px',
   }}
 >

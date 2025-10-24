@@ -86,6 +86,44 @@ const FighterCard = ({ fighter, divisionName }: { fighter: Fighter; divisionName
   );
 };
 
+
+import { Sun, Moon } from 'lucide-react';
+
+const DarkModeToggle = () => {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Load preference from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = stored === 'dark' || (!stored && prefersDark);
+    setDarkMode(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  // When user toggles it
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    document.documentElement.classList.toggle('dark', newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  };
+
+  return (
+    <button
+      onClick={toggleDarkMode}
+      className="p-2 rounded-md transition-all duration-200 hover:bg-accent flex items-center justify-center"
+      title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    >
+      {darkMode ? (
+        <Sun className="w-5 h-5 text-yellow-400" />
+      ) : (
+        <Moon className="w-5 h-5 text-blue-400" />
+      )}
+    </button>
+  );
+};
+
 const UFC = () => {
   const [divisions, setDivisions] = useState<Record<string, Division>>({});
 
@@ -112,6 +150,10 @@ const UFC = () => {
 
   return (
     <PageLayout title="UFC Rankings - Top Fighters by Division">
+      <div className="flex justify-end">
+  <DarkModeToggle />
+</div>
+
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-3 mb-6">
           <TabsTrigger value="all">All Divisions</TabsTrigger>

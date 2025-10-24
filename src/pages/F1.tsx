@@ -97,7 +97,7 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   // ✅ Racing Bulls (your JSON)
   'Racing Bulls': { primary: '#001F3F', secondary: '#000dffff' },
 
-  'Haas F1 Team': { primary: '#FFFFFF', secondary: '#D0021B' },
+  'Haas F1 Team': { primary: '#da0202ff', secondary: '#000000ff' },
 
   // ✅ Kick Sauber (your JSON)
   'Kick Sauber': { primary: '#00FF00', secondary: '#000000' },
@@ -133,19 +133,17 @@ const DriverCard = ({ driver, onClick }: { driver: F1Driver; onClick: () => void
 
             {/* === Team Badge Below === */}
             <Badge
-              variant="outline"
-              className="text-xs font-semibold border"
-              style={{
-                backgroundColor: 'transparent',
-                color: colors.secondary,
-                borderColor: colors.primary,
-                borderWidth: '2px',
-                padding: '0.2rem 0.55rem',
-                letterSpacing: '0.4px',
-              }}
-            >
-              {driver.team}
-            </Badge>
+  className="text-xs font-semibold text-white border-none"
+  style={{
+    backgroundColor: colors.primary,
+    padding: '0.25rem 0.6rem',
+    borderRadius: '0.4rem',
+    letterSpacing: '0.3px',
+  }}
+>
+  {driver.team}
+</Badge>
+
           </div>
 
           {/* === Points Section === */}
@@ -196,23 +194,39 @@ const DriverRaceCard = ({
       className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm"
       style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-            </div>
-            <CardTitle className="text-lg font-bold">{eventName}</CardTitle>
-          </div>
-          <div className="text-right">
-            <div className={`text-2xl font-bold ${getPositionColor(result.position)}`}>
-              P{result.position}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
+    <CardHeader className="pb-3">
+  <div className="flex items-start justify-between">
+    <div>
+      {/* === Circuit Badge (blue filled with white text) */}
+      <Badge
+        className="text-xs font-semibold bg-blue-600 text-white mb-1"
+        style={{
+          border: 'none',
+          padding: '0.2rem 0.6rem',
+          borderRadius: '0.4rem',
+          letterSpacing: '0.3px',
+        }}
+      >
+        {eventName.startsWith('Circuit') ? eventName : `Circuit ${round}`}
+      </Badge>
+
+      {/* === Race/Event Title === */}
+      <CardTitle className="text-lg font-bold">{eventName}</CardTitle>
+    </div>
+    <div className="text-right">
+      <div className={`text-2xl font-bold ${getPositionColor(result.position)}`}>
+        P{result.position}
+      </div>
+    </div>
+  </div>
+</CardHeader>
+
+
+
       <CardContent>
         <div className="grid grid-cols-1 gap-2">
           <div className="space-y-2">
+
             <div className="flex justify-left text-sm gap-3">
               <span className="text-muted-foreground">Qualifying Grid Position</span>
               <span className="font-semibold">{result.grid_position}</span>
@@ -299,19 +313,18 @@ const DriverModal = ({
         <div className="sticky top-0 bg-background border-b p-6 flex items-center justify-between z-10">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Badge
-                variant="outline"
-                className="text-xs font-semibold border"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: colors.secondary,
-                  borderColor: colors.primary,
-                  borderWidth: '2px',
-                  padding: '0.2rem 0.5rem',
-                }}
-              >
-                {driver.team}
-              </Badge>
+             <Badge
+  className="text-xs font-semibold text-white border-none"
+  style={{
+    backgroundColor: colors.primary,
+    padding: '0.25rem 0.6rem',
+    borderRadius: '0.4rem',
+    letterSpacing: '0.3px',
+  }}
+>
+  {driver.team}
+</Badge>
+
               <Badge variant="default" className="text-xs">
                 P{driver.position}
               </Badge>
@@ -468,7 +481,7 @@ const RaceModal = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="default" className="text-sm">
-                Race {race.round}
+                Circuit {race.round}
               </Badge>
             </div>
             <h2 className="text-3xl font-bold">{race.event_name}</h2>
@@ -523,18 +536,17 @@ const RaceModal = ({
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
                                   <Badge
-                                    variant="outline"
-                                    className="text-xs font-semibold border"
-                                    style={{
-                                      backgroundColor: 'transparent',
-                                      color: colors.secondary,
-                                      borderColor: colors.primary,
-                                      borderWidth: '2px',
-                                      padding: '0.2rem 0.5rem',
-                                    }}
-                                  >
-                                    {d.team}
-                                  </Badge>
+  className="text-xs font-semibold text-white border-none"
+  style={{
+    backgroundColor: colors.primary,
+    padding: '0.25rem 0.6rem',
+    borderRadius: '0.4rem',
+    letterSpacing: '0.3px',
+  }}
+>
+  {d.team}
+</Badge>
+
                                 </div>
                                 <CardTitle className="text-sm font-bold">
                                   {d.driver_name}
@@ -613,18 +625,17 @@ const RaceModal = ({
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
                                   <Badge
-                                    variant="outline"
-                                    className="text-xs font-semibold border"
-                                    style={{
-                                      backgroundColor: 'transparent',
-                                      color: colors.secondary,
-                                      borderColor: colors.primary,
-                                      borderWidth: '2px',
-                                      padding: '0.2rem 0.5rem',
-                                    }}
-                                  >
-                                    {d.team}
-                                  </Badge>
+  className="text-xs font-semibold text-white border-none"
+  style={{
+    backgroundColor: colors.primary,
+    padding: '0.25rem 0.6rem',
+    borderRadius: '0.4rem',
+    letterSpacing: '0.3px',
+  }}
+>
+  {d.team}
+</Badge>
+
                                 </div>
                                 <CardTitle className="text-sm font-bold">
                                   {d.driver_name}
@@ -693,7 +704,49 @@ const RaceModal = ({
 
 
 
-/* ------------ Main page ------------ */
+import { Sun, Moon } from 'lucide-react';
+
+const DarkModeToggle = () => {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Load preference from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = stored === 'dark' || (!stored && prefersDark);
+    setDarkMode(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  // When user toggles it
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    document.documentElement.classList.toggle('dark', newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  };
+
+  return (
+    <button
+      onClick={toggleDarkMode}
+      className="p-2 rounded-md transition-all duration-200 hover:bg-accent flex items-center justify-center"
+      title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    >
+      {darkMode ? (
+        <Sun className="w-5 h-5 text-yellow-400" />
+      ) : (
+        <Moon className="w-5 h-5 text-blue-400" />
+      )}
+    </button>
+  );
+};
+
+
+
+
+
+
+
 /* ------------ Main page ------------ */
 const F1 = () => {
   const [selectedTab, setSelectedTab] = useState<string>('standings');
@@ -704,6 +757,10 @@ const F1 = () => {
 
   return (
     <PageLayout title="F1 Driver Standings - 2025 Season">
+      <div className="flex justify-end">
+  <DarkModeToggle />
+</div>
+
       <Tabs defaultValue="standings" className="w-full" onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
           <TabsTrigger value="standings">Championship</TabsTrigger>
@@ -766,7 +823,7 @@ const F1 = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="default">Race {mainRace.round}</Badge>
+                          <Badge variant="default">Circuit {mainRace.round}</Badge>
                           {hasSprint && (
                             <Badge variant="secondary">Sprint</Badge>
                           )}
