@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 
@@ -9,14 +8,14 @@ interface PageLayoutProps {
 
 export function PageLayout({ children, title }: PageLayoutProps) {
   return (
-    <div className="min-h-screen flex">
+    <div className="flex min-h-screen bg-background text-foreground">
+      {/* Sidebar */}
       <Sidebar />
-      
-      <main className="flex-1 ml-32">
-        <div className="container max-w-full p-4 lg:p-6 animate-fade-in">
-          <h1 className="text-2xl font-bold mb-6">{title}</h1>
-          {children}
-        </div>
+
+      {/* Main content */}
+      <main className="flex-1 p-4 lg:p-6 animate-fade-in overflow-x-hidden">
+        <h1 className="text-2xl font-bold mb-6">{title}</h1>
+        {children}
       </main>
     </div>
   );
