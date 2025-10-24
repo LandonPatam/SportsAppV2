@@ -3,6 +3,12 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sun, Moon } from 'lucide-react';
+import nflTeamData from '../nfl_team_stats.json';
+
+/* ============================================================================
+ * TYPE DEFINITIONS
+ * ============================================================================ */
 
 interface NFLTeam {
   name: string;
@@ -15,12 +21,14 @@ interface NFLTeam {
   points_for: number;
   points_against: number;
   point_diff: number;
-  mov: number;
+  mov: number; // Margin of Victory
 }
 
-import nflTeamData from '../nfl_team_stats.json';
+/* ============================================================================
+ * TEAM COLORS CONFIGURATION
+ * NFL team primary and secondary colors for badges
+ * ============================================================================ */
 
-/* ------------ Team Colors (NFL) ------------ */
 const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Buffalo Bills': { primary: '#00338D', secondary: '#C60C30' },
   'Miami Dolphins': { primary: '#008E97', secondary: '#FC4C02' },
@@ -56,6 +64,10 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Seattle Seahawks': { primary: '#002244', secondary: '#69BE28' },
 };
 
+/* ============================================================================
+ * TEAM ABBREVIATIONS
+ * Mapping of full team names to their standard abbreviations
+ * ============================================================================ */
 
 const teamAbbreviations: Record<string, string> = {
   'Buffalo Bills': 'BUF',
@@ -92,16 +104,50 @@ const teamAbbreviations: Record<string, string> = {
   'Seattle Seahawks': 'SEA',
 };
 
+/* ============================================================================
+ * DARK MODE TOGGLE COMPONENT
+ * Allows users to switch between light and dark themes
+ * ============================================================================ */
 
-const getContrastColor = (hex: string) => {
-  const c = hex.replace('#', '');
-  const rgb = parseInt(c, 16);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness > 150 ? '#000' : '#fff';
+const DarkModeToggle = () => {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Initialize theme from localStorage or system preference
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = stored === 'dark' || (!stored && prefersDark);
+    setDarkMode(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  // Toggle theme and persist to localStorage
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    document.documentElement.classList.toggle('dark', newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  };
+
+  return (
+    <button
+      onClick={toggleDarkMode}
+      className="p-2 rounded-md transition-all duration-200 hover:bg-accent flex items-center justify-center"
+      title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    >
+      {darkMode ? (
+        <Sun className="w-5 h-5 text-yellow-400" />
+      ) : (
+        <Moon className="w-5 h-5 text-blue-400" />
+      )}
+    </button>
+  );
 };
+
+/* ============================================================================
+ * TEAM CARD COMPONENT
+ * Displays individual NFL team statistics and record
+ * ============================================================================ */
 
 const TeamCard = ({ team }: { team: NFLTeam }) => {
   const totalGames = team.wins + team.losses + team.ties;
@@ -111,48 +157,46 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
-  <div className="flex items-start justify-between">
-    <div>
-      {/* === Team Name === */}
-      <CardTitle className="text-lg font-bold">{team.name}</CardTitle>
+        <div className="flex items-start justify-between">
+          <div>
+            {/* Team name */}
+            <CardTitle className="text-lg font-bold">{team.name}</CardTitle>
 
-      {/* === Team Color Badge Below === */}
-      <Badge
-  className="text-xs font-semibold border mt-1"
-  style={{
-    backgroundColor: teamColor?.primary || '#555',  // main fill color
-    color: teamColor?.secondary || '#fff',          // text color
-    borderColor: teamColor?.secondary || '#fff',    // subtle accent outline
-    borderWidth: '2px',
-    padding: '0.25rem 0.55rem',
-    borderRadius: '0.4rem',
-    letterSpacing: '0.5px',
-  }}
->
-  {teamAbbr}
-</Badge>
+            {/* Team abbreviation badge with team colors */}
+            <Badge
+              className="text-xs font-semibold border mt-1"
+              style={{
+                backgroundColor: teamColor?.primary || '#555',
+                color: teamColor?.secondary || '#fff',
+                borderColor: teamColor?.secondary || '#fff',
+                borderWidth: '2px',
+                padding: '0.25rem 0.55rem',
+                borderRadius: '0.4rem',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {teamAbbr}
+            </Badge>
+          </div>
 
-
-      {/* === Division text below badge === */}
-    </div>
-
-    {/* === Record Badge (unchanged) === */}
-    <Badge
-      className={`${
-        team.win_pct >= 0.5
-          ? 'bg-blue-500 text-white hover:bg-blue-700'
-          : 'bg-gray-800 text-white hover:bg-red-700'
-      }`}
-    >
-      {team.wins}-{team.losses}
-      {team.ties > 0 ? `-${team.ties}` : ''}
-    </Badge>
-  </div>
-</CardHeader>
-
+          {/* Win-Loss record badge */}
+          <Badge
+            className={`${
+              team.win_pct >= 0.5
+                ? 'bg-blue-500 text-white hover:bg-blue-700'
+                : 'bg-gray-800 text-white hover:bg-red-700'
+            }`}
+          >
+            {team.wins}-{team.losses}
+            {team.ties > 0 ? `-${team.ties}` : ''}
+          </Badge>
+        </div>
+      </CardHeader>
 
       <CardContent>
+        {/* Team statistics grid */}
         <div className="grid grid-cols-2 gap-4">
+          {/* Left column stats */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Win %</span>
@@ -167,6 +211,8 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
               <span className="font-semibold">{team.points_against}</span>
             </div>
           </div>
+
+          {/* Right column stats */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Point Diff (PD)</span>
@@ -203,52 +249,21 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
   );
 };
 
-
-import { Sun, Moon } from 'lucide-react';
-
-const DarkModeToggle = () => {
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = stored === 'dark' || (!stored && prefersDark);
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  // When user toggles it
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    document.documentElement.classList.toggle('dark', newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
-  };
-
-  return (
-    <button
-      onClick={toggleDarkMode}
-      className="p-2 rounded-md transition-all duration-200 hover:bg-accent flex items-center justify-center"
-      title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-    >
-      {darkMode ? (
-        <Sun className="w-5 h-5 text-yellow-400" />
-      ) : (
-        <Moon className="w-5 h-5 text-blue-400" />
-      )}
-    </button>
-  );
-};
+/* ============================================================================
+ * MAIN NFL COMPONENT
+ * ============================================================================ */
 
 const NFL = () => {
   const [teams, setTeams] = useState<NFLTeam[]>([]);
 
+  // Load team data on mount
   useEffect(() => {
     setTeams(nflTeamData);
   }, []);
 
-  // Helper: Sort by win percentage, wins, then point differential
+  /**
+   * Sorts teams by win percentage, then wins, then point differential
+   */
   const sortTeamsByRecord = (teams: NFLTeam[]) => {
     return [...teams].sort((a, b) => {
       if (b.win_pct !== a.win_pct) return b.win_pct - a.win_pct;
@@ -259,9 +274,10 @@ const NFL = () => {
 
   return (
     <PageLayout title="NFL Teams & Standings - 2024-25 Season">
+      {/* Dark mode toggle */}
       <div className="flex justify-end">
-  <DarkModeToggle />
-</div>
+        <DarkModeToggle />
+      </div>
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-3 mb-6">
@@ -270,7 +286,7 @@ const NFL = () => {
           <TabsTrigger value="NFC">NFC</TabsTrigger>
         </TabsList>
 
-        {/* ===== ALL TEAMS TAB ===== */}
+        {/* All Teams Tab - Ranked by record */}
         <TabsContent value="all">
           <h2 className="text-2xl font-bold mb-4">All Teams (Ranked)</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -280,14 +296,16 @@ const NFL = () => {
           </div>
         </TabsContent>
 
-        {/* ===== AFC / NFC TABS ===== */}
-        {['AFC', 'NFC'].map(conference => (
+        {/* AFC and NFC Conference Tabs */}
+        {['AFC', 'NFC'].map((conference) => (
           <TabsContent key={conference} value={conference} className="space-y-8">
             <h2 className="text-2xl font-bold mb-4">{conference}</h2>
-            {['East', 'North', 'South', 'West'].map(division => {
+            
+            {/* Render each division within the conference */}
+            {['East', 'North', 'South', 'West'].map((division) => {
               const divisionTeams = teams
-                .filter(team => team.conference === conference)
-                .filter(team => team.division.endsWith(division))
+                .filter((team) => team.conference === conference)
+                .filter((team) => team.division.endsWith(division))
                 .sort((a, b) => b.wins - a.wins);
 
               if (divisionTeams.length === 0) return null;
@@ -298,7 +316,7 @@ const NFL = () => {
                     {conference} {division}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {divisionTeams.map(team => (
+                    {divisionTeams.map((team) => (
                       <TeamCard key={team.name} team={team} />
                     ))}
                   </div>
@@ -311,7 +329,5 @@ const NFL = () => {
     </PageLayout>
   );
 };
-
-
 
 export default NFL;
