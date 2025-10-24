@@ -29,6 +29,42 @@ def get_fighter_name_from_link(link):
     
     return ""
 
+def scrape_fighter_profile(url):
+    """Scrape individual fighter page for details."""
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    try:
+        res = requests.get(url, headers=headers)
+        res.raise_for_status()
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        details = {}
+
+        # Record (e.g. "22-6-0")
+        record_tag = soup.find('span', class_='record')
+        if record_tag:
+            details['record'] = record_tag.get_text(strip=True)
+
+        # Height / Reach / Weight Class
+        for stat in soup.select('ul.list-unstyled li'):
+            text = stat.get_text(strip=True)
+            if 'Height:' in text:
+                details['height'] = text.replace('Height:', '').strip()
+            elif 'Reach:' in text:
+                details['reach'] = text.replace('Reach:', '').strip()
+            elif 'Weight Class:' in text:
+                details['weight_class'] = text.replace('Weight Class:', '').strip()
+            elif 'Gym:' in text:
+                details['gym'] = text.replace('Gym:', '').strip()
+            elif 'DOB:' in text:
+                details['dob'] = text.replace('DOB:', '').strip()
+
+        return details
+
+    except Exception as e:
+        print(f"Error scraping {url}: {e}")
+        return {}
+
+
 def scrape_ufc_rankings(url="https://www.tapology.com/rankings/ufc"):
     """
     Scrape UFC rankings from Tapology
@@ -36,6 +72,7 @@ def scrape_ufc_rankings(url="https://www.tapology.com/rankings/ufc"):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
+    
     
     response = requests.get(url, headers=headers)
     response.raise_for_status()
@@ -193,7 +230,7 @@ def main():
             with open(out_path, 'w', encoding='utf-8') as f:
                 json.dump(rankings, f, indent=2, ensure_ascii=False)
             
-            print(f"✅ Rankings saved to {out_path}")
+            print(f"[OK] Rankings saved to {out_path}")
         else:
             print("❌ No divisions found. The page structure may have changed.")
             

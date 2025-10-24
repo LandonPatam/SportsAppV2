@@ -83,5 +83,6 @@ json_data = final_df.to_dict(orient="records")
 out_path = r"D:\Personal Projects\SportsAppV2\src\nfl_team_stats.json"
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(json_data, f, indent=4)
-
+    
+print(f"[OK] Saved F1 2025–26 stats to {out_path}")
 #print(json.dumps(json_data, indent=4))
