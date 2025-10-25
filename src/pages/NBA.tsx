@@ -1,30 +1,30 @@
 // ============================
-// 🏀 NBA Dashboard Component
+// 🏀 NBA Dashboard
 // Displays NBA team standings and top player stats
 // ============================
 
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card, CardContent, CardHeader, CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger,
+} from '@/components/ui/tabs';
 import { X, Sun, Moon } from 'lucide-react';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 
-
-
-// ============================
-// 📦 Static JSON imports (Team + Player Data)
-// ============================
+// Static JSON imports
 import nbaData from '../nba_team_stats.json';
 import nbaPlayerData from '../nba_player_stats.json';
+import playerValues from '../nba_player_values.json';
 
 // ============================
 // 📘 Type Definitions
@@ -67,13 +67,12 @@ interface Player {
   FGA: number;
   FG3A: number;
   FTA: number;
-  OFF_RATING?: number;   // ← NEW
-  DEF_RATING?: number;   // ← NEW
-  NET_RATING?: number;   // ← NEW
-  VALUE_SCORE?: number;  // optional, if precomputed
-  HYBRID_SCORE?: number; // optional, if precomputed
+  OFF_RATING?: number;
+  DEF_RATING?: number;
+  NET_RATING?: number;
+  VALUE_SCORE?: number;
+  HYBRID_SCORE?: number;
 }
-
 
 // ============================
 // 🗂️ Team Conference + Division Mapping
@@ -109,7 +108,7 @@ const teamConferences: Record<string, { conference: string; division: string }> 
   'New Orleans Pelicans': { conference: 'Western', division: 'Southwest' },
   'Charlotte Hornets': { conference: 'Eastern', division: 'Southeast' },
   'Washington Wizards': { conference: 'Eastern', division: 'Southeast' },
-  'Utah Jazz': { conference: 'Western', division: 'Northwest' }
+  'Utah Jazz': { conference: 'Western', division: 'Northwest' },
 };
 
 // ============================
@@ -185,6 +184,7 @@ const teamAbbreviations: Record<string, string> = {
   'Utah Jazz': 'UTA',
   'Washington Wizards': 'WAS',
 };
+
 
 
 
@@ -267,7 +267,9 @@ const statDescriptions: Record<string, string> = {
   APG: 'Assist per game',
   RPG: 'Rebounds per game',
   "Win %": 'Win percentage',
-  "PPG": 'Points per game'
+  "PPG": 'Points per game',
+  "OFF": 'Offensive rating',
+  "DEF": 'Defensive rating'
 
 };
 
@@ -451,6 +453,11 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
       <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
       <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
+       <StatRow
+          label="OFF"
+          value={player.OFF_RATING.toFixed(1)}
+          highlight={player.OFF_RATING > 110 ? 'high' : player.OFF_RATING < 100 ? 'low' : 'neutral'}
+        />       
     </div>
 
     {/* Right column */}
@@ -462,6 +469,12 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
       <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
       <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />
+       <StatRow
+          label="DEF"
+          value={player.DEF_RATING.toFixed(1)}
+          highlight={player.DEF_RATING < 110 ? 'high' : player.DEF_RATING > 115 ? 'low' : 'neutral'}
+        />                
+
     </div>
   </div>
 </CardContent>
@@ -778,16 +791,20 @@ type PlayerSortField =
 const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('VALUE_SCORE');
 
 
-const getPlayerValueScore = (p: Player) => {
-  if (!p) return 0;
+// ✅ Uses precomputed VALUE_SCORE from backend JSON
 
-  // Basic shot math
+
+const getPlayerValueScore = (p: Player) => {
+  // Instant lookup from hash map
+  const precomputed = playerValues[p.PLAYER_ID];
+  if (precomputed !== undefined) return precomputed;
+
+  // fallback for safety
   const fgm = p.FG_PCT * p.FGA;
   const ftm = p.FT_PCT * p.FTA;
   const fgMisses = p.FGA - fgm;
   const ftMisses = p.FTA - ftm;
 
-  // Base Value Score
   const valueScore =
     1.0 * p.PTS +
     0.8 * p.AST +
@@ -798,11 +815,9 @@ const getPlayerValueScore = (p: Player) => {
     0.7 * fgMisses -
     0.5 * ftMisses;
 
-  // Hybrid component (includes NET_RATING)
-  const hybridScore = 0.7 * valueScore + 0.3 * (p.NET_RATING ?? 0);
-
-  return Number(hybridScore.toFixed(2));
+  return Number(valueScore.toFixed(2));
 };
+
 
 
 
@@ -819,6 +834,23 @@ const getPlayerStat = (p: Player, field: PlayerSortField): number => {
     case 'FT_PCT': return p.FT_PCT;
   }
 };
+
+// Memoize sorted players to avoid recalculating on every render
+const sortedTopPlayers = React.useMemo(() => {
+  return Object.values(nbaPlayerData)
+    .flat()
+    .sort((a: Player, b: Player) => getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField))
+    .slice(0, 50);
+}, [playerSortField]);
+
+// Memoize player value scores to avoid recalculating
+const playerValueScores = React.useMemo(() => {
+  const scores = new Map<number, number>();
+  sortedTopPlayers.forEach(player => {
+    scores.set(player.PLAYER_ID, getPlayerValueScore(player));
+  });
+  return scores;
+}, [sortedTopPlayers]);
 
 
 
@@ -980,6 +1012,8 @@ const sortTeams = (teams: NBATeam[]) => {
             );
           })}
         </TabsContent>
+
+
 
 {/* === Top Players === */}
 <TabsContent value="top-scorers">
