@@ -5,6 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sun, Moon } from 'lucide-react';
 import nflTeamData from '../nfl_team_stats.json';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 
 /* ============================================================================
  * TYPE DEFINITIONS
@@ -144,10 +151,41 @@ const DarkModeToggle = () => {
   );
 };
 
+
+// Small helper for labeled stats with hover tooltips
+const statDescriptions: Record<string, string> = {
+  'Win %': 'Team win percentage',
+  'Points For (PF)': 'Total points scored by the team',
+  'Points Against (PA)': 'Total points allowed by the team',
+  'Point Diff (PD)': 'Point differential (points for - points against)',
+  MoV: 'Average margin of victory per game',
+  PPG: 'Points per game scored by the team',
+};
+
+const StatRow = ({ label, value }: { label: string; value: string | number }) => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="flex justify-between text-sm cursor-help">
+          <span className="text-muted-foreground">{label}</span>
+          <span className="font-semibold">{value}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="center">
+        <p>{statDescriptions[label] || 'Stat description unavailable'}</p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
+
 /* ============================================================================
  * TEAM CARD COMPONENT
  * Displays individual NFL team statistics and record
  * ============================================================================ */
+
+
+
 
 const TeamCard = ({ team }: { team: NFLTeam }) => {
   const totalGames = team.wins + team.losses + team.ties;
@@ -198,50 +236,31 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
         <div className="grid grid-cols-2 gap-4">
           {/* Left column stats */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Win %</span>
-              <span className="font-semibold">{(team.win_pct * 100).toFixed(1)}%</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Points For (PF)</span>
-              <span className="font-semibold">{team.points_for}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Points Against (PA)</span>
-              <span className="font-semibold">{team.points_against}</span>
-            </div>
+            <StatRow label="Win %" value={`${(team.win_pct * 100).toFixed(1)}%`} />
+            <StatRow label="Points For (PF)" value={team.points_for} />
+            <StatRow label="Points Against (PA)" value={team.points_against} />
           </div>
 
           {/* Right column stats */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Point Diff (PD)</span>
-              <span
-                className={`font-semibold ${
-                  team.point_diff >= 0 ? 'text-success' : 'text-danger'
-                }`}
-              >
-                {team.point_diff >= 0 ? '+' : ''}
-                {team.point_diff}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">MoV</span>
-              <span
-                className={`font-semibold ${
-                  team.mov >= 0 ? 'text-success' : 'text-danger'
-                }`}
-              >
-                {team.mov >= 0 ? '+' : ''}
-                {team.mov.toFixed(1)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">PPG</span>
-              <span className="font-semibold">
-                {totalGames > 0 ? (team.points_for / totalGames).toFixed(1) : '0.0'}
-              </span>
-            </div>
+            <StatRow
+              label="Point Diff (PD)"
+              value={`${team.point_diff >= 0 ? '+' : ''}${team.point_diff}`}
+              //highlight={team.point_diff >= 0}
+            />
+            <StatRow
+              label="MoV"
+              value={`${team.mov >= 0 ? '+' : ''}${team.mov.toFixed(1)}`}
+              //highlight={team.mov >= 0}
+            />
+            <StatRow
+              label="PPG"
+              value={
+                totalGames > 0
+                  ? (team.points_for / totalGames).toFixed(1)
+                  : '0.0'
+              }
+            />
           </div>
         </div>
       </CardContent>

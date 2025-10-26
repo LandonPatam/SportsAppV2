@@ -230,7 +230,8 @@ def main():
             with open(out_path, 'w', encoding='utf-8') as f:
                 json.dump(rankings, f, indent=2, ensure_ascii=False)
             
-            print(f"[OK] Rankings saved to {out_path}")
+            #print(f"[OK] Rankings saved to {out_path}")
+            print(f"[OK] UFC data up to date")
         else:
             print("❌ No divisions found. The page structure may have changed.")
             

@@ -61,9 +61,11 @@ needs_standings_update = bool(new_rounds_standings)
 needs_races_update = bool(new_rounds_races)
 
 if not needs_standings_update and not needs_races_update:
-    print(f"[OK] All {len(completed_rounds)} races already processed")
-    print(f"  Standings processed rounds: {sorted(processed_rounds_standings)}")
-    print(f"  Race results processed rounds: {sorted(processed_rounds_races)}")
+    #print(f"[OK] All {len(completed_rounds)} races already processed")
+    #print(f"  Standings processed rounds: {sorted(processed_rounds_standings)}")
+    #print(f"  Race results processed rounds: {sorted(processed_rounds_races)}")
+    #print(f"[OK] Saved F1 stats to {STANDINGS_PATH} and {RACE_RESULTS_PATH}")
+    print("[OK] F1 Data is up to date")
     raise SystemExit(0)
 
 if needs_standings_update:

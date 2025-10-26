@@ -448,7 +448,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
     <div className="space-y-2">
       <StatRow label="GP" value={player.GP.toFixed(0)} />
       <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} />
-      <StatRow label="PTS" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
+      <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
       <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} />
       <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
       <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
@@ -581,6 +581,8 @@ const TeamCard = ({
               value={team.AST.toFixed(1)}
               highlight={getHighlight('AST')}
             />
+
+            
           </div>
 
           <div className="space-y-2">
@@ -931,7 +933,7 @@ const sortTeams = (teams: NBATeam[]) => {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="WIN_PCT">Win %</SelectItem>
-          <SelectItem value="PTS">PPG</SelectItem>
+          <SelectItem value="PPG">PPG</SelectItem>
           <SelectItem value="REB">RPG</SelectItem>
           <SelectItem value="AST">APG</SelectItem>
           <SelectItem value="FG_PCT">FG%</SelectItem>
@@ -1131,7 +1133,7 @@ const sortTeams = (teams: NBATeam[]) => {
         highlight={getPlayerHighlight(player, 'MIN')}
       />
       <StatRow
-        label="PTS"
+        label="PPG"
         value={player.PTS.toFixed(1)}
         highlight={getPlayerHighlight(player, 'PTS')}
       />
@@ -1155,6 +1157,7 @@ const sortTeams = (teams: NBATeam[]) => {
         value={player.BLK.toFixed(1)}
         highlight={getPlayerHighlight(player, 'BLK')}
       />
+
     </div>
 
     {/* Right column */}
@@ -1193,7 +1196,7 @@ const sortTeams = (teams: NBATeam[]) => {
         label="FT%"
         value={`${(player.FT_PCT * 100).toFixed(1)}%`}
         highlight={getPlayerHighlight(player, 'FT_PCT')}
-      />
+      />    
     </div>
   </div>
 </CardContent>
