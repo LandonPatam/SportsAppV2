@@ -959,6 +959,7 @@ const trackPaths: Record<string, string> = {
 
 
 const trackStyles: Record<number, React.CSSProperties & { orbSize?; orbSpeed?: string }> = {
+
   1: {
     transform: "scale(0.9) translate(8%, 3%) rotate(-5deg)",
     transformOrigin: "center",

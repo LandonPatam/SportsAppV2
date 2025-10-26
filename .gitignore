@@ -26,3 +26,7 @@ dist-ssr
 #Ignore cache directories
 f1_cache
 nba_cache
+
+#Ignore JSON files
+f1_drivers_2025_updated.json
+src/*.json
