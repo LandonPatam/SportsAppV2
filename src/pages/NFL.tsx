@@ -28,7 +28,6 @@ interface NFLTeam {
   points_for: number;
   points_against: number;
   point_diff: number;
-  mov: number; // Margin of Victory
 }
 
 /* ============================================================================
@@ -158,7 +157,6 @@ const statDescriptions: Record<string, string> = {
   'Points For (PF)': 'Total points scored by the team',
   'Points Against (PA)': 'Total points allowed by the team',
   'Point Diff (PD)': 'Point differential (points for - points against)',
-  MoV: 'Average margin of victory per game',
   PPG: 'Points per game scored by the team',
 };
 
@@ -247,11 +245,6 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
               label="Point Diff (PD)"
               value={`${team.point_diff >= 0 ? '+' : ''}${team.point_diff}`}
               //highlight={team.point_diff >= 0}
-            />
-            <StatRow
-              label="MoV"
-              value={`${team.mov >= 0 ? '+' : ''}${team.mov.toFixed(1)}`}
-              //highlight={team.mov >= 0}
             />
             <StatRow
               label="PPG"
