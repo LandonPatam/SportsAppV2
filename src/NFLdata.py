@@ -85,4 +85,3 @@ with open(out_path, "w", encoding="utf-8") as f:
     json.dump(json_data, f, indent=4)
     
 print(f"[OK] NFL Data up to date")
-#print(json.dumps(json_data, indent=4))

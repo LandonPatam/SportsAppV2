@@ -19,11 +19,9 @@ headers = {
   'Sec-Fetch-Dest': 'empty',
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-site',
-  'Priority': 'u=4',
-  'Cookie': 'ak_bmsc=2328E04EA91FE0CC34309DA826963E8D~000000000000000000000000000000~YAAQXF7WF4gTBuiZAQAAQkSzKB36Z+KWzOQmfB7eY3HHnRB8jSsIEUx2WiUY6g6ztqMA5xs6DfQRMDq3kh+PsHUAzHcVifWMlsJALn7mLMB89sSdvUFo+QuJYWg936dJsffrbj2aO4hXYr3gkdlSu0KyOu7gvO55E1QrTuE/7qgBqpV61w1FQIR6g3F2vtaK9X8OpfYobxxIn0PuGwiOex46fGb6NVaxvkG9MdjoAn5QEMZCCG9F0clrB3sfJjKAIErcWVcpI5Gef58oZECMybf/T91Z6VUY92q8iihitTZzQms+83RgQaFE4FVX195RQKSHhbu3Fk3STo4vPJV9AQ1BSJI9TU0WyezL'
-}
+  'Priority': 'u=4',}
 
-r = requests.get(url, headers=headers)
+r = requests.get(url, headers=headers, timeout=10)
 team_data = r.json()
 
 result = team_data["resultSets"][0]
@@ -61,6 +59,7 @@ for t in teams:
 with open("public/data/espn_NBA_team_stats.json", "w") as f:
     json.dump(formatted_teams, f, indent=2)
     
+
     
 # NBA Player Data
 
@@ -78,11 +77,9 @@ headers = {
   'Sec-Fetch-Dest': 'empty',
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-site',
-  'Priority': 'u=4',
-  'Cookie': 'ak_bmsc=2328E04EA91FE0CC34309DA826963E8D~000000000000000000000000000000~YAAQXF7WF4gTBuiZAQAAQkSzKB36Z+KWzOQmfB7eY3HHnRB8jSsIEUx2WiUY6g6ztqMA5xs6DfQRMDq3kh+PsHUAzHcVifWMlsJALn7mLMB89sSdvUFo+QuJYWg936dJsffrbj2aO4hXYr3gkdlSu0KyOu7gvO55E1QrTuE/7qgBqpV61w1FQIR6g3F2vtaK9X8OpfYobxxIn0PuGwiOex46fGb6NVaxvkG9MdjoAn5QEMZCCG9F0clrB3sfJjKAIErcWVcpI5Gef58oZECMybf/T91Z6VUY92q8iihitTZzQms+83RgQaFE4FVX195RQKSHhbu3Fk3STo4vPJV9AQ1BSJI9TU0WyezL; bm_sv=B0BACA0161916BAD4D9A8753F47D4C97~YAAQXF7WFzyrBuiZAQAAUGfFKB1oLyYPW6o/T1t+vSK/HqP4BPB0vmYSwJzNsT60dXP51pltxV49dTWLubibVEaiOzxRc8R1ZuDIRtkRLVew0+DZ9IJOhfigV38IDAx9IwNeJLCsR8xjz7dk3K3jsqY7iBsiCdvOVSyi+2Popp3vZXT3a3LhmsoF68lFcSbuNF/dAvma0BV7eUBLl1pcnkbSpz1JZWXjTrx1dI1VVY1Ht+bwi2gQrWBX/2Nd~1'
-}
+  'Priority': 'u=4',}
 
-d = requests.get(url, headers=headers)
+d = requests.get(url, headers=headers, timeout=10)
 player_data = d.json()
 
 # Extract the base data
@@ -141,3 +138,6 @@ for p in players:
 # Save to file
 with open("public/data/espn_NBA_player_stats.json", "w") as f:
     json.dump(team_players, f, indent=2)
+    
+    
+print(f"[OK] NBA Team and Player data updated")
