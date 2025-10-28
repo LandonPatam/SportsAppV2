@@ -44,6 +44,49 @@ interface NBATeam {
   FG_PCT: number;
   FG3_PCT: number;
   FT_PCT: number;
+  TOV: number;
+  W_PCT: number;
+  MIN: number;
+  FGM: number;
+  FGA: number;
+  FG3M: number;
+  FG3A: number;
+  FTM: number;
+  FTA: number;
+  OREB: number;
+  DREB: number;
+  STL: number;
+  BLK: number;
+  BLKA: number;
+  PF: number;
+  PFD: number;
+  PLUS_MINUS: number;
+  GP_RANK: number;
+  W_RANK: number;
+  L_RANK: number;
+  W_PCT_RANK: number;
+  MIN_RANK: number;
+  FGM_RANK: number;
+  FGA_RANK: number;
+  FG_PCT_RANK: number;
+  FG3M_RANK: number;
+  FG3A_RANK: number;
+  FG3_PCT_RANK: number;
+  FTM_RANK: number;
+  FTA_RANK: number;
+  FT_PCT_RANK: number;
+  OREB_RANK: number;
+  DREB_RANK: number;
+  REB_RANK: number;
+  AST_RANK: number;
+  TOV_RANK: number;
+  STL_RANK: number;
+  BLK_RANK: number;
+  BLKA_RANK: number;
+  PF_RANK: number;
+  PFD_RANK: number;
+  PTS_RANK: number;
+  PLUS_MINUS_RANK: number;
 }
 
 interface Player {
@@ -514,12 +557,40 @@ const TeamCard = ({
   const winPercentage = (team.WIN_PCT * 100).toFixed(1);
 
   // Helper to determine stat color
-  const getHighlight = (statKey: keyof typeof leagueAverages) => {
-    if (!leagueAverages) return undefined;
-    const diff = team[statKey] - leagueAverages[statKey];
-    if (Math.abs(diff) < 0.01) return 'neutral';
-    return diff > 0 ? 'high' : 'low';
-  };
+const getHighlight = (statKey: keyof typeof leagueAverages) => {
+  if (!leagueAverages) return undefined;
+  
+  const diff = team[statKey] - leagueAverages[statKey];
+  
+  // 🔍 Detailed debug for TOV
+  if (statKey === 'TOV') {
+    console.log('TOV Debug:', {
+      statKey,
+      teamValue: team[statKey],
+      leagueAvg: leagueAverages[statKey],
+      diff: diff,
+      absCheck: Math.abs(diff) < 0.01,
+      setHas: new Set(['TOV', 'PF', 'FGA_MISS', 'FTA_MISS']).has(String(statKey)),
+      expectedResult: diff < 0 ? 'high (green)' : 'low (red)'
+    });
+  }
+  
+  if (Math.abs(diff) < 0.01) return 'neutral';
+  
+  // 🧮 Stats where lower is better
+  const lowerIsBetter = new Set([
+    'TOV',       // turnovers
+    'PF',        // personal fouls (if you track it)
+    'FGA_MISS',  // hypothetical example
+    'FTA_MISS',  // hypothetical example
+  ]);
+  
+  if (lowerIsBetter.has(String(statKey))) {
+    // Flip the logic — lower = high (good)
+    return diff < 0 ? 'high' : 'low';
+  }
+  return diff > 0 ? 'high' : 'low';
+};
 
   return (
     <Card
@@ -576,6 +647,11 @@ const TeamCard = ({
               label="APG"
               value={team.AST.toFixed(1)}
               highlight={getHighlight('AST')}
+            />
+               <StatRow
+              label="TOV"
+              value={team.TOV.toFixed(1)}
+              highlight={getHighlight('TOV')}
             />
 
             
@@ -722,9 +798,9 @@ useEffect(() => {
 
 
   // Compute league averages
+// Compute league averages
 const leagueAverages = React.useMemo(() => {
   if (nbaTeams.length === 0) return null;
-
   const totals = nbaTeams.reduce(
     (acc, t) => {
       acc.WIN_PCT += t.WIN_PCT;
@@ -733,11 +809,33 @@ const leagueAverages = React.useMemo(() => {
       acc.AST += t.AST;
       acc.FG_PCT += t.FG_PCT;
       acc.FG3_PCT += t.FG3_PCT;
+      acc.FT_PCT += t.FT_PCT;
+      acc.W_PCT += t.W_PCT;
+      acc.MIN += t.MIN;
+      acc.FGM += t.FGM;
+      acc.FGA += t.FGA;
+      acc.FG3M += t.FG3M;
+      acc.FG3A += t.FG3A;
+      acc.FTM += t.FTM;
+      acc.FTA += t.FTA;
+      acc.OREB += t.OREB;
+      acc.DREB += t.DREB;
+      acc.TOV += t.TOV;
+      acc.STL += t.STL;
+      acc.BLK += t.BLK;
+      acc.BLKA += t.BLKA;
+      acc.PF += t.PF;
+      acc.PFD += t.PFD;
+      acc.PLUS_MINUS += t.PLUS_MINUS;
       return acc;
     },
-    { WIN_PCT: 0, PTS: 0, REB: 0, AST: 0, FG_PCT: 0, FG3_PCT: 0 }
+    { 
+      WIN_PCT: 0, PTS: 0, REB: 0, AST: 0, FG_PCT: 0, FG3_PCT: 0, FT_PCT: 0,
+      W_PCT: 0, MIN: 0, FGM: 0, FGA: 0, FG3M: 0, FG3A: 0, FTM: 0, FTA: 0,
+      OREB: 0, DREB: 0, TOV: 0, STL: 0, BLK: 0, BLKA: 0, PF: 0, PFD: 0,
+      PLUS_MINUS: 0
+    }
   );
-
   const n = nbaTeams.length;
   return {
     WIN_PCT: totals.WIN_PCT / n,
@@ -746,6 +844,24 @@ const leagueAverages = React.useMemo(() => {
     AST: totals.AST / n,
     FG_PCT: totals.FG_PCT / n,
     FG3_PCT: totals.FG3_PCT / n,
+    FT_PCT: totals.FT_PCT / n,
+    W_PCT: totals.W_PCT / n,
+    MIN: totals.MIN / n,
+    FGM: totals.FGM / n,
+    FGA: totals.FGA / n,
+    FG3M: totals.FG3M / n,
+    FG3A: totals.FG3A / n,
+    FTM: totals.FTM / n,
+    FTA: totals.FTA / n,
+    OREB: totals.OREB / n,
+    DREB: totals.DREB / n,
+    TOV: totals.TOV / n,
+    STL: totals.STL / n,
+    BLK: totals.BLK / n,
+    BLKA: totals.BLKA / n,
+    PF: totals.PF / n,
+    PFD: totals.PFD / n,
+    PLUS_MINUS: totals.PLUS_MINUS / n,
   };
 }, [nbaTeams]);
 
