@@ -22,9 +22,10 @@ import {
 } from '@/components/ui/select';
 
 // Static JSON imports
-import nbaData from '../nba_team_stats.json';
-import nbaPlayerData from '../nba_player_stats.json';
-import playerValues from '../nba_player_values.json';
+//import nbaData from '../espn_NBA_team_stats.json';
+//import nbaPlayerData from '../espn_NBA_player_stats.json';
+
+
 
 // ============================
 // 📘 Type Definitions
@@ -43,8 +44,6 @@ interface NBATeam {
   FG_PCT: number;
   FG3_PCT: number;
   FT_PCT: number;
-  conference?: string;
-  division?: string;
 }
 
 interface Player {
@@ -72,6 +71,7 @@ interface Player {
   NET_RATING?: number;
   VALUE_SCORE?: number;
   HYBRID_SCORE?: number;
+  THING?: number;
 }
 
 // ============================
@@ -220,7 +220,7 @@ const PlayerCard = ({ player, index }: { player: Player; index: number }) => (
           </Badge>
         </div>
 
-        <Badge variant="outline">#{player.JERSEY_NUMBER}</Badge>
+
       </div>
     </CardHeader>
 
@@ -315,7 +315,15 @@ const StatRow = ({
 // Displays a team's full roster in a modal
 // ============================
 
-const PlayerModal = ({ team, onClose }: { team: NBATeam; onClose: () => void }) => {
+const PlayerModal = ({
+  team,
+  nbaPlayerData,
+  onClose,
+}: {
+  team: NBATeam;
+  nbaPlayerData: Record<string, Player[]>;
+  onClose: () => void;
+}) => {
   const players: Player[] = nbaPlayerData[team.TEAM_ID.toString()] || [];
   
 
@@ -437,8 +445,6 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
                           {player.TEAM_ABBREVIATION}
                         </Badge>
                       </div>
-
-                      <Badge variant="outline">#{player.JERSEY_NUMBER}</Badge>
                     </div>
                   </CardHeader>
 
@@ -453,11 +459,6 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
       <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
       <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
-       <StatRow
-          label="OFF"
-          value={player.OFF_RATING.toFixed(1)}
-          highlight={player.OFF_RATING > 110 ? 'high' : player.OFF_RATING < 100 ? 'low' : 'neutral'}
-        />       
     </div>
 
     {/* Right column */}
@@ -468,12 +469,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} />
       <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
       <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
-      <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />
-       <StatRow
-          label="DEF"
-          value={player.DEF_RATING.toFixed(1)}
-          highlight={player.DEF_RATING < 110 ? 'high' : player.DEF_RATING > 115 ? 'low' : 'neutral'}
-        />                
+      <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />             
 
     </div>
   </div>
@@ -657,6 +653,10 @@ const DarkModeToggle = () => {
 
 
 const NBA = () => {
+  const [nbaPlayerData, setNbaPlayerData] = useState<Record<string, Player[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
   const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
@@ -664,15 +664,61 @@ const NBA = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
 
-  // Map team data with conference + division
-  useEffect(() => {
-    const teamsWithConference = nbaData.map((team) => ({
+const fetchData = async () => {
+  try {
+    setLoading(true);
+    console.log('Fetching NBA data...');
+    
+    // Fetch team data with cache-busting timestamp
+    const teamResponse = await fetch('/data/espn_NBA_team_stats.json?' + Date.now());
+    console.log('Team response:', teamResponse.ok);
+    if (!teamResponse.ok) throw new Error('Failed to fetch team data');
+    const teamData = await teamResponse.json();
+    console.log('Team data loaded:', teamData.length);
+    
+    // Fetch player data
+    const playerResponse = await fetch('/data/espn_NBA_player_stats.json?' + Date.now());
+    console.log('Player response:', playerResponse.ok);
+    if (!playerResponse.ok) throw new Error('Failed to fetch player data');
+    const playerData = await playerResponse.json();
+    console.log('Player data loaded:', Object.keys(playerData).length);
+    
+    // Map team data with conference + division
+    const teamsWithConference = teamData.map((team: NBATeam) => ({
       ...team,
       conference: teamConferences[team.TEAM_NAME]?.conference || 'Unknown',
       division: teamConferences[team.TEAM_NAME]?.division || 'Unknown',
     }));
+    
     setNbaTeams(teamsWithConference);
-  }, []);
+    setNbaPlayerData(playerData);
+    setLastUpdate(new Date());
+    setLoading(false);
+    console.log('Data loaded successfully!');
+  } catch (error) {
+    console.error('Error fetching NBA data:', error);
+    setLoading(false);
+    alert('Failed to load NBA data. Check console for details.');
+  }
+};
+
+
+  // Map team data with conference + division
+  // Initial load
+useEffect(() => {
+  fetchData();
+}, []);
+
+// Auto-refresh every 30 seconds
+useEffect(() => {
+  if (!autoRefresh) return;
+  
+  const interval = setInterval(() => {
+    fetchData();
+  }, 5000); // 30 seconds
+
+  return () => clearInterval(interval);
+}, [autoRefresh]);
 
 
   // Compute league averages
@@ -749,7 +795,7 @@ const playerAverages = React.useMemo<PlayerAverages | null>(() => {
     GP: totals.GP / n, MIN: totals.MIN / n,
     TOV: totals.TOV / n, FGA: totals.FGA / n, FG3A: totals.FG3A / n, FTA: totals.FTA / n,
   };
-}, []);
+}, [nbaPlayerData]);
 
 
 
@@ -777,6 +823,29 @@ const getPlayerHighlight = (player: Player, key: keyof NonNullable<typeof player
   return diff > 0 ? 'high' : 'low';
 };
 
+const getLeagueHighlight = (
+  player: Player,
+  key: keyof Player,
+  leagueAverages: Record<string, number> | null
+) => {
+  if (!leagueAverages || !(key in leagueAverages)) return 'neutral';
+
+  const playerValue = Number((player as any)[key]);
+  const avgValue = Number((leagueAverages as any)[key]);
+  if (isNaN(playerValue) || isNaN(avgValue)) return 'neutral';
+
+  const diff = playerValue - avgValue;
+  if (Math.abs(diff) < 0.01) return 'neutral';
+
+  const lowerIsBetter = new Set(['TOV']);
+  if (lowerIsBetter.has(key)) {
+    return diff < 0 ? 'high' : 'low';
+  }
+
+  return diff > 0 ? 'high' : 'low';
+};
+
+
 
 
 
@@ -793,32 +862,31 @@ type PlayerSortField =
 const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('VALUE_SCORE');
 
 
-// ✅ Uses precomputed VALUE_SCORE from backend JSON
+
 
 
 const getPlayerValueScore = (p: Player) => {
-  // Instant lookup from hash map
-  const precomputed = playerValues[p.PLAYER_ID];
-  if (precomputed !== undefined) return precomputed;
-
-  // fallback for safety
   const fgm = p.FG_PCT * p.FGA;
   const ftm = p.FT_PCT * p.FTA;
   const fgMisses = p.FGA - fgm;
   const ftMisses = p.FTA - ftm;
 
-  const valueScore =
+  const rawScore =
     1.0 * p.PTS +
     0.8 * p.AST +
-    0.7 * p.REB +
+    0.6 * p.REB +
     1.0 * p.STL +
     0.8 * p.BLK -
     1.0 * p.TOV -
     0.7 * fgMisses -
     0.5 * ftMisses;
 
-  return Number(valueScore.toFixed(2));
+  const normalized = ((rawScore + 20) / 69) * 100;
+
+  // Clamp between 0–100 just in case
+  return Math.max(0, Math.min(100, Number(normalized.toFixed(1))));
 };
+
 
 
 
@@ -841,18 +909,22 @@ const getPlayerStat = (p: Player, field: PlayerSortField): number => {
 const sortedTopPlayers = React.useMemo(() => {
   return Object.values(nbaPlayerData)
     .flat()
-    .sort((a: Player, b: Player) => getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField))
+    .sort(
+      (a: Player, b: Player) =>
+        getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField)
+    )
     .slice(0, 50);
-}, [playerSortField]);
+}, [nbaPlayerData, playerSortField]); // ✅ added nbaPlayerData
 
 // Memoize player value scores to avoid recalculating
 const playerValueScores = React.useMemo(() => {
   const scores = new Map<number, number>();
-  sortedTopPlayers.forEach(player => {
+  sortedTopPlayers.forEach((player) => {
     scores.set(player.PLAYER_ID, getPlayerValueScore(player));
   });
   return scores;
 }, [sortedTopPlayers]);
+
 
 
 
@@ -1025,6 +1097,7 @@ const sortTeams = (teams: NBATeam[]) => {
 <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
   <div className="flex items-center gap-2">
     <label className="text-sm font-medium text-muted-foreground">Filter by:</label>
+
 
     <div className="flex items-center gap-2">
       {/* Dropdown */}
@@ -1210,7 +1283,13 @@ const sortTeams = (teams: NBATeam[]) => {
       </Tabs>
 
       {/* Player Modal */}
-      {selectedTeam && <PlayerModal team={selectedTeam} onClose={() => setSelectedTeam(null)} />}
+{selectedTeam && (
+  <PlayerModal
+    team={selectedTeam}
+    nbaPlayerData={nbaPlayerData} // ✅ pass player data
+    onClose={() => setSelectedTeam(null)}
+  />
+)}
     </PageLayout>
   );
 };
