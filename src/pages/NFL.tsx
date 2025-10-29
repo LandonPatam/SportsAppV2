@@ -175,7 +175,7 @@ const StatRow = ({ label, value }: { label: string; value: string | number }) =>
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex justify-between text-sm cursor-help">
+        <div className="flex justify-left gap-3 text-sm cursor-help">
           <span className="text-muted-foreground">{label}</span>
           <span className="font-semibold">{value}</span>
         </div>
