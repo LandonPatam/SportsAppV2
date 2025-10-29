@@ -21,9 +21,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 
-// Static JSON imports
-//import nbaData from '../espn_NBA_team_stats.json';
-//import nbaPlayerData from '../espn_NBA_player_stats.json';
 
 
 
@@ -34,6 +31,7 @@ import {
 interface NBATeam {
   TEAM_ID: number;
   TEAM_NAME: string;
+  LOGO_URL?: string;
   GP: number;
   W: number;
   L: number;
@@ -312,7 +310,13 @@ const statDescriptions: Record<string, string> = {
   "Win %": 'Win percentage',
   "PPG": 'Points per game',
   "OFF": 'Offensive rating',
-  "DEF": 'Defensive rating'
+  "DEF": 'Defensive rating',
+  "OREB" : 'Offensive Rebounds',
+  "DREB" : 'Defensive Rebounds',
+  "3PM" : 'Three pointers made',
+  "FTM" : 'Free throws made',
+  "+/-" : "Plus Minus"
+  
 
 };
 
@@ -556,11 +560,11 @@ const TeamCard = ({
   const teamColor = teamColors[teamAbbr];
   const winPercentage = (team.WIN_PCT * 100).toFixed(1);
 
-  // Helper to determine stat color
-const getHighlight = (statKey: keyof typeof leagueAverages) => {
-  if (!leagueAverages) return undefined;
-  
-  const diff = team[statKey] - leagueAverages[statKey];
+  // Helper to determine stat color vs league average
+  const getHighlight = (statKey: keyof typeof leagueAverages) => {
+    if (!leagueAverages) return undefined;
+    
+    const diff = team[statKey] - leagueAverages[statKey];
   
   // 🔍 Detailed debug for TOV
   if (statKey === 'TOV') {
@@ -585,12 +589,32 @@ const getHighlight = (statKey: keyof typeof leagueAverages) => {
     'FTA_MISS',  // hypothetical example
   ]);
   
-  if (lowerIsBetter.has(String(statKey))) {
-    // Flip the logic — lower = high (good)
-    return diff < 0 ? 'high' : 'low';
-  }
-  return diff > 0 ? 'high' : 'low';
-};
+    if (lowerIsBetter.has(String(statKey))) {
+      // Flip the logic – lower = high (good)
+      return diff < 0 ? 'high' : 'low';
+    }
+    return diff > 0 ? 'high' : 'low';
+  };
+
+  // Combined highlight for paired stats (e.g., OREB/DREB, 3PM/3PA)
+  const getPairHighlight = (
+    leftKey: keyof typeof leagueAverages,
+    rightKey: keyof typeof leagueAverages
+  ) => {
+    if (!leagueAverages) return 'neutral' as const;
+    const leftDiff = (team as any)[leftKey] - (leagueAverages as any)[leftKey];
+    const rightDiff = (team as any)[rightKey] - (leagueAverages as any)[rightKey];
+    const thr = 0.01;
+    const leftSign = Math.abs(leftDiff) < thr ? 0 : leftDiff > 0 ? 1 : -1;
+    const rightSign = Math.abs(rightDiff) < thr ? 0 : rightDiff > 0 ? 1 : -1;
+    if (leftSign === 1 && rightSign === 1) return 'high';
+    if (leftSign === -1 && rightSign === -1) return 'low';
+    // Mixed: choose the stronger direction by absolute magnitude
+    const pick = Math.abs(leftDiff) >= Math.abs(rightDiff) ? leftSign : rightSign;
+    if (pick === 1) return 'high';
+    if (pick === -1) return 'low';
+    return 'neutral';
+  };
 
   return (
     <Card
@@ -602,7 +626,16 @@ const getHighlight = (statKey: keyof typeof leagueAverages) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg font-bold">{team.TEAM_NAME}</CardTitle>
+            <div className="flex items-center gap-2">
+              {team.LOGO_URL && (
+                <img
+                  src={team.LOGO_URL}
+                  alt={`${team.TEAM_NAME} logo`}
+                  className="w-8 h-8 rounded-sm"
+                />
+              )}
+              <CardTitle className="text-lg font-bold">{team.TEAM_NAME}</CardTitle>
+            </div>
             <Badge
               className="text-xs font-semibold border mt-1"
               style={{
@@ -625,54 +658,76 @@ const getHighlight = (statKey: keyof typeof leagueAverages) => {
       </CardHeader>
 
       <CardContent>
-        {/* 2-column stat grid */}
+        {/* 2-column stat grid (merged, no extra gap) */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
+            <StatRow label="Win %" value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
+            <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
+            <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
+            <StatRow label="APG" value={team.AST.toFixed(1)} highlight={getHighlight('AST')} />
+            <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
             <StatRow
-              label="Win %"
-              value={`${winPercentage}%`}
-              highlight={getHighlight('WIN_PCT')}
-            />
-            <StatRow
-              label="PPG"
-              value={team.PTS.toFixed(1)}
-              highlight={getHighlight('PTS')}
-            />
-            <StatRow
-              label="RPG"
-              value={team.REB.toFixed(1)}
-              highlight={getHighlight('REB')}
-            />
-            <StatRow
-              label="APG"
-              value={team.AST.toFixed(1)}
-              highlight={getHighlight('AST')}
-            />
-               <StatRow
-              label="TOV"
-              value={team.TOV.toFixed(1)}
-              highlight={getHighlight('TOV')}
+              label="OREB"
+              value={`${team.OREB.toFixed(1)}`}
+              highlight={getHighlight('OREB')}
             />
 
-            
+             <StatRow
+              label="DREB"
+              value={`${team.DREB.toFixed(1)}`}
+              highlight={getHighlight('DREB')}
+            />
+          
+            <StatRow
+              label="STL"
+              value={`${team.STL.toFixed(1)}`}
+              highlight={getHighlight('STL')}
+            />
+
+             <StatRow
+              label="BLK"
+              value={` ${team.BLK.toFixed(1)}`}
+              highlight={getHighlight('BLK')}
+            />
+
           </div>
 
           <div className="space-y-2">
+            <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
+            <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
+            <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
             <StatRow
-              label="FG%"
-              value={`${(team.FG_PCT * 100).toFixed(1)}%`}
-              highlight={getHighlight('FG_PCT')}
+              label="3PM"
+              value={`${team.FG3M.toFixed(1)}`}
+              highlight={getHighlight('FG3M')}
             />
             <StatRow
-              label="3P%"
-              value={`${(team.FG3_PCT * 100).toFixed(1)}%`}
-              highlight={getHighlight('FG3_PCT')}
+              label="3PA"
+              value={` ${team.FG3A.toFixed(1)}`}
+              highlight={getHighlight('FG3A')}
             />
             <StatRow
-              label="FT%"
-              value={`${(team.FT_PCT * 100).toFixed(1)}%`}
-              highlight={getHighlight('FT_PCT')}
+              label="FTM"
+              value={`${team.FTM.toFixed(1)}`}
+              highlight={getHighlight('FTM')}
             />
+            <StatRow
+              label="FTA"
+              value={` ${team.FTA.toFixed(1)}`}
+              highlight={getHighlight( 'FTA')}
+            />
+            {(() => {
+              const pm = Number(team.PLUS_MINUS || 0);
+              const pmStr = pm >= 0 ? `+${pm.toFixed(1)}` : pm.toFixed(1);
+              let highlight: 'high' | 'low' | 'neutral' = 'neutral';
+              try {
+                if (leagueAverages && typeof (leagueAverages as any).PLUS_MINUS === 'number') {
+                  const diff = pm - (leagueAverages as any).PLUS_MINUS;
+                  highlight = Math.abs(diff) < 0.01 ? 'neutral' : diff > 0 ? 'high' : 'low';
+                }
+              } catch {}
+              return <StatRow label="+/-" value={pmStr} highlight={highlight} />;
+            })()}
           </div>
         </div>
       </CardContent>

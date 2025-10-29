@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sun, Moon } from 'lucide-react';
-import nflTeamData from '../nfl_team_stats.json';
+// Data now loaded dynamically from public/data/nfl_site_nfl_standings.json
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +28,17 @@ interface NFLTeam {
   points_for: number;
   points_against: number;
   point_diff: number;
+  Home?: string;
+  Road?: string;
+  Div?: string;
+  DivPct?: string;
+  Conf?: string;
+  ConfPct?: string;
+  NonConf?: string;
+  Strk?: string;
+  Last5?: string;
+  logo?: string;
+  link?: string;
 }
 
 /* ============================================================================
@@ -195,8 +206,13 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
-            {/* Team name */}
-            <CardTitle className="text-lg font-bold">{team.name}</CardTitle>
+            {/* Team name with logo */}
+            <div className="flex items-center gap-2">
+              {team.logo && (
+                <img src={team.logo} alt={`${team.name} logo`} className="w-6 h-6 rounded-sm" />
+              )}
+              <CardTitle className="text-lg font-bold">{team.name}</CardTitle>
+            </div>
 
             {/* Team abbreviation badge with team colors */}
             <Badge
@@ -211,7 +227,7 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
                 letterSpacing: '0.5px',
               }}
             >
-              {teamAbbr}
+              {teamAbbr} • {team.conference} {team.division.split(' ').pop()}
             </Badge>
           </div>
 
@@ -237,6 +253,8 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
             <StatRow label="Win %" value={`${(team.win_pct * 100).toFixed(1)}%`} />
             <StatRow label="Points For (PF)" value={team.points_for} />
             <StatRow label="Points Against (PA)" value={team.points_against} />
+            {team.Div && <StatRow label="Division" value={`${team.Div}`} />}
+             {team.Last5 && <StatRow label="Last 5" value={team.Last5} />}
           </div>
 
           {/* Right column stats */}
@@ -254,6 +272,8 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
                   : '0.0'
               }
             />
+             {team.Strk && <StatRow label="Streak" value={team.Strk} />}
+            {team.Conf && <StatRow label="Conference" value={`${team.Conf}`} />}
           </div>
         </div>
       </CardContent>
@@ -268,9 +288,21 @@ const TeamCard = ({ team }: { team: NFLTeam }) => {
 const NFL = () => {
   const [teams, setTeams] = useState<NFLTeam[]>([]);
 
-  // Load team data on mount
+  // Load from public/data and refresh periodically
   useEffect(() => {
-    setTeams(nflTeamData);
+    let alive = true;
+    const bust = () => `?_=${Date.now()}`;
+    const load = async () => {
+      try {
+        const res = await fetch(`/data/nfl_site_nfl_standings.json${bust()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (alive && Array.isArray(data)) setTeams(data as NFLTeam[]);
+      } catch {}
+    };
+    load();
+    const id = setInterval(load, 20000);
+    return () => { alive = false; clearInterval(id); };
   }, []);
 
   /**

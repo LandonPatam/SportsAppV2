@@ -112,4 +112,4 @@ if table:
 with open("public/data/nfl_site_nfl_standings.json", "w", encoding="utf-8") as out:
     json.dump(teams_data, out, indent=2, ensure_ascii=False)
 
-print(f"Extracted {len(teams_data)} teams into public/data/nfl_site_nfl_standings.json ✅")
+print(f"[OK] NFL Team data updated")

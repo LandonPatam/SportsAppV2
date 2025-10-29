@@ -30,10 +30,4 @@ nba_cache
 #Ignore JSON files
 src/*.json
 
-nba_player_stats_v2.json
-nba_team_stats_v2.json
-public/data/espn_NBA_player_stats.json
-public/data/espn_NBA_team_stats.json
-teamstats.json
-teamstats_full.json
-src/driver_standings_2025.json
+public/data

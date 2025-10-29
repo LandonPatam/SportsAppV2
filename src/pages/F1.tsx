@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Sun, Moon } from 'lucide-react';
-import driverDataRaw from '../driver_standings_2025.json';
-import raceResultsData from '../race_results_2025.json';
+
 
 /* ============================================================================
  * TYPE DEFINITIONS
@@ -42,7 +41,7 @@ interface RaceResult {
   circuit_name: string;
   country: string;
   date: string;
-  session_type: string; // "Sprint" or "Grand Prix"
+  session_type: string;
   drivers: RaceDriver[];
 }
 
@@ -50,28 +49,88 @@ interface RaceResult {
  * DATA PROCESSING
  * ============================================================================ */
 
-// Filter out metadata entries and map to F1Driver interface
-const driverData = driverDataRaw.filter(
-  (d: any) => d.driver && typeof d.points === 'number'
-);
+// Dynamic data state (loaded from public/data)
+const useF1Data = () => {
+  const [driversRaw, setDriversRaw] = useState<any[]>([]);
+  const [raceData, setRaceData] = useState<RaceResult[]>([]);
+  const [qualData, setQualData] = useState<RaceResult[]>([]);
+  const [sprintData, setSprintData] = useState<RaceResult[]>([]);
+  const [fpData, setFpData] = useState<RaceResult[]>([]);
 
-const f1Drivers: F1Driver[] = driverData.map((d: any, i: number) => ({
-  id: d.code ?? i.toString(),
-  name: d.driver,
-  team: d.team,
-  points: d.points,
-  position: d.position,
-  wins: d.wins ?? 0,
-  podiums: d.podiums ?? 0,
-  nationality: d.nationality ?? '-',
-  podium_pct: d.podium_pct ?? 0,
-}));
+  useEffect(() => {
+    let alive = true;
+    const bust = () => `?_=${Date.now()}`;
+    const fetchJson = async <T,>(path: string, fallback: T): Promise<T> => {
+      try {
+        const res = await fetch(path + bust(), { cache: 'no-store' });
+        if (!res.ok) return fallback;
+        return (await res.json()) as T;
+      } catch {
+        return fallback;
+      }
+    };
 
-// Sort drivers by points (descending)
-const sortedDrivers = [...f1Drivers].sort((a, b) => b.points - a.points);
+    const loadAll = async () => {
+      const [drivers, race, qual, sprint, fp] = await Promise.all([
+        fetchJson<any[]>(`/data/espn_driver_standings.json`, []),
+        fetchJson<RaceResult[]>(`/data/espn_race_data.json`, []),
+        fetchJson<RaceResult[]>(`/data/espn_qualifying_data.json`, []),
+        fetchJson<RaceResult[]>(`/data/espn_sprint_data.json`, []),
+        fetchJson<RaceResult[]>(`/data/espn_fp_data.json`, []),
+      ]);
+      if (!alive) return;
+      setDriversRaw(drivers || []);
+      setRaceData(race || []);
+      setQualData(qual || []);
+      setSprintData(sprint || []);
+      setFpData(fp || []);
+    };
 
-// Type cast race results data
-const raceResults: RaceResult[] = raceResultsData as RaceResult[];
+    loadAll();
+    const id = setInterval(loadAll, 20000); // refresh every 20s
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  const f1Drivers: F1Driver[] = useMemo(() => {
+    return (driversRaw || [])
+      .filter((d: any) => d.driver && typeof d.points === 'number')
+      .map((d: any) => ({
+        id: `${d.driver}-${d.team}`,
+        name: d.driver,
+        team: d.team,
+        points: Number(d.points) || 0,
+        position: Number(d.position) || 0,
+        wins: Number(d.race_wins ?? d.wins ?? 0) || 0,
+        podiums: Number(d.podiums ?? 0) || 0,
+        nationality: d.nationality ?? '-',
+        podium_pct: Number(d.podium_percentage ?? d.podium_pct ?? 0) || 0,
+      }));
+  }, [driversRaw]);
+
+  const sortedDrivers = useMemo(() => {
+    return [...f1Drivers].sort((a, b) => b.points - a.points);
+  }, [f1Drivers]);
+
+  // Merge sessions; prefer Race for UI, but keep Sprint/Qual/Practice available
+  const raceResults: RaceResult[] = useMemo(() => {
+    const merged = [
+      ...(raceData || []),
+      ...(sprintData || []),
+      ...(qualData || []),
+      ...(fpData || []),
+    ];
+    // Stable sort by round then by session priority
+    const priority: Record<string, number> = { Race: 0, Sprint: 1, Qualifying: 2, Practice: 3 };
+    return merged.sort((a, b) =>
+      a.round !== b.round ? a.round - b.round : (priority[a.session_type] ?? 9) - (priority[b.session_type] ?? 9)
+    );
+  }, [raceData, sprintData, qualData, fpData]);
+
+  return { sortedDrivers, f1Drivers, raceResults };
+};
 
 /* ============================================================================
  * TEAM COLORS CONFIGURATION
@@ -79,6 +138,7 @@ const raceResults: RaceResult[] = raceResultsData as RaceResult[];
 
 const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Red Bull Racing': { primary: '#001F3F', secondary: '#DC1E2D' },
+  'Red Bull': { primary: '#001F3F', secondary: '#DC1E2D' },
   'Ferrari': { primary: '#ff0000ff', secondary: '#ff0000ff' },
   'Mercedes': { primary: '#00A19C', secondary: '#000000' },
   'McLaren': { primary: '#FF8700', secondary: '#000000' },
@@ -338,7 +398,8 @@ const DriverModal = ({
       
       if (rr.session_type === 'Sprint') {
         spArr.push({ rr, dr });
-      } else {
+      } else if (rr.session_type === 'Race') {
+        // Limit GP tab to the main race only, so points are present
         gpArr.push({ rr, dr });
       }
     }
@@ -494,30 +555,31 @@ const DriverModal = ({
 
 const RaceModal = ({
   race,
+  allResults,
   onClose,
 }: {
   race: RaceResult;
+  allResults: RaceResult[];
   onClose: () => void;
 }) => {
-  const [tab, setTab] = useState<'gp' | 'sprint'>('gp');
+  type TabKey = 'race' | 'sprint';
+  const [tab, setTab] = useState<TabKey>('race');
 
-  // Group all sessions (GP + Sprint) for this round
-  const sessions = useMemo(() => {
-    const allRaces = raceResults.filter((r) => r.round === race.round);
-    return {
-      gp: allRaces.filter((r) => r.session_type !== 'Sprint'),
-      sprint: allRaces.filter((r) => r.session_type === 'Sprint'),
-    };
-  }, [race.round]);
+  // Gather sessions for this round
+  const { races, sprints } = useMemo(() => {
+    const r = (allResults || []).filter((x) => x.round === race.round);
+    const races = r.filter((x) => x.session_type === 'Race');
+    const sprints = r.filter((x) => x.session_type === 'Sprint');
+    return { races, sprints };
+  }, [race.round, allResults]);
 
-  const hasGP = sessions.gp.length > 0;
-  const hasSprint = sessions.sprint.length > 0;
+  const hasRace = races.length > 0;
+  const hasSprint = sprints.length > 0;
 
-  // Set default tab based on available sessions
   useEffect(() => {
-    if (!hasGP && hasSprint) setTab('sprint');
-    else setTab('gp');
-  }, [hasGP, hasSprint]);
+    if (hasRace) setTab('race');
+    else if (hasSprint) setTab('sprint');
+  }, [hasRace, hasSprint]);
 
   // Lock scroll when modal opens
   useEffect(() => {
@@ -532,6 +594,86 @@ const RaceModal = ({
       scrollEl.scrollTop = prevScrollTop;
     };
   }, []);
+
+  // Helper to parse lap times like '1:22.167'
+  const toSeconds = (val: string) => {
+    if (!val || val === 'N/A' || val === '--') return Number.POSITIVE_INFINITY;
+    const parts = val.split(':');
+    if (parts.length === 2) {
+      const m = parseInt(parts[0], 10);
+      const s = parseFloat(parts[1]);
+      return m * 60 + s;
+    }
+    if (parts.length === 3) {
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const s = parseFloat(parts[2]);
+      return h * 3600 + m * 60 + s;
+    }
+    const n = parseFloat(val);
+    return isNaN(n) ? Number.POSITIVE_INFINITY : n;
+  };
+
+  const SessionTable = ({ session }: { session: RaceResult }) => {
+    let fastestCode: string | null = null;
+    if (session.session_type === 'Race' || session.session_type === 'Sprint') {
+      const best = session.drivers.reduce<{ code: string | null; t: number }>(
+        (acc, d) => {
+          const t = toSeconds(d.fastest_lap || '');
+          if (t < acc.t) return { code: d.driver_code, t };
+          return acc;
+        },
+        { code: null, t: Number.POSITIVE_INFINITY }
+      );
+      fastestCode = best.t !== Number.POSITIVE_INFINITY ? best.code : null;
+    }
+
+    const showPoints = session.session_type === 'Race' || session.session_type === 'Sprint';
+    const colsClass = showPoints ? 'grid-cols-7' : 'grid-cols-6';
+
+    return (
+      <div className="space-y-2">
+        <div className={`grid ${colsClass} text-xs font-semibold text-muted-foreground px-2`}>
+          <div>#</div>
+          <div>Driver</div>
+          <div>Team</div>
+          <div>Grid</div>
+          {showPoints && <div>Pts</div>}
+          <div>Status</div>
+          <div>{session.session_type === 'Practice' ? 'Time' : 'Time / Lap'}</div>
+        </div>
+        <div className="divide-y border rounded-md">
+          {session.drivers.map((d) => {
+            const isFL = fastestCode && d.driver_code === fastestCode;
+            return (
+              <div key={d.driver_code} className={`grid ${colsClass} items-center px-2 py-2 text-sm`}>
+                <div className={`font-semibold ${getPositionColor(d.position)}`}>P{d.position}</div>
+                <div className="font-medium flex items-center">
+                  <span className="inline-block w-5">
+                    {isFL && (
+                      <Badge className="text-[9px] px-1 py-0 bg-purple-600/80 text-white border border-purple-400/50 -ml-[25px]">FL</Badge>
+                    )}
+                  </span>
+                  <span>{d.driver_name}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">{d.team}</div>
+                <div>{d.grid_position ?? '-'}</div>
+                {showPoints && <div>{typeof d.points === 'number' ? d.points : d.points ?? '-'}</div>}
+                <div className="text-xs">{d.status || 'Finished'}</div>
+                <div className="text-xs">
+                  {session.session_type === 'Practice'
+                    ? d.race_time || ''
+                    : isFL
+                    ? d.fastest_lap || ''
+                    : d.race_time || ''}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div
@@ -565,194 +707,41 @@ const RaceModal = ({
           </button>
         </div>
 
-        {/* Tabs for GP / Sprint sessions */}
+        {/* Tabs for Race / Sprint */}
         <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)]">
-          <Tabs
-            value={tab}
-            onValueChange={(v) => setTab(v as 'gp' | 'sprint')}
-            className="w-full"
-          >
-            {/* Only show tabs if both GP and Sprint exist */}
-            {(hasGP && hasSprint) && (
-              <TabsList className="grid w-full max-w-sm grid-cols-2 mb-6">
-                {hasGP && <TabsTrigger value="gp">Grand Prix</TabsTrigger>}
-                {hasSprint && <TabsTrigger value="sprint">Sprint</TabsTrigger>}
-              </TabsList>
-            )}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="w-full">
+            {(() => {
+              const count = (hasRace ? 1 : 0) + (hasSprint ? 1 : 0);
+              const cols = count === 2 ? 'grid-cols-2' : 'grid-cols-1';
+              return (
+                <TabsList className={`inline-grid ${cols} gap-2 mb-6`}>
+                  {hasRace && <TabsTrigger value="race">Race</TabsTrigger>}
+                  {hasSprint && <TabsTrigger value="sprint">Sprint</TabsTrigger>}
+                </TabsList>
+              );
+            })()}
 
-            {/* Grand Prix session results */}
-            {hasGP && (
-              <TabsContent value="gp">
-                {sessions.gp.map((r) => (
-                  <div
-                    key={`gp-${r.round}`}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
-                  >
-                    {r.drivers.map((d, i) => {
-                      const colors = teamColors[d.team] || { primary: '#888', secondary: '#ccc' };
-                      return (
-                        <Card
-                          key={d.driver_code}
-                          className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm"
-                          style={{
-                            animation: `slideUp 0.4s ease-out ${i * 0.05}s both`,
-                          }}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge
-                                    className="text-xs font-semibold text-white border-none"
-                                    style={{
-                                      backgroundColor: colors.primary,
-                                      padding: '0.25rem 0.6rem',
-                                      borderRadius: '0.4rem',
-                                      letterSpacing: '0.3px',
-                                    }}
-                                  >
-                                    {d.team}
-                                  </Badge>
-                                </div>
-                                <CardTitle className="text-sm font-bold">
-                                  {d.driver_name}
-                                </CardTitle>
-                              </div>
-                              <div className="text-right">
-                                <div
-                                  className={`text-2xl font-bold ${getPositionColor(
-                                    d.position
-                                  )}`}
-                                >
-                                  P{d.position}
-                                </div>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <div className="flex justify-left gap-1">
-                                  <span className="text-muted-foreground">Qualifying -</span>
-                                  <span className="font-semibold">
-                                    {d.grid_position}
-                                  </span>
-                                </div>
-                                <div className="flex justify-left gap-1">
-                                  <span className="text-muted-foreground">Points -</span>
-                                  <span className="font-semibold">{d.points}</span>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="flex justify-left gap-1">
-                                  <span className="text-muted-foreground">Status -</span>
-                                  <span className="font-semibold">{d.status}</span>
-                                </div>
-                                <div className="flex justify-left gap-1">
-                                  <span className="text-muted-foreground">
-                                    Fastest Lap -
-                                  </span>
-                                  <span className="font-semibold">
-                                    {d.fastest_lap}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+            {hasRace && (
+              <TabsContent value="race">
+                {races.map((s, idx) => (
+                  <div key={`race-${idx}`} className="mb-6">
+                    <SessionTable session={s} />
                   </div>
                 ))}
               </TabsContent>
             )}
 
-            {/* Sprint session results */}
             {hasSprint && (
               <TabsContent value="sprint">
-                {sessions.sprint.map((r) => (
-                  <div
-                    key={`sprint-${r.round}`}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
-                  >
-                    {r.drivers.map((d, i) => {
-                      const colors = teamColors[d.team] || { primary: '#888', secondary: '#ccc' };
-                      return (
-                        <Card
-                          key={d.driver_code}
-                          className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm"
-                          style={{
-                            animation: `slideUp 0.4s ease-out ${i * 0.05}s both`,
-                          }}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge
-                                    className="text-xs font-semibold text-white border-none"
-                                    style={{
-                                      backgroundColor: colors.primary,
-                                      padding: '0.25rem 0.6rem',
-                                      borderRadius: '0.4rem',
-                                      letterSpacing: '0.3px',
-                                    }}
-                                  >
-                                    {d.team}
-                                  </Badge>
-                                </div>
-                                <CardTitle className="text-sm font-bold">
-                                  {d.driver_name}
-                                </CardTitle>
-                              </div>
-                              <div className="text-right">
-                                <div
-                                  className={`text-2xl font-bold ${getPositionColor(
-                                    d.position
-                                  )}`}
-                                >
-                                  P{d.position}
-                                </div>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Grid</span>
-                                  <span className="font-semibold">
-                                    {d.grid_position}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Points</span>
-                                  <span className="font-semibold">{d.points}</span>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Status</span>
-                                  <span className="font-semibold">{d.status}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">
-                                    Fastest Lap
-                                  </span>
-                                  <span className="font-semibold">
-                                    {d.fastest_lap}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                {sprints.map((s, idx) => (
+                  <div key={`sprint-${idx}`} className="mb-6">
+                    <SessionTable session={s} />
                   </div>
                 ))}
               </TabsContent>
             )}
+
+            {/* No practice tabs */}
           </Tabs>
         </div>
       </div>
@@ -772,11 +761,12 @@ const RaceModal = ({
  * ============================================================================ */
 
 const F1 = () => {
+  const { sortedDrivers, f1Drivers, raceResults } = useF1Data();
   const [selectedTab, setSelectedTab] = useState<string>('standings');
   const [selectedDriver, setSelectedDriver] = useState<F1Driver | null>(null);
   const [selectedRace, setSelectedRace] = useState<RaceResult | null>(null);
 
-  const resultsByDriver = useMemo(() => raceResults, []);
+  const resultsByDriver = useMemo(() => raceResults, [raceResults]);
 
   return (
     <PageLayout title="F1 Driver Standings - 2025 Season">
@@ -826,9 +816,10 @@ const F1 = () => {
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {grouped.map((racesInRound: RaceResult[], index: number) => {
-                      // Display main race (prefer Grand Prix over Sprint)
+                      // Prefer the main Grand Prix Race, then Sprint, else first available
                       const mainRace =
-                        racesInRound.find((r) => r.session_type !== 'Sprint') ||
+                        racesInRound.find((r) => r.session_type === 'Race') ||
+                        racesInRound.find((r) => r.session_type === 'Sprint') ||
                         racesInRound[0];
 
                       // Check if this round has a Sprint session
@@ -923,7 +914,11 @@ const F1 = () => {
       )}
 
       {selectedRace && (
-        <RaceModal race={selectedRace} onClose={() => setSelectedRace(null)} />
+        <RaceModal
+          race={selectedRace}
+          allResults={raceResults}
+          onClose={() => setSelectedRace(null)}
+        />
       )}
     </PageLayout>
   );

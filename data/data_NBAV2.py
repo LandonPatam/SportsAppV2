@@ -141,3 +141,18 @@ with open("public/data/espn_NBA_player_stats.json", "w") as f:
     
     
 print(f"[OK] NBA Team and Player data updated")
+
+# --- Load existing team stats ---
+with open("public/data/espn_NBA_team_stats.json", "r", encoding="utf-8") as f:
+    team_data = json.load(f)
+
+# --- Attach the logo for each team ---
+for team in team_data:
+    team_id = team.get("TEAM_ID")
+    if team_id:
+        # Construct the NBA logo URL using the official CDN pattern
+        team["LOGO_URL"] = f"https://cdn.nba.com/logos/nba/{team_id}/primary/L/logo.svg"
+
+# --- Save updated JSON ---
+with open("public/data/espn_NBA_team_stats.json", "w", encoding="utf-8") as f:
+    json.dump(team_data, f, indent=2, ensure_ascii=False)
