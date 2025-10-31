@@ -149,9 +149,8 @@ const UFC = () => {
   };
 
   return (
-    <PageLayout title="UFC Rankings - Top Fighters by Division">
+    <PageLayout>
       <div className="flex justify-end">
-  <DarkModeToggle />
 </div>
 
       <Tabs defaultValue="all" className="w-full">

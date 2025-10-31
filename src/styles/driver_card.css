@@ -1,0 +1,114 @@
+/* Driver card style adapted from provided CSS, flattened and scoped */
+
+.driver-card {
+  --grad: red, blue;
+  /* Adjustable sizing */
+  --card-h: 56px;            /* set e.g., 48px–64px for compact */
+  --card-px: 1rem;           /* horizontal padding */
+  --card-py: 0.4rem;         /* vertical padding */
+  /* Theming variables (light defaults) */
+  --bg-start: #e0e4e5;
+  --bg-end: #f2f6f9;
+  --text-color: #444447;
+  --muted-color: #6b7280;
+
+  min-height: var(--card-h);
+  padding: var(--card-py) var(--card-px);
+  background-image: linear-gradient(to bottom left, var(--bg-start), var(--bg-end));
+  border-radius: 2rem;
+  column-gap: 0.75rem;
+  display: grid;
+  grid-template:
+    'title content icon' auto
+    'bar   bar     bar'  2px / 1fr auto auto;
+  font-family: system-ui, sans-serif;
+  color: var(--text-color);
+  box-shadow: inset -2px 2px rgba(255,255,255,1), -20px 20px 40px rgba(0,0,0,0.25);
+  align-items: center;
+}
+
+/* Dark mode overrides when your app uses class-based dark mode */
+.dark .driver-card {
+  --bg-start: #3a3a3a32;        /* slate-900-ish */
+  --bg-end: #3a3a3a32;          /* gray-800-ish */
+  --text-color: #e5e7eb;      /* gray-200 */
+  --muted-color: #9ca3af;     /* gray-400 */
+  box-shadow: inset 0 1px rgb(0, 0, 0), 0 8px 24px rgba(0,0,0,0.45);
+}
+
+.driver-card .title {
+  font-size: 1rem;
+  grid-area: title;
+  align-self: center;
+  text-transform: uppercase;
+  font-weight: 500;
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.driver-card .title .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Make the leading position label a bit smaller */
+.driver-card .title > span:first-child { font-size: 0.9rem; }
+
+.driver-card .icon {
+  grid-area: icon;
+  font-size: 1.25rem; /* smaller points */
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  line-height: 1;
+}
+
+.driver-card .icon > i {
+  color: var(--team-color);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  font-style: normal;
+}
+
+
+.driver-card .icon .points-label {
+  font-size: 0.7rem;
+  color: var(--muted-color);
+}
+
+.driver-card .content {
+  grid-area: content;
+  display: flex;
+  justify-content: flex-end; /* 👈 pushes all stats to the right */
+  align-items: center;
+  gap: 0.5rem; /* spacing between stat items */
+  flex-wrap: nowrap;
+  min-width: 0;
+  font-size: 0.85rem;
+}
+
+.driver-card .content > *:first-child { margin-top: 0; }
+.driver-card .content > *:last-child { margin-bottom: 0; }
+
+/* Single stat group */
+.driver-card .content .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  white-space: nowrap;
+}
+
+/* Muted text color for labels */
+.driver-card .muted { color: var(--muted-color); }
+
+.driver-card::after {
+  content: "";
+  grid-area: bar;
+  height: 2px;
+  width: 96%; /* ← try 50%, 75%, etc. */
+  background-image: linear-gradient(270deg, var(--grad));
+  justify-self: center; /* or 'center' or 'end' depending on where you want it */
+}
+

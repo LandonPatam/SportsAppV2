@@ -31,3 +31,4 @@ nba_cache
 src/*.json
 
 public/data
+public/data/nfl_site_nfl_standings.json

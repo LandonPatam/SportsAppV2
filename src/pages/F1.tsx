@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Sun, Moon } from 'lucide-react';
+// import { FrostedCard } from "@/components/ui/frosted_card";
+import "@/styles/driver_card.css";
 
 
 /* ============================================================================
@@ -141,13 +143,13 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Red Bull': { primary: '#001F3F', secondary: '#DC1E2D' },
   'Ferrari': { primary: '#ff0000ff', secondary: '#ff0000ff' },
   'Mercedes': { primary: '#00A19C', secondary: '#000000' },
-  'McLaren': { primary: '#FF8700', secondary: '#000000' },
+  'McLaren': { primary: '#FF8700', secondary: '#5c5b5bff' },
   'Aston Martin': { primary: '#00665E', secondary: '#000000ff' },
   'Alpine': { primary: '#0071C2', secondary: '#FF4F5E' },
   'Williams': { primary: '#00AEEF', secondary: '#002F6C' },
   'Racing Bulls': { primary: '#001F3F', secondary: '#000dffff' },
-  'Haas F1 Team': { primary: '#da0202ff', secondary: '#000000ff' },
-  'Kick Sauber': { primary: '#00FF00', secondary: '#000000' },
+  'Haas': { primary: '#da0202ff', secondary: '#000000ff' },
+  'Sauber': { primary: '#00FF00', secondary: '#000000' },
 };
 
 /* ============================================================================
@@ -162,6 +164,23 @@ const getPositionColor = (pos: number): string => {
   if (pos === 2) return 'text-gray-400';
   if (pos === 3) return 'text-amber-700';
   return 'text-foreground';
+};
+
+// Convert hex color to rgba with specified alpha
+const hexToRgba = (hex: string, alpha: number): string => {
+  try {
+    let h = (hex || '').trim();
+    if (h.startsWith('#')) h = h.slice(1);
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    if (h.length === 8) h = h.slice(0, 6);
+    const n = parseInt(h, 16);
+    const r = (n >> 16) & 255;
+    const g = (n >> 8) & 255;
+    const b = n & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } catch {
+    return `rgba(136, 136, 136, ${alpha})`;
+  }
 };
 
 /**
@@ -235,62 +254,55 @@ const DarkModeToggle = () => {
 const DriverCard = ({ driver, onClick }: { driver: F1Driver; onClick: () => void }) => {
   const colors = teamColors[driver.team] || { primary: '#888', secondary: '#ccc' };
 
+  const grad = `${colors.secondary || colors.primary}, ${colors.primary}`;
   return (
-    <Card
-      className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm cursor-pointer"
+
+      
+
+
+    <div
+      className="driver-card cursor-pointer"
       onClick={onClick}
+      style={{ ['--grad' as any]: grad }}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            {/* Position and driver name */}
-            <div className="flex items-center gap-3 mb-1">
-              <span className={`text-xl font-bold ${getPositionColor(driver.position)}`}>
-                P{driver.position}
-              </span>
-              <CardTitle className="text-xl font-bold">{driver.name}</CardTitle>
-            </div>
 
-            {/* Team badge with custom colors */}
-            <Badge
-              className="text-xs font-semibold text-white border-none"
-              style={{
-                backgroundColor: colors.primary,
-                padding: '0.25rem 0.6rem',
-                borderRadius: '0.4rem',
-                letterSpacing: '0.3px',
-              }}
-            >
-              {driver.team}
-            </Badge>
-          </div>
+      
+      <div className="title">
+        <span className={`mr-3 ${getPositionColor(driver.position)}`}>P{driver.position}</span>
+        <span className="font-bold name">{driver.name}</span>
+        <Badge
+          className="ml-3 text-[10px] md:text-xs font-semibold text-white border-none"
+          style={{
+            backgroundColor: colors.primary,
+            padding: "0.2rem 0.5rem",
+            borderRadius: "0.4rem",
+            letterSpacing: "0.3px",
+          }}
+        >
+          {driver.team}
+        </Badge>
+      </div>
 
-          {/* Championship points */}
-          <div className="text-right">
-            <div className="text-2xl font-bold">{driver.points}</div>
-            <div className="text-xs text-muted-foreground">Points</div>
-          </div>
+      <div className="icon">
+        <i>{driver.points}</i>
+        <span className="points-label">Points</span>
+      </div>
+
+      <div className="content text-sm">
+        <div className="stat">
+          <span className="font-semibold" style={{ color: '#0a8f3a' }}>{driver.wins}</span>
+          <span className="muted">Wins</span>
         </div>
-      </CardHeader>
-
-      <CardContent>
-        {/* Driver statistics grid */}
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold text-success">{driver.wins}</div>
-            <div className="text-xs text-muted-foreground">Wins</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-primary">{driver.podiums}</div>
-            <div className="text-xs text-muted-foreground">Podiums</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold">{driver.podium_pct.toFixed(0)}%</div>
-            <div className="text-xs text-muted-foreground">Podium Rate</div>
-          </div>
+        <div className="stat">
+          <span className="font-semibold" style={{ color: '#2563eb' }}>{driver.podiums}</span>
+          <span className="muted">Podiums</span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="stat">
+          <span className="font-semibold">{driver.podium_pct.toFixed(0)}%</span>
+          <span className="muted">Podium Rate</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -690,7 +702,7 @@ const RaceModal = ({
         <div className="sticky top-0 bg-background border-b p-6 flex items-center justify-between z-10">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="default" className="text-sm">
+              <Badge variant="default" style={{ backgroundColor: "#00e5ffff", color: "#000000c4" }} className="text-sm">
                 Circuit {race.round}
               </Badge>
             </div>
@@ -769,10 +781,9 @@ const F1 = () => {
   const resultsByDriver = useMemo(() => raceResults, [raceResults]);
 
   return (
-    <PageLayout title="F1 Driver Standings - 2025 Season">
+    <PageLayout>
       {/* Dark mode toggle */}
       <div className="flex justify-end">
-        <DarkModeToggle />
       </div>
 
       <Tabs defaultValue="standings" className="w-full" onValueChange={setSelectedTab}>
@@ -785,7 +796,7 @@ const F1 = () => {
         <TabsContent value="standings">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold mb-4">Drivers' Championship</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               {sortedDrivers.map((driver) => (
                 <DriverCard
                   key={driver.id}

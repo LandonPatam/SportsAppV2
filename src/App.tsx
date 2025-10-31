@@ -8,6 +8,7 @@ import NFL from "./pages/NFL";
 import F1 from "./pages/F1";
 import NBA from "./pages/NBA";
 import UFC from "./pages/UFC";
+import Playground from "./pages/Playground";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/f1" element={<F1 />} />
           <Route path="/nba" element={<NBA />} />
           <Route path="/ufc" element={<UFC />} />
+          <Route path="/playground" element={<Playground />} />
 
           {/* Catch-all for 404s */}
           <Route path="*" element={<NotFound />} />

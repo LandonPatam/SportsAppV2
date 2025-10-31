@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { LayeredCard } from '@/components/ui/layered_card';
 
 
 
@@ -596,143 +597,154 @@ const TeamCard = ({
     return diff > 0 ? 'high' : 'low';
   };
 
-  // Combined highlight for paired stats (e.g., OREB/DREB, 3PM/3PA)
-  const getPairHighlight = (
-    leftKey: keyof typeof leagueAverages,
-    rightKey: keyof typeof leagueAverages
-  ) => {
-    if (!leagueAverages) return 'neutral' as const;
-    const leftDiff = (team as any)[leftKey] - (leagueAverages as any)[leftKey];
-    const rightDiff = (team as any)[rightKey] - (leagueAverages as any)[rightKey];
-    const thr = 0.01;
-    const leftSign = Math.abs(leftDiff) < thr ? 0 : leftDiff > 0 ? 1 : -1;
-    const rightSign = Math.abs(rightDiff) < thr ? 0 : rightDiff > 0 ? 1 : -1;
-    if (leftSign === 1 && rightSign === 1) return 'high';
-    if (leftSign === -1 && rightSign === -1) return 'low';
-    // Mixed: choose the stronger direction by absolute magnitude
-    const pick = Math.abs(leftDiff) >= Math.abs(rightDiff) ? leftSign : rightSign;
-    if (pick === 1) return 'high';
-    if (pick === -1) return 'low';
-    return 'neutral';
-  };
 
-  return (
-    <Card
-      onClick={onClick}
-      className={`overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm ${
-        onClick ? 'cursor-pointer' : ''
-      }`}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              {team.LOGO_URL && (
-                <img
-                  src={team.LOGO_URL}
-                  alt={`${team.TEAM_NAME} logo`}
-                  className="w-8 h-8 rounded-sm"
-                />
-              )}
-              <CardTitle className="text-lg font-bold">{team.TEAM_NAME}</CardTitle>
-            </div>
-            <Badge
-              className="text-xs font-semibold border mt-1"
-              style={{
-                backgroundColor: teamColor?.primary || '#555',
-                color: teamColor?.secondary || '#fff',
-                borderColor: teamColor?.secondary || '#fff',
-                borderWidth: '2px',
-                padding: '0.25rem 0.55rem',
-                borderRadius: '0.4rem',
-                letterSpacing: '0.5px',
-              }}
-            >
-              {teamAbbr}
-            </Badge>
-          </div>
-          <Badge variant={team.W > team.L ? 'default' : 'secondary'}>
-            {team.W}-{team.L}
-          </Badge>
-        </div>
-      </CardHeader>
+const teamGradientColors = {
+  'ATL': { start: '#ff0004ff', end: '#fff831ff' },
+  'BOS': { start: '#007A33', end: '#ffffffff' },
+  'BKN': { start: '#000000', end: '#FFFFFF' },
+  'CHA': { start: '#1D1160', end: '#00788C' },
+  'CHI': { start: '#CE1141', end: '#000000' },
+  'CLE': { start: '#860038', end: '#FDBB30' },
+  'DAL': { start: '#00538C', end: '#002B5E' },
+  'DEN': { start: '#FEC524', end: '#0E2240' },
+  'DET': { start: '#C8102E', end: '#1D42BA' },
+  'GSW': { start: '#1D428A', end: '#FFC72C' },
+  'HOU': { start: '#CE1141', end: '#000000' },
+  'IND': { start: '#002D62', end: '#FDBB30' },
+  'LAC': { start: '#ffffffff', end: '#1D428A' },
+  'LAL': { start: '#552583', end: '#FDB927' },
+  'MEM': { start: '#5D76A9', end: '#12173F' },
+  'MIA': { start: '#98002E', end: '#F9A01B' },
+  'MIL': { start: '#00471B', end: '#EEE1C6' },
+  'MIN': { start: '#0C2340', end: '#236192' },
+  'NOP': { start: '#0C2340', end: '#C8102E' },
+  'NYK': { start: '#006BB6', end: '#F58426' },
+  'OKC': { start: '#007AC1', end: '#EF3B24' },
+  'ORL': { start: '#0077C0', end: '#C4CED4' },
+  'PHI': { start: '#006BB6', end: '#ED174C' },
+  'PHX': { start: '#1D1160', end: '#E56020' },
+  'POR': { start: '#ffffffff', end: '#E03A3E' },
+  'SAC': { start: '#5A2D81', end: '#63727A' },
+  'SAS': { start: '#C4CED4', end: '#000000' },
+  'TOR': { start: '#CE1141', end: '#000000' },
+  'UTA': { start: '#270063ff', end: '#ffffffff' },
+  'WAS': { start: '#002B5C', end: '#E31837' },
+};
 
-      <CardContent>
-        {/* 2-column stat grid (merged, no extra gap) */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <StatRow label="Win %" value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
-            <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
-            <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
-            <StatRow label="APG" value={team.AST.toFixed(1)} highlight={getHighlight('AST')} />
-            <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
-            <StatRow
-              label="OREB"
-              value={`${team.OREB.toFixed(1)}`}
-              highlight={getHighlight('OREB')}
-            />
 
-             <StatRow
-              label="DREB"
-              value={`${team.DREB.toFixed(1)}`}
-              highlight={getHighlight('DREB')}
-            />
+return (
+  <div
+    className="relative rounded-xl shadow-lg overflow-hidden"
+    style={{
+      backgroundImage: `linear-gradient(300deg, ${
+        teamGradientColors[teamAbbr]?.start || '#1e40af'
+      }, ${teamGradientColors[teamAbbr]?.end || '#dc2626'})`,
+      padding: '3px',
+    }}
+  >
+    {/* === Dark overlay over the gradient === */}
+    <div
+      className="absolute inset-1 rounded-xl"
+      style={{
+        backgroundColor: '#1d1d1dff',
+        opacity: 1,
+      }}
+      aria-hidden
+    />
+
+    {/* === Foreground content (sits above overlay) === */}
+    <div className="relative z-10 p-4 text-white">
+      {/* === Team header on top of gradient === */}
+      <div className="flex items-center gap-2 mb-3">
+  {team.LOGO_URL && (
+    <img
+      src={team.LOGO_URL}
+      alt={`${team.TEAM_NAME} logo`}
+      className="w-8 h-8 rounded-sm"
+    />
+  )}
+  <h3 className="text-lg font-bold">{team.TEAM_NAME}</h3>
+<Badge
+  className="ml-auto border-0 text-white font-semibold shadow-sm"
+  style={{
+    backgroundImage:
+      team.W >= team.L
+        ? 'linear-gradient(90deg, #ffffffff, #ffffffff)' // 🟢 Green gradient for winning record
+        : 'linear-gradient(90deg, #000000ff, #000000ff)', // 🔴 Red gradient for losing record
+    color: team.W >= team.L ? '#2b2b2bff' : '#ffffffff',
+    padding: '0.25rem 0.6rem',
+    borderRadius: '0.4rem',
+    letterSpacing: '0.5px',
+    textShadow: '0 1px 2px rgba(0,0,0,0.4)', // subtle depth for visibility
+  }}
+>
+  {team.W}-{team.L}
+</Badge>
+</div>
+
+
+
+
+      {/* === White stats card === */}
+ 
+      <Card
+        onClick={onClick}
+        className={`overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full ${
+          onClick ? 'cursor-pointer' : ''
+        }`}
+        style={{
+        backgroundColor: '#0000004c',
+        opacity: 1,
+      }}
+ 
+      >
+        <CardHeader className="pb-0">
           
-            <StatRow
-              label="STL"
-              value={`${team.STL.toFixed(1)}`}
-              highlight={getHighlight('STL')}
-            />
+        </CardHeader>
 
-             <StatRow
-              label="BLK"
-              value={` ${team.BLK.toFixed(1)}`}
-              highlight={getHighlight('BLK')}
-            />
+        <CardContent>
+          {/* 2-column stat grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <StatRow label="Win %" value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
+              <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
+              <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
+              <StatRow label="APG" value={team.AST.toFixed(1)} highlight={getHighlight('AST')} />
+              <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
+              <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} />
+              <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} />
+              <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} />
+              <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} />
+            </div>
 
+            <div className="space-y-2">
+              <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
+              <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
+              <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
+              <StatRow label="3PM" value={team.FG3M.toFixed(1)} highlight={getHighlight('FG3M')} />
+              <StatRow label="3PA" value={team.FG3A.toFixed(1)} highlight={getHighlight('FG3A')} />
+              <StatRow label="FTM" value={team.FTM.toFixed(1)} highlight={getHighlight('FTM')} />
+              <StatRow label="FTA" value={team.FTA.toFixed(1)} highlight={getHighlight('FTA')} />
+              {(() => {
+                const pm = Number(team.PLUS_MINUS || 0);
+                const pmStr = pm >= 0 ? `+${pm.toFixed(1)}` : pm.toFixed(1);
+                let highlight: 'high' | 'low' | 'neutral' = 'neutral';
+                try {
+                  if (leagueAverages && typeof (leagueAverages as any).PLUS_MINUS === 'number') {
+                    const diff = pm - (leagueAverages as any).PLUS_MINUS;
+                    highlight = Math.abs(diff) < 0.01 ? 'neutral' : diff > 0 ? 'high' : 'low';
+                  }
+                } catch {}
+                return <StatRow label="+/-" value={pmStr} highlight={highlight} />;
+              })()}
+            </div>
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
 
-          <div className="space-y-2">
-            <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
-            <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
-            <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
-            <StatRow
-              label="3PM"
-              value={`${team.FG3M.toFixed(1)}`}
-              highlight={getHighlight('FG3M')}
-            />
-            <StatRow
-              label="3PA"
-              value={` ${team.FG3A.toFixed(1)}`}
-              highlight={getHighlight('FG3A')}
-            />
-            <StatRow
-              label="FTM"
-              value={`${team.FTM.toFixed(1)}`}
-              highlight={getHighlight('FTM')}
-            />
-            <StatRow
-              label="FTA"
-              value={` ${team.FTA.toFixed(1)}`}
-              highlight={getHighlight( 'FTA')}
-            />
-            {(() => {
-              const pm = Number(team.PLUS_MINUS || 0);
-              const pmStr = pm >= 0 ? `+${pm.toFixed(1)}` : pm.toFixed(1);
-              let highlight: 'high' | 'low' | 'neutral' = 'neutral';
-              try {
-                if (leagueAverages && typeof (leagueAverages as any).PLUS_MINUS === 'number') {
-                  const diff = pm - (leagueAverages as any).PLUS_MINUS;
-                  highlight = Math.abs(diff) < 0.01 ? 'neutral' : diff > 0 ? 'high' : 'low';
-                }
-              } catch {}
-              return <StatRow label="+/-" value={pmStr} highlight={highlight} />;
-            })()}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 };
 
 
@@ -968,6 +980,16 @@ const playerAverages = React.useMemo<PlayerAverages | null>(() => {
   };
 }, [nbaPlayerData]);
 
+// Map team abbreviation to logo URL for quick lookup in player cards
+const abbrToLogo = React.useMemo(() => {
+  const map: Record<string, string> = {};
+  nbaTeams.forEach((t) => {
+    const abbr = teamAbbreviations[t.TEAM_NAME];
+    if (abbr && t.LOGO_URL) map[abbr] = t.LOGO_URL;
+  });
+  return map;
+}, [nbaTeams]);
+
 
 
 
@@ -1136,19 +1158,9 @@ const sortTeams = (teams: NBATeam[]) => {
   // ============================
   // 🧭 Render
   // ============================
-
-  if (nbaTeams.length === 0) {
-    return (
-      <PageLayout title="NBA Team Standings - 2024-25 Season">
-        <div>Loading...</div>
-      </PageLayout>
-    );
-  }
-
   return (
-    <PageLayout title="NBA Team Standings - 2024-25 Season">
-      <div className="flex justify-end mb-4">
-        <DarkModeToggle />
+    <PageLayout>
+      <div className="flex justify-end">
       </div>
 
       {/* Tabs for All / East / West / Scorers */}
@@ -1160,39 +1172,76 @@ const sortTeams = (teams: NBATeam[]) => {
           <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
         </TabsList>
 
-        {/* === All Teams === */}
 
         {/* === Sort Controls === */}
 <TabsContent value="all">
-  <h2 className="text-2xl font-bold mb-4">All Teams</h2>
 
-  {/* === Sort Controls (only for All Teams) === */}
-  <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
-    <div className="flex items-center gap-3">
-      <label className="text-sm font-medium text-muted-foreground">Sort by:</label>
-      <Select onValueChange={(v) => setSortField(v as typeof sortField)} value={sortField}>
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="Select stat" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="WIN_PCT">Win %</SelectItem>
-          <SelectItem value="PPG">PPG</SelectItem>
-          <SelectItem value="REB">RPG</SelectItem>
-          <SelectItem value="AST">APG</SelectItem>
-          <SelectItem value="FG_PCT">FG%</SelectItem>
-          <SelectItem value="FG3_PCT">3P%</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+ {/* === Sort Controls (All Teams view) === */}
+<div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
+  {/* === Sort Dropdown === */}
+  <div className="flex items-center gap-3">
+    <label className="text-sm font-semibold text-white/80">Sort by:</label>
 
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-    >
-      {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
-    </Button>
+    <Select onValueChange={(v) => setSortField(v as typeof sortField)} value={sortField}>
+      <SelectTrigger
+        className="
+  w-[150px] rounded-full px-4 py-2 text-sm font-semibold text-black
+  bg-white
+  shadow-md shadow-black/40
+  hover:scale-[1.05]
+  transition-all duration-300
+"
+
+      >
+        <SelectValue placeholder="Select stat" />
+      </SelectTrigger>
+
+      <SelectContent
+        className="
+          rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
+          text-white shadow-lg"
+      >
+        <SelectItem value="WIN_PCT" className="hover:bg-white/10 cursor-pointer">
+          Win %
+        </SelectItem>
+        <SelectItem value="PPG" className="hover:bg-white/10 cursor-pointer">
+          PPG
+        </SelectItem>
+        <SelectItem value="REB" className="hover:bg-white/10 cursor-pointer">
+          RPG
+        </SelectItem>
+        <SelectItem value="AST" className="hover:bg-white/10 cursor-pointer">
+          APG
+        </SelectItem>
+        <SelectItem value="FG_PCT" className="hover:bg-white/10 cursor-pointer">
+          FG%
+        </SelectItem>
+        <SelectItem value="FG3_PCT" className="hover:bg-white/10 cursor-pointer">
+          3P%
+        </SelectItem>
+      </SelectContent>
+    </Select>
   </div>
+
+  {/* === Ascending / Descending Button === */}
+ <Button
+  variant="ghost"
+  size="sm"
+  onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+  className={`
+    rounded-full px-4 py-2 text-sm font-semibold text-black
+    bg-white
+    shadow-md shadow-black/40
+    hover:bg-white hover:text-black
+    hover:scale-[1.05]
+    transition-all duration-300
+  `}
+>
+  {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
+</Button>
+
+</div>
+
 
   {/* === Team Grid === */}
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1262,18 +1311,23 @@ const sortTeams = (teams: NBATeam[]) => {
 
 {/* === Top Players === */}
 <TabsContent value="top-scorers">
-  <h2 className="text-2xl font-bold mb-4">Top Players</h2>
 
   {/* === Filter Controls === */}
 <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
   <div className="flex items-center gap-2">
-    <label className="text-sm font-medium text-muted-foreground">Filter by:</label>
+    <label  className="text-sm font-semibold text-white/80">Rank by:</label>
 
 
     <div className="flex items-center gap-2">
       {/* Dropdown */}
       <Select onValueChange={(v) => setPlayerSortField(v as PlayerSortField)} value={playerSortField}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className={`
+  rounded-full px-4 py-2 text-sm font-semibold text-black
+  bg-white
+  shadow-md shadow-black/40
+  hover:scale-[1.05]
+  transition-all duration-300
+`}>
           <SelectValue placeholder="Select stat" />
         </SelectTrigger>
         <SelectContent>
@@ -1323,35 +1377,38 @@ const sortTeams = (teams: NBATeam[]) => {
     .sort((a: Player, b: Player) => getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField))
     .slice(0, 50)
     .map((player: Player, index) => (
-      <Card
+      <div
         key={player.PLAYER_ID}
-        className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm"
-        style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
+        className="relative rounded-xl shadow-lg overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(300deg, ${
+            teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af'
+          }, ${teamColors[player.TEAM_ABBREVIATION]?.secondary || '#dc2626'})`,
+          padding: '3px',
+          animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+        }}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-lg font-bold">
-                #{index + 1} {player.PLAYER_NAME}
-              </CardTitle>
-              <Badge
-                className="text-xs font-semibold border mt-1"
-                style={{
-                  color: teamColors[player.TEAM_ABBREVIATION]?.secondary,
-                  backgroundColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#fff',
-                  borderColor: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#888',
-                  borderWidth: '2px',
-                  padding: '0.25rem 0.55rem',
-                  borderRadius: '0.4rem',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                {player.TEAM_ABBREVIATION}
-              </Badge>
-            </div>
+        <div
+          className="absolute inset-1 rounded-xl"
+          style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
+          aria-hidden
+        />
 
+        <div className="relative z-10 p-4 text-white">
+          {/* Header with team logo and player name */}
+          <div className="flex items-center gap-2 mb-3">
+            {abbrToLogo[player.TEAM_ABBREVIATION] && (
+              <img
+                src={abbrToLogo[player.TEAM_ABBREVIATION]}
+                alt={`${player.TEAM_ABBREVIATION} logo`}
+                className="w-8 h-8 rounded-sm"
+              />
+            )}
+            <h3 className="text-lg font-bold">#{index + 1} {player.PLAYER_NAME}</h3>
+
+            {/* Stat badge on the right */}
             <Badge
-              className="text-xs font-semibold mt-1 bg-blue-600 text-white border-blue-700"
+              className="ml-auto text-xs font-semibold mt-1 bg-white text-black hover:bg-white hover:text-black"
               style={{ letterSpacing: '0.3px', padding: '0.25rem 0.5rem' }}
             >
               {playerSortField === 'VALUE_SCORE'
@@ -1359,93 +1416,42 @@ const sortTeams = (teams: NBATeam[]) => {
                 : `${playerSortField.replace('_', ' ')}: ${getPlayerStat(player, playerSortField).toFixed(1)}`}
             </Badge>
           </div>
-        </CardHeader>
 
-        <CardContent>
-  {/* Grid of Player Stats with Tooltips */}
-  <div className="grid grid-cols-2 gap-4">
-    {/* Left column */}
-    <div className="space-y-2">
-      <StatRow
-        label="GP"
-        value={player.GP.toFixed(0)}
-        /*highlight={getPlayerHighlight(player, 'GP')}*/
-      />
-      <StatRow
-        label="MIN"
-        value={player.MIN.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'MIN')}
-      />
-      <StatRow
-        label="PPG"
-        value={player.PTS.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'PTS')}
-      />
-      <StatRow
-        label="REB"
-        value={player.REB.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'REB')}
-      />
-      <StatRow
-        label="AST"
-        value={player.AST.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'AST')}
-      />
-      <StatRow
-        label="STL"
-        value={player.STL.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'STL')}
-      />
-      <StatRow
-        label="BLK"
-        value={player.BLK.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'BLK')}
-      />
+          {/* Inner stats card to match TeamCard style */}
+          <Card
+            className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full"
+            style={{ backgroundColor: '#0000004c', opacity: 1 }}
+          >
+            <CardHeader className="pb-0"></CardHeader>
+            <CardContent>
+              {/* Grid of Player Stats with Tooltips */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Left column */}
+                <div className="space-y-2">
+                  <StatRow label="GP" value={player.GP.toFixed(0)} />
+                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getPlayerHighlight(player, 'MIN')} />
+                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getPlayerHighlight(player, 'PTS')} />
+                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getPlayerHighlight(player, 'REB')} />
+                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getPlayerHighlight(player, 'AST')} />
+                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getPlayerHighlight(player, 'STL')} />
+                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getPlayerHighlight(player, 'BLK')} />
+                </div>
 
-    </div>
-
-    {/* Right column */}
-    <div className="space-y-2">
-      <StatRow
-        label="TOV"
-        value={player.TOV.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'TOV')}
-      />
-      <StatRow
-        label="FGA"
-        value={player.FGA.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'FGA')}
-      />
-      <StatRow
-        label="FG%"
-        value={`${(player.FG_PCT * 100).toFixed(1)}%`}
-        highlight={getPlayerHighlight(player, 'FG_PCT')}
-      />
-      <StatRow
-        label="3PA"
-        value={player.FG3A.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'FG3A')}
-      />
-      <StatRow
-        label="3P%"
-        value={`${(player.FG3_PCT * 100).toFixed(1)}%`}
-        highlight={getPlayerHighlight(player, 'FG3_PCT')}
-      />
-      <StatRow
-        label="FTA"
-        value={player.FTA.toFixed(1)}
-        highlight={getPlayerHighlight(player, 'FTA')}
-      />
-      <StatRow
-        label="FT%"
-        value={`${(player.FT_PCT * 100).toFixed(1)}%`}
-        highlight={getPlayerHighlight(player, 'FT_PCT')}
-      />    
-    </div>
-  </div>
-</CardContent>
-
-      </Card>
+                {/* Right column */}
+                <div className="space-y-2">
+                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getPlayerHighlight(player, 'TOV')} />
+                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getPlayerHighlight(player, 'FGA')} />
+                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG_PCT')} />
+                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getPlayerHighlight(player, 'FG3A')} />
+                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG3_PCT')} />
+                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getPlayerHighlight(player, 'FTA')} />
+                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FT_PCT')} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     ))}
 </div>
 </TabsContent>

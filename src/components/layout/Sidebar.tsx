@@ -68,6 +68,14 @@ const NBAIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Simple beaker icon for Playground/Lab
+const LabIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M9 3h6M10 3v5l-5 9a3 3 0 002.6 4.5h8.8A3 3 0 0019 17l-5-9V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M8 14h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 
 /* ============================================================================
  * SIDEBAR COMPONENT
@@ -94,45 +102,70 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-<aside
-  className={cn(
-    'sticky top-0 self-start h-screen overflow-y-auto w-[8vw] min-w-[80px] max-w-[128px] flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border'
-  )}
->
+    <aside
+      className={cn(
+        'fixed top-0 left-0 h-screen w-[100px] z-40 flex flex-col justify-between',
+        'backdrop-blur-lg bg-[rgba(20,20,20,0.85)] border-r border-white/10 shadow-[inset_0_0_30px_rgba(255,255,255,0.06)]',
+        className
+      )}
+    >
+      {/* === NAVIGATION === */}
+      <nav className="flex flex-col flex-1 justify-between py-6">
+        <div className="flex flex-col flex-1 gap-4 px-2">
+          {navItems.map((item, index) => {
+            const isActive = location.pathname.startsWith(item.href);
+            return (
+              <Link
+                key={index}
+                to={item.href}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-2 w-full flex-1 py-6 rounded-lg',
+                  'transition-all duration-300 ease-out',
+                  'hover:scale-[1.03] hover:shadow-[0_0_10px_rgba(255,255,255,0.15)]',
+                  isActive
+                    ? 'bg-gradient-to-b from-white-500/80 to-purple-500/80 text-white ring-1 ring-white/30 shadow-[0_0_12px_rgba(255,255,255,0.4)]'
+                    : 'bg-[rgba(255,255,255,0.05)] text-white/70 hover:bg-[rgba(255,255,255,0.1)]'
+                )}
+              >
+                <item.icon
+                  className={cn(
+                    'h-7 w-7 transition-all duration-300',
+                    isActive
+                      ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]'
+                      : 'text-white/80 group-hover:text-white'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-xs font-semibold tracking-wide',
+                    isActive ? 'text-white' : 'text-white/70'
+                  )}
+                >
+                  {item.title}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
 
-  <ScrollArea className="flex-1 py-4">
-    <nav className="flex flex-col gap-2 px-2 h-full">
-      {navItems.map((item, index) => {
-        const isActive = location.pathname.startsWith(item.href);
-        return (
-          <Link
-            key={index}
-            to={item.href}
-            className={cn(
-              'flex-1 flex flex-col items-center justify-center gap-2 rounded-md py-8 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-              isActive
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground'
-            )}
+        {/* === FOOTER (Month/Year) === */}
+        <div className="p-2 mt-auto">
+          <div
+            className="
+              flex flex-col items-center justify-center
+              rounded-lg 
+              text-white/90
+              shadow-[0_0_8px_rgba(0,0,0,0.4)]
+              w-full aspect-square
+              text-center text-[11px] font-medium
+              select-none
+            "
           >
-            <item.icon className="h-6 w-6 shrink-0" />
-            <span className="text-sm font-medium">{item.title}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  </ScrollArea>
-
-  {/* Footer */}
-  <div className="p-2 border-t border-sidebar-border">
-    <div className="rounded-md bg-sidebar-accent/50 p-2 text-[10px] text-sidebar-accent-foreground text-center">
-      <p className="font-medium">{month}</p>
-      <p className="text-[9px]">{year}</p>
-    </div>
-  </div>
-</aside>
-
-
-
+            <p className="text-sm font-semibold">{month}</p>
+            <p className="text-[10px] leading-none opacity-90">{year}</p>
+          </div>
+        </div>
+      </nav>
+    </aside>
   );
 }
