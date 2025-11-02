@@ -19,9 +19,9 @@ export default {
 			}
 		},
 		extend: {
-			fontFamily: {
-				sans: ['Inter var', 'sans-serif'],
-			},
+            fontFamily: {
+                sans: ['"Uni Sans Heavy"', 'Inter var', 'sans-serif'],
+            },
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

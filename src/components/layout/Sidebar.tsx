@@ -105,7 +105,7 @@ export function Sidebar({ className }: SidebarProps) {
     <aside
       className={cn(
         'fixed top-0 left-0 h-screen w-[100px] z-40 flex flex-col justify-between',
-        'backdrop-blur-lg bg-[rgba(20,20,20,0.85)] border-r border-white/10 shadow-[inset_0_0_30px_rgba(255,255,255,0.06)]',
+        'backdrop-blur-lg bg-[rgba(0, 0, 0, 0.85)] border-r border-white/10 shadow-[inset_0_0_30px_rgba(255,255,255,0.06)]',
         className
       )}
     >
@@ -124,14 +124,14 @@ export function Sidebar({ className }: SidebarProps) {
                   'hover:scale-[1.03] hover:shadow-[0_0_10px_rgba(255,255,255,0.15)]',
                   isActive
                     ? 'bg-gradient-to-b from-white-500/80 to-purple-500/80 text-white ring-1 ring-white/30 shadow-[0_0_12px_rgba(255,255,255,0.4)]'
-                    : 'bg-[rgba(255,255,255,0.05)] text-white/70 hover:bg-[rgba(255,255,255,0.1)]'
+                    : 'bg-[rgba(0, 0, 0, 1)] text-white/70 hover:bg-[rgba(255, 255, 255, 1)]'
                 )}
               >
                 <item.icon
                   className={cn(
                     'h-7 w-7 transition-all duration-300',
                     isActive
-                      ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]'
+                      ? 'text-white drop-shadow-[0_0_0px_rgba(255,255,255,0.6)]'
                       : 'text-white/80 group-hover:text-white'
                   )}
                 />
@@ -155,7 +155,7 @@ export function Sidebar({ className }: SidebarProps) {
               flex flex-col items-center justify-center
               rounded-lg 
               text-white/90
-              shadow-[0_0_8px_rgba(0,0,0,0.4)]
+              shadow-[0_0_0px_rgba(0,0,0,0.4)]
               w-full aspect-square
               text-center text-[11px] font-medium
               select-none
@@ -169,3 +169,4 @@ export function Sidebar({ className }: SidebarProps) {
     </aside>
   );
 }
+

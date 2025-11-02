@@ -3,7 +3,7 @@
 // Displays NBA team standings and top player stats
 // ============================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import {
   Card, CardContent, CardHeader, CardTitle,
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs';
-import { X, Sun, Moon } from 'lucide-react';
+import { X, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { LayeredCard } from '@/components/ui/layered_card';
 
 
 
@@ -115,6 +114,41 @@ interface Player {
   HYBRID_SCORE?: number;
   THING?: number;
 }
+
+// ============================
+// Schedule Types (support multiple shapes)
+// ============================
+
+interface ScheduleGameAny {
+  game_id: string;
+  date?: string;          // e.g., '2025-10-31'
+  time?: string;          // e.g., '4:00 PM' or status detail
+  tv?: string;            // joined provider names
+  tv_providers?: string[]; // alternate provider list
+  home?: string;          // team abbrev (optional)
+  away?: string;          // team abbrev (optional)
+  matchup?: string;       // e.g., 'Atlanta Hawks @ Indiana Pacers'
+  location?: string;
+  game_link?: string;
+}
+
+type NBAScheduleData =
+  | { teams?: Record<string, string>; games?: ScheduleGameAny[] }
+  | ScheduleGameAny[];
+
+// ============================
+// Stronger stat key types to fix TS
+// ============================
+
+type TeamStatKey =
+  | 'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT' | 'FT_PCT'
+  | 'FG3M' | 'FG3A' | 'FTM' | 'FTA' | 'OREB' | 'DREB' | 'STL' | 'BLK' | 'TOV'
+  | 'PLUS_MINUS';
+
+type TeamAverages = {
+  GP: number; MIN: number; PTS: number; REB: number; AST: number; STL: number; BLK: number;
+  TOV: number; FGA: number; FG3A: number; FTA: number; FG_PCT: number; FG3_PCT: number; FT_PCT: number;
+};
 
 // ============================
 // 🗂️ Team Conference + Division Mapping
@@ -231,13 +265,351 @@ const teamAbbreviations: Record<string, string> = {
 
 
 // ============================
+// Dashboard Compact Components
+// ============================
+
+const DashboardTeamMiniCard = ({ team }: { team: NBATeam }) => {
+  const abbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
+  const colors = teamColors[abbr] || { primary: '#222', secondary: '#555' };
+  return (
+    <div
+      className="relative rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
+        padding: '2px',
+      }}
+    >
+<div 
+  className="absolute inset-0.5 rounded-lg" 
+  style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
+  aria-hidden 
+/>      <div className="relative z-10 flex items-center gap-3 p-3">
+        {team.LOGO_URL && (
+          <img
+            src={team.LOGO_URL}
+            alt={`${team.TEAM_NAME} logo`}
+            className="w-8 h-8 rounded-sm object-contain"
+            loading="lazy"
+            width={32}
+            height={32}
+          />
+        )}
+        <div className="min-w-0">
+          <div className="text-sm font-semibold truncate">{team.TEAM_NAME}</div>
+        </div>
+        <div className="ml-auto text-xl font-semibold text-white">
+          {team.W} - {team.L}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DashboardPlayerMiniCard = ({ player, logoMap }: { player: Player; logoMap: Record<string, string> }) => {
+  const abbr = player.TEAM_ABBREVIATION || 'UNK';
+  const colors = teamColors[abbr] || { primary: '#222', secondary: '#555' };
+  // compute value score locally to avoid cross-scope references
+  const fgm = player.FG_PCT * player.FGA;
+  const ftm = player.FT_PCT * player.FTA;
+  const fgMisses = player.FGA - fgm;
+  const ftMisses = player.FTA - ftm;
+  const rawScore = 1.0 * player.PTS + 0.8 * player.AST + 0.6 * player.REB + 1.0 * player.STL + 0.8 * player.BLK - 1.0 * player.TOV - 0.7 * fgMisses - 0.5 * ftMisses;
+  const normalized = ((rawScore + 20) / 69) * 100;
+  const value = Math.max(0, Math.min(100, Number(normalized.toFixed(1))))
+    .toFixed(1);
+  const logo = logoMap[abbr];
+  return (
+    <div
+      className="relative rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
+        padding: '2px',
+      }}
+    >
+<div 
+  className="absolute inset-0.5 rounded-lg" 
+  style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
+  aria-hidden 
+/>      <div className="relative z-10 flex items-center gap-3 p-3">
+        {logo && (
+          <img
+            src={logo}
+            alt={`${abbr} logo`}
+            className="w-8 h-8 rounded-sm object-contain"
+            loading="lazy"
+            width={32}
+            height={32}
+          />
+        )}
+        <div className="min-w-0">
+          <div className="text-sm font-semibold truncate">{player.PLAYER_NAME}</div>
+        </div>
+
+         <div className="ml-auto text-2xl font-semibold text-white">
+          {}
+        </div>
+        <Badge className="ml-auto font-semibold bg-white text-black hover:bg-white hover:text-black">
+          Rating: {value}
+        </Badge>
+      </div>
+    </div>
+  );
+};
+
+const DashboardTodaySchedule = ({
+  scheduleData,
+  logoMap,
+  recordMap,
+  onGapChange,
+}: {
+  scheduleData: NBAScheduleData | null;
+  logoMap: Record<string, string>;
+  recordMap: Record<string, string>;
+  onGapChange?: (gap: number) => void;
+}) => {
+  const todayKey = React.useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, []);
+
+  const games = React.useMemo(() => {
+    if (!scheduleData) return [] as ScheduleGameAny[];
+    const arr: ScheduleGameAny[] = Array.isArray(scheduleData)
+      ? (scheduleData as ScheduleGameAny[])
+      : (scheduleData.games || []);
+    return arr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
+  }, [scheduleData, todayKey]);
+
+  // Reactive scale so all cards fit without scrolling (vertical-only sizing)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState(1);
+  const [availPx, setAvailPx] = React.useState(0);
+  const [ready, setReady] = React.useState(false);
+  React.useLayoutEffect(() => {
+    const BASE_CARD = 92; // px baseline compact card height
+    const BASE_GAP = 12;  // px gap between cards
+    const MIN_SCALE = 0.6;
+    const MAX_SCALE = 1.5; // allow growing to fill the screen
+    const compute = () => {
+      const wrapper = containerRef.current as HTMLElement | null;
+      const rect = wrapper?.getBoundingClientRect();
+      const top = rect ? rect.top : 0;
+
+      // Estimate extra space below the grid: padding/margins of CardContent/Card
+      let extraBottom = 16;
+      const contentEl = wrapper?.parentElement as HTMLElement | null; // CardContent
+      if (contentEl) {
+        const cs = window.getComputedStyle(contentEl);
+        extraBottom += (parseFloat(cs.paddingBottom || '0') || 0) + (parseFloat(cs.marginBottom || '0') || 0);
+      }
+      const cardEl = contentEl?.parentElement as HTMLElement | null; // Card
+      if (cardEl) {
+        const cs2 = window.getComputedStyle(cardEl);
+        extraBottom += (parseFloat(cs2.paddingBottom || '0') || 0) + (parseFloat(cs2.marginBottom || '0') || 0) + (parseFloat(cs2.borderBottomWidth || '0') || 0);
+      }
+
+      const available = Math.max(100, window.innerHeight - top - extraBottom);
+      setAvailPx(available);
+
+      // Estimate natural height based on baseline sizes
+      const n = Math.max(1, games.length);
+      // Include top and bottom edge gap so inter-card gap equals edge gap
+      const naturalHeight = n * BASE_CARD + (n - 1 + 2) * BASE_GAP;
+      const FUDGE = 0.97; // slight undershoot to avoid cutoff
+      const sRaw = (available / naturalHeight) * FUDGE;
+      const s = Math.max(MIN_SCALE, Math.min(MAX_SCALE, sRaw * FUDGE));
+      setScale(s);
+      // compute current gap (used for equal edge spacing)
+      const g = Math.round(12 * s);
+      try { onGapChange && onGapChange(g); } catch {}
+      setReady(true);
+    };
+    compute();
+    const onResize = () => compute();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize as any);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize as any);
+    };
+  }, [games.length, scheduleData]);
+
+  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
+  if (games.length === 0) return <div className="text-sm text-muted-foreground">No games today</div>;
+
+  const gap = Math.round(12 * scale);
+  return (
+    <div
+      ref={containerRef}
+      className="grid grid-cols-1"
+      style={{
+        rowGap: gap,
+        paddingTop: gap,
+        paddingBottom: gap,
+        height: availPx ? `${availPx}px` : undefined,
+        overflow: 'hidden',
+        opacity: ready ? 1 : 0,
+        transition: 'opacity 120ms ease-out',
+      }}
+    >
+      {games.map((g) => {
+        let awayAbbr = (g as any).away as string | undefined;
+        let homeAbbr = (g as any).home as string | undefined;
+        if ((!awayAbbr || !homeAbbr) && g.matchup) {
+          const parts = g.matchup.split('@');
+          const awayName = parts[0]?.trim();
+          const homeName = parts[1]?.trim();
+          const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
+          const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
+          if (a) awayAbbr = a;
+          if (h) homeAbbr = h;
+        }
+        const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
+        const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+        const aScore = Number((g as any).away_score);
+        const hScore = Number((g as any).home_score);
+        const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
+        const awayWin = hasScores ? aScore >= hScore : false;
+        const homeWin = hasScores ? hScore >= aScore : false;
+
+        // Normalize TV providers similar to schedule tab
+        const providers: string[] = Array.isArray((g as any).tv_providers)
+          ? ((g as any).tv_providers as string[]).filter(Boolean)
+          : (g as any).tv
+            ? String((g as any).tv)
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [];
+
+        const awayName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
+        const homeName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
+        const statusText = String((g as any).status || '').toLowerCase();
+        const isFinal = statusText.includes('final') || Boolean((g as any).winner);
+
+        const cardPadding = Math.max(8, Math.round(12 * scale));
+          const logoSize = Math.max(18, Math.round(40 * scale));
+          const scoreFont = Math.max(16, Math.round(24 * scale));
+          const timeFont = Math.max(14, Math.round(20 * scale));
+          const nameFont = Math.max(11, Math.round(14 * scale));
+          const contentPad = Math.max(6, Math.round(10 * scale));
+          const contentSkew = Math.max(2, Math.round(4 * scale));
+          const topPad = Math.max(2, contentPad - contentSkew);
+          const bottomPad = contentPad + contentSkew;
+
+            return (
+          <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border" style={{ padding: cardPadding }}>
+            
+
+            {/* TV Badges top-right */}
+            {providers.length > 0 && (
+              <div className="absolute top-2 right-2 flex flex-wrap justify-end gap-1 max-w-[220px]">
+                {providers.map((p) => {
+                  const name = String(p).toLowerCase();
+                  let style: React.CSSProperties | undefined;
+                  if (name.includes('prime')) {
+                    style = { backgroundColor: '#00A8E1', color: '#ffffff' };
+                  } else if (name.includes('peacock')) {
+                    style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                  } else if (name.includes('espn')) {
+                    style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                  }
+                  return (
+                    <Badge key={p} className="text-[10px] font-semibold px-2 py-0.5" style={style}>
+                      {p}
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
+
+            <CardContent className="p-0" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
+              <div className="grid grid-cols-3 items-center">
+                {/* Away side */}
+                <div className="flex flex-col items-center justify-center gap-2">
+                  {awayLogo && (
+                    <img
+                      src={awayLogo}
+                      alt={awayAbbr || 'Away'}
+                      className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                      style={{ width: logoSize, height: logoSize, filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' : undefined }}
+                      loading="lazy"
+                      width={64}
+                      height={64}
+                    />
+                  )}
+                  <div className="font-semibold text-center truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
+                    {awayName || awayAbbr || 'Away'}
+                  </div>
+                </div>
+
+                {/* Center time or score */}
+                <div className="text-center">
+                  {(() => {
+                    const statusTextCenter = String((g as any).status || '').toLowerCase();
+                    const isFinalCenter = statusTextCenter.includes('final') || Boolean((g as any).winner);
+                    const isLiveCenter = (statusTextCenter.includes('live') || statusTextCenter.includes('in progress')) || (hasScores && !isFinalCenter);
+                    if (isLiveCenter) {
+                      return <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>;
+                    }
+                    return hasScores ? (
+                    <div className="font-extrabold tracking-wide" style={{ fontSize: scoreFont }}>
+                      <span className={(awayWin) ? 'text-white' : 'text-white/50'}>
+                        {aScore}
+                      </span>
+                      <span className="mx-2 text-muted-foreground">-</span>
+                      <span className={(homeWin) ? 'text-white' : 'text-white/50'}>
+                        {hScore}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="font-bold" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
+                  );
+                  })()}
+                  {(g as any).tv && providers.length === 0 && (
+                    <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>
+                      {String((g as any).tv)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Home side */}
+                <div className="flex flex-col items-center justify-center gap-2">
+                  {homeLogo && (
+                    <img
+                      src={homeLogo}
+                      alt={homeAbbr || 'Home'}
+                      className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                      style={{ width: logoSize, height: logoSize, filter: isFinal && homeWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' : undefined }}
+                      loading="lazy"
+                      width={64}
+                      height={64}
+                    />
+                  )}
+                  <div className="font-semibold text-center truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
+                    {homeName || homeAbbr || 'Home'}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+// ============================
 // 🧍 PlayerCard Component
 // Displays individual player stats
 // ============================
 
-const PlayerCard = ({ player, index }: { player: Player; index: number }) => (
+const PlayerCard = React.memo(({ player, index }: { player: Player; index: number }) => (
   <Card
-    className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm"
+    className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-0 md:backdrop-blur-sm will-change-transform"
     style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
   >
     <CardHeader className="pb-3">
@@ -284,7 +656,7 @@ const PlayerCard = ({ player, index }: { player: Player; index: number }) => (
       </div>
     </CardContent>
   </Card>
-);
+));
 
 // Small helper component for consistent stat layout
 const statDescriptions: Record<string, string> = {
@@ -352,6 +724,329 @@ const StatRow = ({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  );
+};
+
+
+// ============================
+// Schedule View Component (Next 7 Days)
+// ============================
+
+const ScheduleView = ({ scheduleData }: { scheduleData: NBAScheduleData | null }) => {
+  const days = useMemo(() => {
+    const arr: { key: string; label: string; date: Date }[] = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(today.getDate() + i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const label = d.toLocaleDateString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+      });
+      arr.push({ key, label, date: d });
+    }
+    return arr;
+  }, []);
+
+  const gamesByDate = useMemo(() => {
+    const map: Record<string, ScheduleGameAny[]> = {};
+    const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
+      ? (scheduleData as ScheduleGameAny[])
+      : (scheduleData?.games || []);
+
+    for (const g of gamesArr) {
+      const k = ((g.date as string) || '').slice(0, 10);
+      if (!k) continue;
+      if (!map[k]) map[k] = [];
+      map[k].push(g);
+    }
+    for (const k of Object.keys(map)) {
+      map[k].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    }
+    return map;
+  }, [scheduleData]);
+
+  if (!scheduleData) {
+    return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
+  }
+
+  const logos: Record<string, string> = Array.isArray(scheduleData)
+    ? {}
+    : (scheduleData?.teams || {});
+
+  return (
+    <div className="overflow-x-auto pb-2">
+      <div className="flex gap-4 min-w-max">
+        {days.map((d) => {
+          const games = gamesByDate[d.key] || [];
+          return (
+            <Card key={d.key} className="w-72 shrink-0 bg-card/60 backdrop-blur border">
+              <CardHeader className="py-3">
+                <CardTitle className="text-base font-semibold">{d.label}</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {games.length === 0 ? (
+                  <div className="text-sm text-muted-foreground py-6 text-center">No games</div>
+                ) : (
+                  <div className="divide-y">
+                    {games.map((g) => (
+                      <div key={g.game_id} className="flex items-center justify-between gap-3 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1">
+                            {/* If we have home/away abbrevs, show logos; else show matchup text */}
+                            {g.away && g.home ? (
+                              <>
+                                {logos[g.away] && (
+                                  <img src={logos[g.away]} alt={g.away} className="h-5 w-5 rounded-sm object-contain" loading="lazy" width="20" height="20" />
+                                )}
+                                <span className="text-sm font-semibold">{g.away}</span>
+                                <span className="text-xs text-muted-foreground">@</span>
+                                {logos[g.home] && (
+                                  <img src={logos[g.home]} alt={g.home} className="h-5 w-5 rounded-sm object-contain" loading="lazy" width="20" height="20" />
+                                )}
+                                <span className="text-sm font-semibold">{g.home}</span>
+                              </>
+                            ) : (
+                              <span className="text-sm font-semibold">
+                                {g.matchup || 'Matchup TBA'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-medium">{g.time || 'TBA'}</div>
+                          {(g.tv || (g.tv_providers && g.tv_providers.length)) && (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+                              {g.tv || (g.tv_providers || []).join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Compact, arrow-controlled view
+const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string> }) => {
+  // Build games grouped by date from the provided schedule
+  const gamesByDate = useMemo(() => {
+    const map: Record<string, ScheduleGameAny[]> = {};
+    const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
+      ? (scheduleData as ScheduleGameAny[])
+      : (scheduleData?.games || []);
+
+    for (const g of gamesArr) {
+      const k = ((g.date as string) || '').slice(0, 10);
+      if (!k) continue;
+      if (!map[k]) map[k] = [];
+      map[k].push(g);
+    }
+    for (const k of Object.keys(map)) map[k].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    return map;
+  }, [scheduleData]);
+
+  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
+  const logos: Record<string, string> = Array.isArray(scheduleData) ? {} : (scheduleData?.teams || {});
+
+  // All available date keys sorted ascending
+  const dateKeys = useMemo(() => Object.keys(gamesByDate).sort(), [gamesByDate]);
+
+  // Helper to format date labels from YYYY-MM-DD
+  const formatLabel = (key: string) => {
+    const [y, m, d] = key.split('-').map((s) => parseInt(s, 10));
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  // Pick initial index near today
+  const todayKey = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, []);
+
+  const initialIndex = useMemo(() => {
+    if (dateKeys.length === 0) return 0;
+    // Find first date >= today
+    const idx = dateKeys.findIndex((k) => k >= todayKey);
+    if (idx >= 0) return idx;
+    // Otherwise, jump to last available date
+    return dateKeys.length - 1;
+  }, [dateKeys, todayKey]);
+
+  const [index, setIndex] = React.useState<number>(initialIndex);
+  useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
+
+  if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
+
+  const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
+  const currentKey = dateKeys[clamp(index)];
+  const games = gamesByDate[currentKey] || [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="text-lg font-semibold">{formatLabel(currentKey)}</div>
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full">
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {games.length === 0 ? (
+        <Card className="bg-card/60 backdrop-blur-sm border">
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {games.map((g) => {
+            // Derive home/away abbreviations and logos
+            let awayAbbr = (g as any).away as string | undefined;
+            let homeAbbr = (g as any).home as string | undefined;
+            if ((!awayAbbr || !homeAbbr) && g.matchup) {
+              const parts = g.matchup.split('@');
+              const awayName = parts[0]?.trim();
+              const homeName = parts[1]?.trim();
+              const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
+              const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
+              if (a) awayAbbr = a;
+              if (h) homeAbbr = h;
+            }
+            const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
+            const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+            const aScore = Number((g as any).away_score);
+            const hScore = Number((g as any).home_score);
+            const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
+            const awayWin = hasScores ? aScore >= hScore : false;
+            const homeWin = hasScores ? hScore >= aScore : false;
+            const statusText = String((g as any).status || '').toLowerCase();
+            const isFinal = statusText.includes('final') || Boolean((g as any).winner);
+
+            // Normalize TV providers to an array of names
+            const providers: string[] = Array.isArray((g as any).tv_providers)
+              ? ((g as any).tv_providers as string[]).filter(Boolean)
+              : (g as any).tv
+                ? String((g as any).tv)
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                : [];
+
+            const awayName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
+            const homeName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
+
+            return (
+              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-4">
+                {/* TV Badges top-right */}
+                {providers.length > 0 && (
+                  <div className="absolute top-2 right-2 flex flex-wrap justify-end gap-1 max-w-[220px]">
+                    {providers.map((p) => {
+                      const name = String(p).toLowerCase();
+                      let style: React.CSSProperties | undefined;
+                      if (name.includes('prime')) {
+                        style = { backgroundColor: '#00A8E1', color: '#ffffff' };
+                      } else if (name.includes('peacock')) {
+                        style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                      } else if (name.includes('espn')) {
+                        style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                      }
+                      return (
+                        <Badge key={p} className="text-[10px] font-semibold px-2 py-0.5" style={style}>
+                          {p}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-3 items-center">
+                    {/* Away side */}
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      {awayLogo && (
+                        <img
+                          src={awayLogo}
+                          alt={awayAbbr || 'Away'}
+                          className={`h-10 w-10 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
+                          loading="lazy"
+                          width={64}
+                          height={64}
+                        />
+                      )}
+                      <div className="text-sm font-semibold text-center truncate max-w-[9rem]">
+                        {awayName || awayAbbr || 'Away'}
+                      </div>
+                    </div>
+
+                    {/* Center time or score */}
+                    <div className="text-center">
+                      {(() => {
+                        const statusText2 = String((g as any).status || '').toLowerCase();
+                        const hasScores2 = Boolean((g as any).home_score && (g as any).away_score);
+                        const isFinal2 = statusText2.includes('final') || Boolean((g as any).winner);
+                        const isLive2 = (statusText2.includes('live') || statusText2.includes('in progress')) || (hasScores2 && !isFinal2);
+                        if (isLive2) {
+                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>;
+                        }
+                        if (hasScores2) {
+                          const a = parseInt((g as any).away_score as string, 10);
+                          const h = parseInt((g as any).home_score as string, 10);
+                          return (
+                            <div className="text-2xl md:text-3xl font-extrabold tracking-wide">
+                              <span className={(a >= h) ? 'text-white' : 'text-white/50'}>{(g as any).away_score}</span>
+                              <span className="mx-2 text-muted-foreground">-</span>
+                              <span className={(h >= a) ? 'text-white' : 'text-white/50'}>{(g as any).home_score}</span>
+                            </div>
+                          );
+                        }
+                        return <div className="text-xl md:text-2xl font-bold">{g.time || 'TBA'}</div>;
+                      })()}
+                    </div>
+
+                    {/* Home side */}
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      {homeLogo && (
+                        <img
+                          src={homeLogo}
+                          alt={homeAbbr || 'Home'}
+                          className={`h-10 w-10 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
+                          loading="lazy"
+                          width={64}
+                          height={64}
+                        />
+                      )}
+                      <div className="text-sm font-semibold text-center truncate max-w-[9rem]">
+                        {homeName || homeAbbr || 'Home'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer: arena centered */}
+                  <div className="mt-4 text-xs text-muted-foreground text-center">
+                    {(g as any).location || ''}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -445,7 +1140,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       style={{ animation: 'fadeIn 0.2s ease-out' }}
     >
       <div
-        className="relative bg-background rounded-2xl shadow-2xl max-w-6xl w-full max-h-[85vh] overflow-hidden border"
+        className="relative bg-background rounded-2xl max-w-6xl w-full max-h-[85vh] overflow-hidden border"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: 'scaleIn 0.25s ease-out' }}
       >
@@ -471,7 +1166,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
               {players.map((player, index) => (
                 <Card
                   key={player.PLAYER_ID}
-                  className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm"
+                  className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm"
                   style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
                 >
                   <CardHeader className="pb-3">
@@ -562,20 +1257,19 @@ const TeamCard = ({
   const winPercentage = (team.WIN_PCT * 100).toFixed(1);
 
   // Helper to determine stat color vs league average
-  const getHighlight = (statKey: keyof typeof leagueAverages) => {
+const getHighlight = (statKey: TeamStatKey) => {
     if (!leagueAverages) return undefined;
-    
-    const diff = team[statKey] - leagueAverages[statKey];
+    const diff = Number((team as any)[statKey]) - Number((leagueAverages as any)[statKey]);
   
   // 🔍 Detailed debug for TOV
   if (statKey === 'TOV') {
     console.log('TOV Debug:', {
       statKey,
-      teamValue: team[statKey],
-      leagueAvg: leagueAverages[statKey],
+      teamValue: (team as any)[statKey],
+      leagueAvg: (leagueAverages as any)[statKey],
       diff: diff,
       absCheck: Math.abs(diff) < 0.01,
-      setHas: new Set(['TOV', 'PF', 'FGA_MISS', 'FTA_MISS']).has(String(statKey)),
+      setHas: new Set<TeamStatKey>(['TOV']).has(statKey),
       expectedResult: diff < 0 ? 'high (green)' : 'low (red)'
     });
   }
@@ -590,7 +1284,7 @@ const TeamCard = ({
     'FTA_MISS',  // hypothetical example
   ]);
   
-    if (lowerIsBetter.has(String(statKey))) {
+    if (lowerIsBetter.has(statKey)) {
       // Flip the logic – lower = high (good)
       return diff < 0 ? 'high' : 'low';
     }
@@ -634,7 +1328,7 @@ const teamGradientColors = {
 
 return (
   <div
-    className="relative rounded-xl shadow-lg overflow-hidden"
+    className="relative rounded-xl overflow-hidden"
     style={{
       backgroundImage: `linear-gradient(300deg, ${
         teamGradientColors[teamAbbr]?.start || '#1e40af'
@@ -665,7 +1359,7 @@ return (
   )}
   <h3 className="text-lg font-bold">{team.TEAM_NAME}</h3>
 <Badge
-  className="ml-auto border-0 text-white font-semibold shadow-sm"
+  className="ml-auto border-0 text-white font-semibold"
   style={{
     backgroundImage:
       team.W >= team.L
@@ -689,7 +1383,7 @@ return (
  
       <Card
         onClick={onClick}
-        className={`overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full ${
+        className={`overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full ${
           onClick ? 'cursor-pointer' : ''
         }`}
         style={{
@@ -802,9 +1496,32 @@ const NBA = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
   const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   const [sortField, setSortField] = useState<'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT'>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
+  useEffect(() => {
+    // Lock body scroll on Dashboard; allow on other tabs
+    if (activeTab === 'dashboard') {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev || ''; };
+    }
+    document.body.style.overflow = '';
+  }, [activeTab]);
+
+  // Memoized sorted teams to avoid sorting on every render
+  const sortedTeams = useMemo(() => {
+    const list = [...nbaTeams];
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      const av = (a as any)[sortField];
+      const bv = (b as any)[sortField];
+      return (av - bv) * dir;
+    });
+    return list;
+  }, [nbaTeams, sortField, sortOrder]);
 
 
 const fetchData = async () => {
@@ -835,6 +1552,19 @@ const fetchData = async () => {
     
     setNbaTeams(teamsWithConference);
     setNbaPlayerData(playerData);
+
+    // Fetch schedule data (initial load only; polling handled separately)
+    try {
+      const schedResp = await fetch('/data/nba_schedule.json', { cache: 'no-cache' });
+      if (schedResp.ok) {
+        const schedJson = (await schedResp.json()) as NBAScheduleData;
+        setScheduleData(schedJson);
+      } else {
+        console.warn('Failed to fetch nba_schedule.json');
+      }
+    } catch (e) {
+      console.warn('Schedule fetch error', e);
+    }
     setLastUpdate(new Date());
     setLoading(false);
     console.log('Data loaded successfully!');
@@ -852,16 +1582,71 @@ useEffect(() => {
   fetchData();
 }, []);
 
-// Auto-refresh every 30 seconds
+// Auto-refresh teams/players periodically (decoupled from schedule)
 useEffect(() => {
   if (!autoRefresh) return;
-  
+
   const interval = setInterval(() => {
+    try {
+      if (typeof document !== 'undefined' && document.hidden) return;
+    } catch {}
     fetchData();
-  }, 5000); // 30 seconds
+  }, 30000);
 
   return () => clearInterval(interval);
 }, [autoRefresh]);
+
+// Lightweight schedule-only polling with adaptive interval
+useEffect(() => {
+  let cancelled = false;
+  if (!autoRefresh) return;
+
+  const fetchScheduleOnly = async () => {
+    try {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const resp = await fetch('/data/nba_schedule.json', { cache: 'no-cache' });
+      if (!resp.ok) return;
+      const text = await resp.text();
+      if (cancelled) return;
+      const next = JSON.parse(text) as NBAScheduleData;
+      const currentText = JSON.stringify(scheduleData ?? null);
+      if (text !== currentText) setScheduleData(next);
+    } catch {}
+  };
+
+  const computeInterval = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const todayKey = `${y}-${m}-${d}`;
+    const gamesArr: any[] = Array.isArray(scheduleData)
+      ? (scheduleData as any[])
+      : ((scheduleData as any)?.games || []);
+    const todays = gamesArr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
+    const anyLive = todays.some((g) => !(g.home_score && g.away_score));
+    return anyLive ? 3000 : 60000;
+  };
+
+  const tick = () => fetchScheduleOnly();
+  const id = setInterval(tick, computeInterval());
+  tick();
+  return () => { cancelled = true; clearInterval(id); };
+}, [autoRefresh, scheduleData]);
+
+// Refresh schedule immediately on tab visibility
+useEffect(() => {
+  const onVis = () => {
+    if (document.visibilityState === 'visible') {
+      fetch('/data/nba_schedule.json', { cache: 'no-cache' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setScheduleData(d))
+        .catch(() => {});
+    }
+  };
+  document.addEventListener('visibilitychange', onVis);
+  return () => document.removeEventListener('visibilitychange', onVis);
+}, []);
 
 
   // Compute league averages
@@ -986,6 +1771,16 @@ const abbrToLogo = React.useMemo(() => {
   nbaTeams.forEach((t) => {
     const abbr = teamAbbreviations[t.TEAM_NAME];
     if (abbr && t.LOGO_URL) map[abbr] = t.LOGO_URL;
+  });
+  return map;
+}, [nbaTeams]);
+
+// Map team abbreviation to record string (W-L)
+const abbrToRecord = React.useMemo(() => {
+  const map: Record<string, string> = {};
+  nbaTeams.forEach((t) => {
+    const abbr = teamAbbreviations[t.TEAM_NAME];
+    if (abbr) map[abbr] = `${t.W}-${t.L}`;
   });
   return map;
 }, [nbaTeams]);
@@ -1159,18 +1954,109 @@ const sortTeams = (teams: NBATeam[]) => {
   // 🧭 Render
   // ============================
   return (
-    <PageLayout>
+<PageLayout>
       <div className="flex justify-end">
       </div>
-
-      {/* Tabs for All / East / West / Scorers */}
-      <Tabs defaultValue="all" className="w-full" onValueChange={(v) => setSelectedConference(v as any)}>
-        <TabsList className="grid w-full max-w-lg grid-cols-4 mb-6">
+      {/* Tabs for Dashboard / All / East / West / Scorers / Schedule */}
+      <Tabs
+        defaultValue="dashboard"
+        className="w-full"
+        onValueChange={(v) => {
+          setActiveTab(v);
+          if (v === 'all' || v === 'Eastern' || v === 'Western') {
+            setSelectedConference(v as any);
+          }
+        }}
+      >
+        <TabsList className="grid w-full grid-cols-4 mb-6 max-w-none">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="all">All Teams</TabsTrigger>
-          <TabsTrigger value="Eastern">Eastern</TabsTrigger>
-          <TabsTrigger value="Western">Western</TabsTrigger>
           <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
         </TabsList>
+
+<TabsContent value="dashboard">
+  {/* === Outer Grid === */}
+  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
+    
+    {/* === LEFT COLUMN (2 equal static cards) === */}
+    <div className="flex flex-col gap-4 lg:col-span-7 h-full overflow-hidden">
+      {/* Top Teams */}
+      <Card className="bg-gray/50 backdrop-blur-sm border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
+          <div className="mb-4 px-1 flex-shrink-0">
+            {/* Header content here if needed */}
+          </div>
+          <div className="flex-1 min-h-0 overflow-hidden px-4">
+            {(() => {
+              const list = [...nbaTeams]
+                .sort((a, b) => {
+                  const d = b.WIN_PCT - a.WIN_PCT;
+                  return Math.abs(d) < 1e-6 ? b.W - a.W : d;
+                })
+                .slice(0, 10);
+              return list.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {list.map((t) => (
+                    <DashboardTeamMiniCard key={t.TEAM_ID} team={t} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground py-4">No team data</div>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Top Players */}
+      <Card className="bg-gray/50 backdrop-blur-sm border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
+          <div className="mb-4 px-1 flex-shrink-0">
+            {/* Header content here if needed */}
+          </div>
+          <div className="flex-1 min-h-0 overflow-hidden px-4">
+            {(() => {
+              const list = Object.values(nbaPlayerData)
+                .flat()
+                .sort((a: Player, b: Player) => {
+                  const fgmA = a.FG_PCT * a.FGA; const ftmA = a.FT_PCT * a.FTA;
+                  const rawA = 1.0 * a.PTS + 0.8 * a.AST + 0.6 * a.REB + 1.0 * a.STL + 0.8 * a.BLK - 1.0 * a.TOV - 0.7 * (a.FGA - fgmA) - 0.5 * (a.FTA - ftmA);
+                  const normA = ((rawA + 20) / 69) * 100;
+                  const scoreA = Math.max(0, Math.min(100, Number(normA.toFixed(1))));
+                  const fgmB = b.FG_PCT * b.FGA; const ftmB = b.FT_PCT * b.FTA;
+                  const rawB = 1.0 * b.PTS + 0.8 * b.AST + 0.6 * b.REB + 1.0 * b.STL + 0.8 * b.BLK - 1.0 * b.TOV - 0.7 * (b.FGA - fgmB) - 0.5 * (b.FTA - ftmB);
+                  const normB = ((rawB + 20) / 69) * 100;
+                  const scoreB = Math.max(0, Math.min(100, Number(normB.toFixed(1))));
+                  return scoreB - scoreA;
+                })
+                .slice(0, 10);
+              return list.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {list.map((p) => (
+                    <DashboardPlayerMiniCard key={p.PLAYER_ID} player={p} logoMap={abbrToLogo} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground py-4">No player data</div>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+    
+    {/* Right column */}
+    <div className="lg:col-span-5 h-full overflow-hidden">
+      <Card className="bg-card/50 backdrop-blur-sm border w-full h-full flex flex-col overflow-hidden">
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
+          <DashboardTodaySchedule scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} />
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+</TabsContent>
+
 
 
         {/* === Sort Controls === */}
@@ -1187,7 +2073,6 @@ const sortTeams = (teams: NBATeam[]) => {
         className="
   w-[150px] rounded-full px-4 py-2 text-sm font-semibold text-black
   bg-white
-  shadow-md shadow-black/40
   hover:scale-[1.05]
   transition-all duration-300
 "
@@ -1199,7 +2084,7 @@ const sortTeams = (teams: NBATeam[]) => {
       <SelectContent
         className="
           rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
-          text-white shadow-lg"
+          text-white"
       >
         <SelectItem value="WIN_PCT" className="hover:bg-white/10 cursor-pointer">
           Win %
@@ -1231,7 +2116,6 @@ const sortTeams = (teams: NBATeam[]) => {
   className={`
     rounded-full px-4 py-2 text-sm font-semibold text-black
     bg-white
-    shadow-md shadow-black/40
     hover:bg-white hover:text-black
     hover:scale-[1.05]
     transition-all duration-300
@@ -1282,6 +2166,11 @@ const sortTeams = (teams: NBATeam[]) => {
           })}
         </TabsContent>
 
+        {/* === Schedule === */}
+        <TabsContent value="schedule">
+          <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} />
+        </TabsContent>
+
         {/* === Western Conference === */}
         <TabsContent value="Western" className="space-y-6">
           {['Northwest', 'Pacific', 'Southwest'].map((division) => {
@@ -1324,7 +2213,6 @@ const sortTeams = (teams: NBATeam[]) => {
         <SelectTrigger className={`
   rounded-full px-4 py-2 text-sm font-semibold text-black
   bg-white
-  shadow-md shadow-black/40
   hover:scale-[1.05]
   transition-all duration-300
 `}>
@@ -1372,14 +2260,10 @@ const sortTeams = (teams: NBATeam[]) => {
   {/* === Player Grid (All Stats with Tooltips) === */}
   
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-  {Object.values(nbaPlayerData)
-    .flat()
-    .sort((a: Player, b: Player) => getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField))
-    .slice(0, 50)
-    .map((player: Player, index) => (
+  {sortedTopPlayers.slice(0, 50).map((player: Player, index) => (
       <div
         key={player.PLAYER_ID}
-        className="relative rounded-xl shadow-lg overflow-hidden"
+        className="relative rounded-xl overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(300deg, ${
             teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af'
@@ -1402,6 +2286,9 @@ const sortTeams = (teams: NBATeam[]) => {
                 src={abbrToLogo[player.TEAM_ABBREVIATION]}
                 alt={`${player.TEAM_ABBREVIATION} logo`}
                 className="w-8 h-8 rounded-sm"
+                loading="lazy"
+                width={32}
+                height={32}
               />
             )}
             <h3 className="text-lg font-bold">#{index + 1} {player.PLAYER_NAME}</h3>
@@ -1419,7 +2306,7 @@ const sortTeams = (teams: NBATeam[]) => {
 
           {/* Inner stats card to match TeamCard style */}
           <Card
-            className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full"
+            className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
             style={{ backgroundColor: '#0000004c', opacity: 1 }}
           >
             <CardHeader className="pb-0"></CardHeader>
