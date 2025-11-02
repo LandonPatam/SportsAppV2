@@ -145,6 +145,15 @@
     @apply bg-muted-foreground/50;
   }
 
+  /* Utility to hide scrollbars while retaining scrollability */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
   /* Chart & data visualization styles */
   .chart-container {
     @apply w-full h-full min-h-[200px] rounded-lg overflow-hidden;

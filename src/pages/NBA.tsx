@@ -17,6 +17,10 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+// Chart.js for wins/losses pie
+import { Chart as ChartJS, ArcElement, Tooltip as ChartJSTooltip, Legend as ChartJSLegend, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
+import { Doughnut, Radar } from 'react-chartjs-2';
+ChartJS.register(ArcElement, ChartJSTooltip, ChartJSLegend, RadialLinearScale, PointElement, LineElement, Filler);
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -686,8 +690,7 @@ const statDescriptions: Record<string, string> = {
   "OREB" : 'Offensive Rebounds',
   "DREB" : 'Defensive Rebounds',
   "3PM" : 'Three pointers made',
-  "FTM" : 'Free throws made',
-  "+/-" : "Plus Minus"
+  "FTM" : 'Free throws made'
   
 
 };
@@ -1145,7 +1148,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       >
         {/* Header */}
         <div className="sticky top-0 bg-background border-b p-6 flex items-center justify-between z-10">
-          <div>
+          <div className="flex-1 min-h-0 flex flex-col">
             <h2 className="text-3xl font-bold">{team.TEAM_NAME}</h2>
             <p className="text-muted-foreground mt-1">
               {team.W}-{team.L} • {team.division} Division • {(team.WIN_PCT * 100).toFixed(1)}% Win Rate
@@ -1396,40 +1399,31 @@ return (
         </CardHeader>
 
         <CardContent>
-          {/* 2-column stat grid */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 4-column stat grid to reduce height */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <StatRow label="Win %" value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
+              <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
               <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
               <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
               <StatRow label="APG" value={team.AST.toFixed(1)} highlight={getHighlight('AST')} />
+            </div>
+            <div className="space-y-2">
               <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
               <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} />
               <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} />
               <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} />
-              <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} />
             </div>
-
             <div className="space-y-2">
+              <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} />
               <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
               <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
               <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
+            </div>
+            <div className="space-y-2">
               <StatRow label="3PM" value={team.FG3M.toFixed(1)} highlight={getHighlight('FG3M')} />
               <StatRow label="3PA" value={team.FG3A.toFixed(1)} highlight={getHighlight('FG3A')} />
               <StatRow label="FTM" value={team.FTM.toFixed(1)} highlight={getHighlight('FTM')} />
               <StatRow label="FTA" value={team.FTA.toFixed(1)} highlight={getHighlight('FTA')} />
-              {(() => {
-                const pm = Number(team.PLUS_MINUS || 0);
-                const pmStr = pm >= 0 ? `+${pm.toFixed(1)}` : pm.toFixed(1);
-                let highlight: 'high' | 'low' | 'neutral' = 'neutral';
-                try {
-                  if (leagueAverages && typeof (leagueAverages as any).PLUS_MINUS === 'number') {
-                    const diff = pm - (leagueAverages as any).PLUS_MINUS;
-                    highlight = Math.abs(diff) < 0.01 ? 'neutral' : diff > 0 ? 'high' : 'low';
-                  }
-                } catch {}
-                return <StatRow label="+/-" value={pmStr} highlight={highlight} />;
-              })()}
             </div>
           </div>
         </CardContent>
@@ -1497,18 +1491,35 @@ const NBA = () => {
   const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
+  // Separate selection for All Teams detail pane to avoid opening roster modal
+  const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
   const [sortField, setSortField] = useState<'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT'>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
+  // League-wide maxima for radar normalization (memoized for smooth animation)
+  const teamMaxima = useMemo(() => {
+    return nbaTeams.reduce(
+      (acc, t) => ({
+        pts: Math.max(acc.pts, Number((t as any).PTS || 0)),
+        reb: Math.max(acc.reb, Number((t as any).REB || 0)),
+        threes: Math.max(acc.threes, Number((t as any).FG3M || 0)),
+        ftm: Math.max(acc.ftm, Number((t as any).FTM || 0)),
+        blk: Math.max(acc.blk, Number((t as any).BLK || 0)),
+      }),
+      { pts: 0, reb: 0, threes: 0, ftm: 0, blk: 0 }
+    );
+  }, [nbaTeams]);
+  // Lock page scroll while on NBA page; sections manage their own scroll
   useEffect(() => {
-    // Lock body scroll on Dashboard; allow on other tabs
-    if (activeTab === 'dashboard') {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = prev || ''; };
-    }
-    document.body.style.overflow = '';
-  }, [activeTab]);
+    const prevBody = document.body.style.overflow;
+    const prevDoc = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBody || '';
+      document.documentElement.style.overflow = prevDoc || '';
+    };
+  }, []);
 
   // Memoized sorted teams to avoid sorting on every render
   const sortedTeams = useMemo(() => {
@@ -2126,17 +2137,243 @@ const sortTeams = (teams: NBATeam[]) => {
 </div>
 
 
-  {/* === Team Grid === */}
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-    {sortTeams(nbaTeams).map((team, index) => (
-      <TeamCard
-        key={team.TEAM_ID}
-        team={{ ...team, rank: index + 1 }}
-        leagueAverages={leagueAverages}
-        onClick={() => setSelectedTeam(team)}
-      />
-    ))}
-  </div>
+  {/* === Teams Sidebar + Detail Pane === */}
+  {(() => {
+    const teams = sortTeams(nbaTeams);
+    const currentTeam = selectedTeamAll || teams[0];
+    const teamPlayers: Player[] = currentTeam ? (nbaPlayerData[currentTeam.TEAM_ID.toString()] || []) : [];
+    const topTeamPlayers = [...teamPlayers]
+      .sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
+
+    return (
+      <div className="flex gap-4 h-[85vh] overflow-hidden">
+        {/* Left: logos as rounded-square buttons */}
+        <div
+          className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
+          style={{ scrollPaddingTop: '24px', scrollPaddingBottom: '24px' }}
+        >
+          <div className="grid grid-cols-3 gap-3">
+            {teams.map((t) => {
+              const isActive = currentTeam && t.TEAM_ID === currentTeam.TEAM_ID;
+              return (
+                <button
+                  key={t.TEAM_ID}
+                  onClick={() => setSelectedTeamAll(t)}
+                  className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border snap-start ${
+                    isActive
+                      ? 'ring-2 ring-inset ring-white/80 border-transparent'
+                      : 'border-white/10'
+                  }`}
+                  title={t.TEAM_NAME}
+                >
+                  {t.LOGO_URL ? (
+                    <img
+                      src={t.LOGO_URL}
+                      alt={`${t.TEAM_NAME} logo`}
+                      className="w-3/5 h-3/5 object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground px-2 text-center">{t.TEAM_NAME}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right: wide team card + players; parent does not scroll; inner players list scrolls */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4 min-w-0 pr-0">
+          {currentTeam && (() => {
+            const teamAbbr = teamAbbreviations[currentTeam.TEAM_NAME] || 'UNK';
+            const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
+            const secondaryColor = teamColors[teamAbbr]?.secondary || '#4f46e5';
+            const doughnutData = {
+              labels: [],
+              datasets: [
+                {
+                  data: [currentTeam.W, currentTeam.L],
+                  backgroundColor: [primaryColor, '#4b5563'],
+                  borderWidth: 0,
+                },
+              ],
+            };
+          const doughnutOptions: any = {
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '55%',
+  responsiveAnimationDuration: 0,
+  animation: {
+    animateRotate: true,
+    animateScale: false,
+    duration: 180, easing: 'easeOutQuart',
+  },
+  transitions: {
+    show: {
+      animations: {
+        circumference: { duration: 180, easing: 'easeOutQuart' },
+        rotation: { duration: 180, easing: 'easeOutQuart' },
+      },
+    },
+    hide: {
+      animations: {
+        circumference: { duration: 120, easing: 'easeInCubic' },
+        rotation: { duration: 120, easing: 'easeInCubic' },
+      },
+    },
+  },
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { color: 'currentColor', boxWidth: 10 },
+    },
+    tooltip: { enabled: true },
+  },
+};
+
+            // Radar (spider) chart data and options
+            const radarLabels = ['PPG', 'RPG', '3PM', 'FTM', 'BLK'];
+            const rawValues = {
+              PPG: Number(currentTeam.PTS || 0),
+              RPG: Number(currentTeam.REB || 0),
+              '3PM': Number(currentTeam.FG3M || 0),
+              FTM: Number(currentTeam.FTM || 0),
+              BLK: Number(currentTeam.BLK || 0),
+            } as const;
+            const maxs = teamMaxima;
+            // Normalize each metric to a common 0–100 scale so categories with different units are comparable
+            const norm = (v: number, max: number) => (max > 0 ? (v / max) * 100 : 0);
+            const normalizedValues = [
+              norm(rawValues.PPG, maxs.pts),
+              norm(rawValues.RPG, maxs.reb),
+              norm(rawValues['3PM'], maxs.threes),
+              norm(rawValues.FTM, maxs.ftm),
+              norm(rawValues.BLK, maxs.blk),
+            ];
+            const bgColor = secondaryColor && secondaryColor.length === 7 ? `${secondaryColor}55` : primaryColor;
+            const radarData = {
+              labels: radarLabels,
+              datasets: [
+                {
+                  id: 'teamRadar',
+                  label: currentTeam.TEAM_NAME,
+                  data: normalizedValues,
+                  backgroundColor: bgColor,
+                  borderColor: secondaryColor,
+                  pointBackgroundColor: secondaryColor,
+                  pointBorderColor: '#fff',
+                  borderWidth: 2,
+                  tension: 0,
+                },
+              ],
+            } as any;
+            const radarOptions: any = {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 200, easing: 'easeOutQuart' },
+              animations: { 
+                numbers: { type: 'number', duration: 200, easing: 'easeOutQuart' },
+                x: { duration: 200, easing: 'easeOutQuart' },
+                y: { duration: 200, easing: 'easeOutQuart' },
+              },
+              transitions: { active: { animation: { duration: 200, easing: 'easeOutQuart' } } },
+              plugins: { legend: { display: false }, tooltip: { enabled: true } },
+              elements: { line: { tension: 0 } },
+              scales: {
+                r: {
+                  suggestedMin: 0,
+                  suggestedMax: 100,
+                  angleLines: { color: 'rgba(255,255,255,0.1)' },
+                  grid: { color: 'rgba(255,255,255,0.1)' },
+                  pointLabels: { color: 'currentColor', font: { size: 10 } },
+                  ticks: { display: false },
+                },
+              },
+            };
+            return (
+              <div className="w-full flex gap-4 items-stretch">
+                <div className="w-full xl:w-2/3 xl:w-1/2 mr-auto">
+                  <TeamCard
+                    team={{ ...currentTeam, rank: (teams.findIndex(tt => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
+                    leagueAverages={leagueAverages}
+                    onClick={() => setSelectedTeam(currentTeam)}
+                  />
+                </div>
+                {/* Use the right gap exclusively for the pie chart (xl+) */}
+                <div className="hidden xl:block flex-1 min-w-0">
+                  <Card className="bg-transparent border-none w-[342px] h-[235px] overflow-hidden">
+                    <CardHeader className="py-2 px-3">
+                    </CardHeader>
+                    <CardContent className="h-[220px] p-1">
+                      <Doughnut data={doughnutData} options={doughnutOptions} />
+                    </CardContent>
+                  </Card>
+                </div>
+                {/* Spider (Radar) chart on the right of pie (xl+) */}
+                <div className="hidden xl:block shrink-0">
+                  <Card className="bg-transparent border-none w-[342px] h-[235px] overflow-hidden">
+                    <CardContent className="h-[220px] p-1">
+                      <Radar data={radarData} options={radarOptions} datasetIdKey="id" updateMode="active" />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Players list (scrollable with snap, no rank number) */}
+          <div className="flex-1 min-h-0 flex flex-col">
+            {topTeamPlayers.length ? (
+              <div
+                className="flex-1 min-h-0 overflow-y-auto no-scrollbar snap-y snap-mandatory pt-0 pb-8"
+                style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {topTeamPlayers.map((p) => (
+                    <Card
+                      key={p.PLAYER_ID}
+                      className="overflow-hidden bg-card/60 backdrop-blur border snap-start"
+                      style={{ scrollMarginTop: '16px', scrollMarginBottom: '16px' }}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate">{p.PLAYER_NAME}</div>
+                            <div className="text-xs text-muted-foreground truncate">Value {getPlayerValueScore(p).toFixed(1)}</div>
+                          </div>
+                        </div>
+                        {/* Key stats */}
+                        <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
+                          <div className="bg-background/40 rounded px-2 py-1 text-center">
+                            <div className="text-muted-foreground">PPG</div>
+                            <div className="font-semibold">{p.PTS.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-background/40 rounded px-2 py-1 text-center">
+                            <div className="text-muted-foreground">RPG</div>
+                            <div className="font-semibold">{p.REB.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-background/40 rounded px-2 py-1 text-center">
+                            <div className="text-muted-foreground">APG</div>
+                            <div className="font-semibold">{p.AST.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-background/40 rounded px-2 py-1 text-center">
+                            <div className="text-muted-foreground">FG%</div>
+                            <div className="font-semibold">{(p.FG_PCT * 100).toFixed(1)}</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground px-1">No player data for this team</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  })()}
 </TabsContent>
 
 
@@ -2198,7 +2435,7 @@ const sortTeams = (teams: NBATeam[]) => {
 
 
 {/* === Top Players === */}
-<TabsContent value="top-scorers">
+<TabsContent value="top-scorers" className="max-h-[85vh] overflow-y-auto no-scrollbar">
 
   {/* === Filter Controls === */}
 <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
@@ -2358,4 +2595,5 @@ const sortTeams = (teams: NBATeam[]) => {
 };
 
 export default NBA;
+
 
