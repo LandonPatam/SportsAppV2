@@ -274,16 +274,16 @@ const DashboardTeamMiniCard = ({ team }: { team: NBATeam }) => {
   return (
     <div
       className="relative rounded-xl overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
-        padding: '2px',
-      }}
+//            style={{
+//        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
+//        padding: '2px',
+//       }}
     >
 <div 
   className="absolute inset-0.5 rounded-lg" 
-  style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
+  style={{ backgroundColor: ' #16181d47' }}
   aria-hidden 
-/>      <div className="relative z-10 flex items-center gap-3 p-3">
+/>      <div className="relative z-10 flex items-center gap-4 p-3 border">
         {team.LOGO_URL && (
           <img
             src={team.LOGO_URL}
@@ -297,40 +297,31 @@ const DashboardTeamMiniCard = ({ team }: { team: NBATeam }) => {
         <div className="min-w-0">
           <div className="text-sm font-semibold truncate">{team.TEAM_NAME}</div>
         </div>
-        <div className="ml-auto text-xl font-semibold text-white">
+         <Badge className="ml-auto text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
           {team.W} - {team.L}
-        </div>
+        </Badge>
       </div>
     </div>
   );
 };
 
-const DashboardPlayerMiniCard = ({ player, logoMap }: { player: Player; logoMap: Record<string, string> }) => {
+const DashboardPlayerMiniCard = ({ player, logoMap, rank }: { player: Player; logoMap: Record<string, string>; rank?: number }) => {
   const abbr = player.TEAM_ABBREVIATION || 'UNK';
   const colors = teamColors[abbr] || { primary: '#222', secondary: '#555' };
-  // compute value score locally to avoid cross-scope references
-  const fgm = player.FG_PCT * player.FGA;
-  const ftm = player.FT_PCT * player.FTA;
-  const fgMisses = player.FGA - fgm;
-  const ftMisses = player.FTA - ftm;
-  const rawScore = 1.0 * player.PTS + 0.8 * player.AST + 0.6 * player.REB + 1.0 * player.STL + 0.8 * player.BLK - 1.0 * player.TOV - 0.7 * fgMisses - 0.5 * ftMisses;
-  const normalized = ((rawScore + 20) / 69) * 100;
-  const value = Math.max(0, Math.min(100, Number(normalized.toFixed(1))))
-    .toFixed(1);
   const logo = logoMap[abbr];
   return (
     <div
       className="relative rounded-xl overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
-        padding: '2px',
-      }}
+//      style={{
+//        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
+//        padding: '2px',
+//      }}
     >
 <div 
   className="absolute inset-0.5 rounded-lg" 
-  style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
+  style={{ backgroundColor: '#16181d47' }}
   aria-hidden 
-/>      <div className="relative z-10 flex items-center gap-3 p-3">
+/>      <div className="relative z-10 flex items-center gap-4 p-3 border">
         {logo && (
           <img
             src={logo}
@@ -348,8 +339,8 @@ const DashboardPlayerMiniCard = ({ player, logoMap }: { player: Player; logoMap:
          <div className="ml-auto text-2xl font-semibold text-white">
           {}
         </div>
-        <Badge className="ml-auto font-semibold bg-white text-black hover:bg-white hover:text-black">
-          Rating: {value}
+        <Badge className="ml-auto text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+          {rank ?? ''}
         </Badge>
       </div>
     </div>
@@ -497,8 +488,8 @@ const DashboardTodaySchedule = ({
           const nameFont = Math.max(11, Math.round(14 * scale));
           const contentPad = Math.max(6, Math.round(10 * scale));
           const contentSkew = Math.max(2, Math.round(4 * scale));
-          const topPad = Math.max(2, contentPad - contentSkew);
-          const bottomPad = contentPad + contentSkew;
+          const topPad = Math.max(0, contentPad - (2 * contentSkew));
+          const bottomPad = contentPad + (2 * contentSkew);
 
             return (
           <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border" style={{ padding: cardPadding }}>
@@ -529,20 +520,23 @@ const DashboardTodaySchedule = ({
             <CardContent className="p-0" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
               <div className="grid grid-cols-3 items-center">
                 {/* Away side */}
-                <div className="flex flex-col items-center justify-center gap-2">
+               <div className="flex flex-col items-center justify-center gap-1">
                   {awayLogo && (
                     <img
                       src={awayLogo}
                       alt={awayAbbr || 'Away'}
                       className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                      style={{ width: logoSize, height: logoSize, filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' : undefined }}
+                      style={{ width: logoSize, height: logoSize, filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))' : undefined }}
                       loading="lazy"
                       width={64}
                       height={64}
                     />
                   )}
-                  <div className="font-semibold text-center truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
-                    {awayName || awayAbbr || 'Away'}
+                  <div className="text-center">
+                    <div className="font-semibold truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
+                      {awayName || awayAbbr || 'Away'}
+                    </div>
+                
                   </div>
                 </div>
 
@@ -577,7 +571,7 @@ const DashboardTodaySchedule = ({
                 </div>
 
                 {/* Home side */}
-                <div className="flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-1">
                   {homeLogo && (
                     <img
                       src={homeLogo}
@@ -589,8 +583,13 @@ const DashboardTodaySchedule = ({
                       height={64}
                     />
                   )}
-                  <div className="font-semibold text-center truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
-                    {homeName || homeAbbr || 'Home'}
+
+                  
+                  <div className="text-center">
+                    <div className="font-semibold truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
+                      {homeName || homeAbbr || 'Home'}
+                    </div>
+
                   </div>
                 </div>
               </div>
@@ -1982,9 +1981,9 @@ const sortTeams = (teams: NBATeam[]) => {
     {/* === LEFT COLUMN (2 equal static cards) === */}
     <div className="flex flex-col gap-4 lg:col-span-7 h-full overflow-hidden">
       {/* Top Teams */}
-      <Card className="bg-gray/50 backdrop-blur-sm border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+      <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
         <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
-          <div className="mb-4 px-1 flex-shrink-0">
+          <div className="mb-5 px-1 flex-shrink-0">
             {/* Header content here if needed */}
           </div>
           <div className="flex-1 min-h-0 overflow-hidden px-4">
@@ -2010,9 +2009,9 @@ const sortTeams = (teams: NBATeam[]) => {
       </Card>
       
       {/* Top Players */}
-      <Card className="bg-gray/50 backdrop-blur-sm border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+      <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
         <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
-          <div className="mb-4 px-1 flex-shrink-0">
+          <div className="mb-5 px-1 flex-shrink-0">
             {/* Header content here if needed */}
           </div>
           <div className="flex-1 min-h-0 overflow-hidden px-4">
@@ -2033,8 +2032,8 @@ const sortTeams = (teams: NBATeam[]) => {
                 .slice(0, 10);
               return list.length ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {list.map((p) => (
-                    <DashboardPlayerMiniCard key={p.PLAYER_ID} player={p} logoMap={abbrToLogo} />
+                  {list.map((p, idx) => (
+                    <DashboardPlayerMiniCard key={p.PLAYER_ID} player={p} logoMap={abbrToLogo} rank={idx + 1} />
                   ))}
                 </div>
               ) : (
@@ -2048,7 +2047,7 @@ const sortTeams = (teams: NBATeam[]) => {
     
     {/* Right column */}
     <div className="lg:col-span-5 h-full overflow-hidden">
-      <Card className="bg-card/50 backdrop-blur-sm border w-full h-full flex flex-col overflow-hidden">
+      <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
         <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
           <DashboardTodaySchedule scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} />
         </CardContent>
@@ -2359,3 +2358,4 @@ const sortTeams = (teams: NBATeam[]) => {
 };
 
 export default NBA;
+
