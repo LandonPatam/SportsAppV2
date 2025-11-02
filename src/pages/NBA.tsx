@@ -2146,7 +2146,7 @@ const sortTeams = (teams: NBATeam[]) => {
       .sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
 
     return (
-      <div className="flex gap-4 h-[85vh] overflow-hidden">
+    <div className="flex flex-col xl:flex-row gap-4 h-[85vh] overflow-hidden">
         {/* Left: logos as rounded-square buttons */}
         <div
           className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
@@ -2183,7 +2183,7 @@ const sortTeams = (teams: NBATeam[]) => {
         </div>
 
         {/* Right: wide team card + players; parent does not scroll; inner players list scrolls */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4 min-w-0 pr-0">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4 w-0 pr-0">
           {currentTeam && (() => {
             const teamAbbr = teamAbbreviations[currentTeam.TEAM_NAME] || 'UNK';
             const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
@@ -2292,7 +2292,7 @@ const sortTeams = (teams: NBATeam[]) => {
             };
             return (
               <div className="w-full flex gap-4 items-stretch">
-                <div className="w-full xl:w-2/3 xl:w-1/2 mr-auto">
+                <div className="w-full xl:w-3/6 xl:w-1/2 mr-auto">
                   <TeamCard
                     team={{ ...currentTeam, rank: (teams.findIndex(tt => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
                     leagueAverages={leagueAverages}
@@ -2595,5 +2595,4 @@ const sortTeams = (teams: NBATeam[]) => {
 };
 
 export default NBA;
-
 
