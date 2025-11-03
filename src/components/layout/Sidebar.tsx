@@ -105,7 +105,7 @@ export function Sidebar({ className }: SidebarProps) {
     <aside
       className={cn(
         'fixed top-0 left-0 h-screen w-[100px] z-40 flex flex-col justify-between',
-        'backdrop-blur-lg bg-[rgba(0, 0, 0, 0.85)] border-r border-white/10 shadow-[inset_0_0_30px_rgba(255,255,255,0.06)]',
+        'backdrop-blur-lg bg-[rgba(0, 0, 0, 0.85)] border-none shadow-[inset_0_0_30px_rgba(255,255,255,0.06)]',
         className
       )}
     >
