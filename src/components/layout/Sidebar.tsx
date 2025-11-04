@@ -101,12 +101,18 @@ export function Sidebar({ className }: SidebarProps) {
     { title: 'NBA', icon: NBAIcon, href: '/nba' },
   ];
 
+  const totalItems = navItems.length;
+  const expandedPercent = 25;
+  const expandedBasis = `${expandedPercent}%`;
+  const collapsedBasis =
+    totalItems > 1 ? `calc((100% - ${expandedPercent}%) / ${totalItems - 1})` : '100%';
+
   return (
     <aside
       className={cn(
         'fixed top-0 left-0 h-screen w-[100px] z-40 flex flex-col justify-between',
-        'backdrop-blur-lg bg-[rgba(0, 0, 0, 0.85)] border-none shadow-[inset_0_0_30px_rgba(255,255,255,0.06)]',
-        className
+      'bg-transparent border-none shadow-[inset_0_0_30px_rgba(255,255,255,0.0)]',
+          className
       )}
     >
       {/* === NAVIGATION === */}
@@ -120,11 +126,11 @@ export function Sidebar({ className }: SidebarProps) {
                 to={item.href}
                 className={cn(
                   'flex flex-col items-center justify-center gap-2 w-full flex-1 py-6 rounded-lg',
-                  'transition-all duration-300 ease-out',
-                  'hover:scale-[1.03] hover:shadow-[0_0_10px_rgba(255,255,255,0.15)]',
+                  'transition-all duration-300 ease-in',
+                  'hover:scale-[1.03] hover:shadow-[0_0_10px_rgba(255,255,255,0.15)] border-[1px]',
                   isActive
                     ? 'bg-gradient-to-b from-white-500/80 to-purple-500/80 text-white ring-1 ring-white/30 shadow-[0_0_12px_rgba(255,255,255,0.4)]'
-                    : 'bg-[rgba(0, 0, 0, 1)] text-white/70 hover:bg-[rgba(255, 255, 255, 1)]'
+                    : 'bg-[rgba(0, 0, 0, 1)] text-white/70 hover:bg-[rgba(244, 14, 14, 1)]'
                 )}
               >
                 <item.icon
@@ -159,6 +165,7 @@ export function Sidebar({ className }: SidebarProps) {
               w-full aspect-square
               text-center text-[11px] font-medium
               select-none
+              
             "
           >
             <p className="text-sm font-semibold">{month}</p>
@@ -169,4 +176,3 @@ export function Sidebar({ className }: SidebarProps) {
     </aside>
   );
 }
-

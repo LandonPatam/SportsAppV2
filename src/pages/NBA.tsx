@@ -3,7 +3,7 @@
 // Displays NBA team standings and top player stats
 // ============================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import {
   Card, CardContent, CardHeader, CardTitle,
@@ -1496,6 +1496,7 @@ const NBA = () => {
   const [sortField, setSortField] = useState<'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT'>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
+  const logosScrollRef = useRef<HTMLDivElement | null>(null);
   // League-wide maxima for radar normalization (memoized for smooth animation)
   const teamMaxima = useMemo(() => {
     return nbaTeams.reduce(
@@ -1957,6 +1958,27 @@ const sortTeams = (teams: NBATeam[]) => {
   const getDivisionTeams = (division: string) =>
     getFilteredTeams().filter((t) => t.division === division).sort((a, b) => b.WIN_PCT - a.WIN_PCT);
 
+  const dashboardTeamList = React.useMemo(() => {
+    return [...nbaTeams].sort((a, b) => {
+      const diff = b.WIN_PCT - a.WIN_PCT;
+      return Math.abs(diff) < 1e-6 ? b.W - a.W : diff;
+    });
+  }, [nbaTeams]);
+
+  const dashboardPlayerList = React.useMemo(() => {
+    return Object.values(nbaPlayerData)
+      .flat()
+      .filter((p: Player) => Number.isFinite(p.PTS) && Number.isFinite(p.MIN))
+      .sort((a: Player, b: Player) => getPlayerValueScore(b) - getPlayerValueScore(a))
+      .slice(0, 50);
+  }, [nbaPlayerData]);
+
+  useEffect(() => {
+    if (logosScrollRef.current) {
+      logosScrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [sortField, sortOrder]);
+
 
 
   
@@ -1997,14 +2019,9 @@ const sortTeams = (teams: NBATeam[]) => {
           <div className="mb-5 px-1 flex-shrink-0">
             {/* Header content here if needed */}
           </div>
-          <div className="flex-1 min-h-0 overflow-hidden px-4">
+          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
             {(() => {
-              const list = [...nbaTeams]
-                .sort((a, b) => {
-                  const d = b.WIN_PCT - a.WIN_PCT;
-                  return Math.abs(d) < 1e-6 ? b.W - a.W : d;
-                })
-                .slice(0, 10);
+              const list = dashboardTeamList;
               return list.length ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {list.map((t) => (
@@ -2025,22 +2042,9 @@ const sortTeams = (teams: NBATeam[]) => {
           <div className="mb-5 px-1 flex-shrink-0">
             {/* Header content here if needed */}
           </div>
-          <div className="flex-1 min-h-0 overflow-hidden px-4">
+          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
             {(() => {
-              const list = Object.values(nbaPlayerData)
-                .flat()
-                .sort((a: Player, b: Player) => {
-                  const fgmA = a.FG_PCT * a.FGA; const ftmA = a.FT_PCT * a.FTA;
-                  const rawA = 1.0 * a.PTS + 0.8 * a.AST + 0.6 * a.REB + 1.0 * a.STL + 0.8 * a.BLK - 1.0 * a.TOV - 0.7 * (a.FGA - fgmA) - 0.5 * (a.FTA - ftmA);
-                  const normA = ((rawA + 20) / 69) * 100;
-                  const scoreA = Math.max(0, Math.min(100, Number(normA.toFixed(1))));
-                  const fgmB = b.FG_PCT * b.FGA; const ftmB = b.FT_PCT * b.FTA;
-                  const rawB = 1.0 * b.PTS + 0.8 * b.AST + 0.6 * b.REB + 1.0 * b.STL + 0.8 * b.BLK - 1.0 * b.TOV - 0.7 * (b.FGA - fgmB) - 0.5 * (b.FTA - ftmB);
-                  const normB = ((rawB + 20) / 69) * 100;
-                  const scoreB = Math.max(0, Math.min(100, Number(normB.toFixed(1))));
-                  return scoreB - scoreA;
-                })
-                .slice(0, 10);
+              const list = dashboardPlayerList;
               return list.length ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {list.map((p, idx) => (
@@ -2085,6 +2089,8 @@ const sortTeams = (teams: NBATeam[]) => {
   bg-white
   hover:scale-[1.05]
   transition-all duration-300
+  focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
+  focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:ring-0 data-[state=open]:ring-offset-0
 "
 
       >
@@ -2129,6 +2135,7 @@ const sortTeams = (teams: NBATeam[]) => {
     hover:bg-white hover:text-black
     hover:scale-[1.05]
     transition-all duration-300
+    focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
   `}
 >
   {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
@@ -2149,6 +2156,7 @@ const sortTeams = (teams: NBATeam[]) => {
     <div className="flex flex-col xl:flex-row gap-4 h-[85vh] overflow-hidden">
         {/* Left: logos as rounded-square buttons */}
         <div
+          ref={logosScrollRef}
           className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
           style={{ scrollPaddingTop: '24px', scrollPaddingBottom: '24px' }}
         >
@@ -2435,10 +2443,10 @@ const sortTeams = (teams: NBATeam[]) => {
 
 
 {/* === Top Players === */}
-<TabsContent value="top-scorers" className="max-h-[85vh] overflow-y-auto no-scrollbar">
+<TabsContent value="top-scorers" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-12 pr-2">
 
   {/* === Filter Controls === */}
-<div className="flex flex-wrap items-center justify-between mb-4 gap-3">
+<div className="flex flex-wrap items-center justify-between mb-5 gap-4">
   <div className="flex items-center gap-2">
     <label  className="text-sm font-semibold text-white/80">Rank by:</label>
 
@@ -2495,8 +2503,8 @@ const sortTeams = (teams: NBATeam[]) => {
 
   {/* === Player Grid (All Stats with Tooltips) === */}
   
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-  {sortedTopPlayers.slice(0, 50).map((player: Player, index) => (
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-16">
+  {sortedTopPlayers.map((player: Player, index) => (
       <div
         key={player.PLAYER_ID}
         className="relative rounded-xl overflow-hidden"
@@ -2516,7 +2524,7 @@ const sortTeams = (teams: NBATeam[]) => {
 
         <div className="relative z-10 p-4 text-white">
           {/* Header with team logo and player name */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             {abbrToLogo[player.TEAM_ABBREVIATION] && (
               <img
                 src={abbrToLogo[player.TEAM_ABBREVIATION]}

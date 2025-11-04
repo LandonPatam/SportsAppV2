@@ -20,6 +20,55 @@ import {
 // Register Chart.js elements once
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartJSTooltip, ChartJSLegend, RadialLinearScale, PointElement, LineElement, Filler);
 
+const teamLogoCache: Record<string, HTMLImageElement> = {};
+
+const teamLogoAxisPlugin = {
+  id: 'teamLogoAxisPlugin',
+  afterDatasetsDraw: (chart: ChartJS, _args: unknown, pluginOptions: { logos?: string[]; size?: number; offset?: number } = {}) => {
+    const logos = pluginOptions.logos ?? [];
+    if (!logos.length) return;
+
+    const yScale = chart.scales?.y;
+    const chartArea = chart.chartArea;
+    if (!yScale || !chartArea) return;
+
+    const ctx = chart.ctx;
+    const size = pluginOptions.size ?? 36;
+    const offset = pluginOptions.offset ?? 14;
+
+    logos.forEach((logoSrc, index) => {
+      if (!logoSrc) return;
+
+      let logoImage = teamLogoCache[logoSrc];
+      if (!logoImage) {
+        logoImage = new Image();
+        logoImage.src = logoSrc;
+        logoImage.onload = () => chart.draw();
+        teamLogoCache[logoSrc] = logoImage;
+      }
+
+      if (!logoImage.complete) return;
+
+      const centerY = yScale.getPixelForTick(index);
+      if (Number.isNaN(centerY)) return;
+
+      const drawX = Math.max(chartArea.left - offset - size, 0);
+      const drawY = centerY - size / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      const radius = size / 2;
+      ctx.arc(drawX + radius, centerY, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(logoImage, drawX, drawY, size, size);
+      ctx.restore();
+    });
+  },
+};
+
+ChartJS.register(teamLogoAxisPlugin);
+
 
 /* ============================================================================
  * TYPE DEFINITIONS
@@ -720,6 +769,42 @@ const NFL = () => {
     } as any;
   }, [teams]);
 
+  const winRateSortedTeams = React.useMemo(() => {
+    return [...teams]
+      .map((team) => ({
+        team,
+        winPct: Number.isFinite(team.win_pct) ? Number(team.win_pct) : 0,
+      }))
+      .sort((a, b) => {
+        if (b.winPct !== a.winPct) return b.winPct - a.winPct;
+        const winsDiff = (b.team.wins ?? 0) - (a.team.wins ?? 0);
+        if (winsDiff !== 0) return winsDiff;
+        return (b.team.point_diff ?? 0) - (a.team.point_diff ?? 0);
+      })
+      .map((entry) => entry.team);
+  }, [teams]);
+
+  const fpiSortedTeams = React.useMemo(() => {
+    return [...teams]
+      .map((team) => {
+        const fpi = Number(team.fpi);
+        const rank = Number(team.fpirank);
+        return {
+          team,
+          fpiValue: Number.isFinite(fpi) ? fpi : -Infinity,
+          rankValue: Number.isFinite(rank) ? rank : Infinity,
+        };
+      })
+      .sort((a, b) => {
+        if (b.fpiValue !== a.fpiValue) return b.fpiValue - a.fpiValue;
+        if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue;
+        const winDiff = (b.team.win_pct ?? 0) - (a.team.win_pct ?? 0);
+        if (Math.abs(winDiff) > 1e-6) return winDiff;
+        return (b.team.wins ?? 0) - (a.team.wins ?? 0);
+      })
+      .map((entry) => entry.team);
+  }, [teams]);
+
   // Conference-level averages for Division, Conference, Last 5 (within conference)
   const conferenceAverages = React.useMemo(() => {
     const buckets: Record<string, { divPctSum: number; confPctSum: number; last5PctSum: number; countDiv: number; countConf: number; countL5: number }> = {};
@@ -785,24 +870,49 @@ const NFL = () => {
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
         </TabsList>
 
-        {/* Dashboard: Left = all teams (compact), Right = today's schedule (compact) */}
+        {/* Dashboard: Win% & FPI stacks + schedule */}
         <TabsContent value="dashboard" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
-            {/* Left: All Teams grid (compact style similar to NBA dashboard) */}
-            <div className="lg:col-span-7">
-              <Card className="bg-card border w-full overflow-hidden">
-                <CardHeader className="p-0" />
-                <CardContent className="py-3 px-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {sortTeamsDynamic(teams).map((team) => (
-                      <NFLTeamMiniCard key={team.name} team={team} />
-                    ))}
+            {/* Left column: ranked team stacks similar to NBA layout */}
+            <div className="lg:col-span-7 flex flex-col gap-4 h-full overflow-hidden">
+              <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+                <CardHeader className="px-4 py-3">
+                </CardHeader>
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden px-4 pb-4">
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {winRateSortedTeams.map((team) => {
+                        return <NFLTeamMiniCard key={`${team.name}-win`} team={team} />;
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+                <CardHeader className="px-4 py-3">
+                </CardHeader>
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden px-2 pb-4">
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {fpiSortedTeams.map((team, idx) => {
+                        const fpi = Number.isFinite(Number(team.fpi)) ? Number(team.fpi).toFixed(1) : null;
+                        return (
+                          <NFLTeamMiniCard
+                            key={`${team.name}-fpi`}
+                            team={team}
+                            badgeText={`${idx + 1}`}
+                            statBadgeText={fpi ? `FPI ${fpi}` : undefined}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Right: Today's Schedule (compact list) */}
+            {/* Right column: today's schedule + strength chart */}
             <div className="lg:col-span-5 space-y-4">
               <Card className="bg-card border w-full overflow-hidden">
                 <CardHeader className="p-0" />
@@ -810,17 +920,7 @@ const NFL = () => {
                   <DashboardTodayScheduleNFL scheduleData={scheduleData} logoMap={abbrToLogo} />
                 </CardContent>
               </Card>
-              {teams.length > 0 && (
-                <Card className="bg-card border w-full overflow-hidden">
-                  <CardHeader className="px-4 py-3">
-                  </CardHeader>
-                  <CardContent className="pb-4 px-4">
-                    <div className="h-[607px]">
-                      <DashboardTeamStrengthChart teams={teams} />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {teams.length > 0 }
             </div>
           </div>
         </TabsContent>
@@ -871,9 +971,9 @@ const NFL = () => {
             const ordered = sortTeamsDynamic(teams);
             const currentTeam = selectedTeamAll || ordered[0];
             return (
-              <div className="flex flex-col xl:flex-row gap-4 h-[82vh] overflow-hidden">
+              <div className="flex flex-col xl:flex-row gap-4 h-[100vh] overflow-hidden">
                 {/* Left: team logos grid */}
-                <div className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-6">
+                <div className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar pr-1 pt-0 pb-6">
                   <div className="grid grid-cols-3 gap-3">
                     {ordered.map((t) => {
                       const isActive = currentTeam && t.name === currentTeam.name;
@@ -1146,30 +1246,60 @@ const PlayerCardNFL = React.memo(({ player, index }: { player: any; index: numbe
  * NFL Schedule View V2 (arrow-controlled, single day)
  * Matches NBA Schedule tab behavior
  * ============================================================================ */
-const NFLTeamMiniCard = ({ team }: { team: NFLTeam }) => {
+const NFLTeamMiniCard = ({
+  team,
+  rank,
+  highlightLabel,
+  highlightValue,
+  badgeText,
+  statBadgeText,
+}: {
+  team: NFLTeam;
+  rank?: number;
+  highlightLabel?: string;
+  highlightValue?: string;
+  badgeText?: string;
+  statBadgeText?: string;
+}) => {
   const abbr = (teamAbbreviations as any)[team.name] || 'UNK';
   const colors = teamColors[team.name] || { primary: '#222', secondary: '#555' };
   const record = `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ''}`;
+  const primaryBadgeText = badgeText ?? record;
   return (
     <div className="relative rounded-xl overflow-hidden border border-white/10">
       <div className="absolute inset-0.5 rounded-lg" style={{ backgroundColor: '#14141437' }} aria-hidden />
-      <div className="relative z-10 flex items-center gap-3 p-3 bg-card/50 backdrop-blur-sm">
-        {team.logo && (
-          <img
-            src={team.logo}
-            alt={`${team.name} logo`}
-            className="w-7 h-7 rounded-sm object-contain"
-            loading="lazy"
-            width={32}
-            height={32}
-          />
-        )}
-        <div className="min-w-0">
-          <div className="text-sm font-semibold truncate">{team.name}</div>
+      <div className="relative z-10 flex flex-col gap-2 p-3 bg-card/50 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          {team.logo && (
+            <img
+              src={team.logo}
+              alt={`${team.name} logo`}
+              className="w-7 h-7 rounded-sm object-contain"
+              loading="lazy"
+              width={32}
+              height={32}
+            />
+          )}
+          <div className="min-w-0">
+            <div className="text-sm font-semibold truncate">{team.name}</div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {statBadgeText && (
+              <Badge className="text-xs font-semibold bg-white/80 text-black hover:bg-white hover:text-black">
+                {statBadgeText}
+              </Badge>
+            )}
+            <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+              {primaryBadgeText}
+            </Badge>
+          </div>
         </div>
-        <Badge className="ml-auto text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
-          {record}
-        </Badge>
+        {highlightLabel && highlightValue && (
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-white/60">
+            <span>{highlightLabel}</span>
+            <span className="text-white text-sm font-semibold normal-case">{highlightValue}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1489,99 +1619,3 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
     </div>
   );
 };
-
-const DashboardTeamStrengthChart = ({ teams }: { teams: NFLTeam[] }) => {
-  const chartConfig = React.useMemo(() => {
-    const sorted = [...teams]
-      .filter((t) => typeof t.win_pct === 'number' && Number.isFinite(t.win_pct))
-      .sort((a, b) => (b.win_pct ?? 0) - (a.win_pct ?? 0))
-      .slice(0, 10);
-
-    if (sorted.length === 0) return null as any;
-
-    const labels = sorted.map((t) => t.name);
-    const winPercents = sorted.map((t) => Number(((t.win_pct ?? 0) * 100).toFixed(1)));
-    const fpiRanks = sorted.map((t, i) => {
-      const r = (t as any).fpirank;
-      return Number.isFinite(r) ? Number(r) : i + 1;
-    });
-    const fpiValues = sorted.map((t) => {
-      const v = (t as any).fpi;
-      return Number.isFinite(v) ? Number(v) : null;
-    });
-
-    return {
-      data: {
-        labels,
-        datasets: [
-          {
-            type: 'bar' as const,
-            label: '',
-            data: winPercents,
-            backgroundColor: 'rgba(34,197,94,0.7)',
-            borderRadius: 6,
-            xAxisID: 'x',
-            barThickness: 30
-          },
-          {
-            type: 'line' as const,
-            label: 'FPI Rank',
-            data: fpiRanks,
-            borderColor: '#60a5fa',
-            backgroundColor: '#60a5fa',
-            tension: 0.3,
-            fill: false,
-            xAxisID: 'xRank',
-            pointRadius: 3,
-            spanGaps: true,
-          },
-        ],
-      },
-     options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  indexAxis: 'y',
-  interaction: { mode: 'index', intersect: false },
-
-  // ✨ Remove all axis labels, ticks, and grid lines
-  scales: {
-    x: {
-      beginAtZero: true,
-      max: 100,
-      ticks: { display: false },           // hide numbers
-      grid: { display: false, drawBorder: false }, // hide grid + axis line
-    },
-    xRank: {
-      position: 'top',
-      reverse: true,
-      ticks: { display: false },
-      grid: { display: false, drawBorder: false },
-    },
-    y: {
-      ticks: { display: false },
-      grid: { display: false, drawBorder: false },
-    },
-  },
-
-  // ✨ Remove legends, tooltips, and title
-  plugins: {
-    legend: { display: false },
-    tooltip: { enabled: false },
-    title: { display: false },
-  },
-
-  // ✨ Optional: tighten layout
-  layout: {
-    padding: 0,
-  },
-} as any
-    };
-  }, [teams]);
-
-  if (!chartConfig) {
-    return <div className="text-xs text-muted-foreground">Insufficient data for chart.</div>;
-  }
-
-  return <ChartComponent type="bar" data={chartConfig.data} options={chartConfig.options} />;
-};
-
