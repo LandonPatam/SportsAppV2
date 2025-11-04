@@ -265,6 +265,10 @@ const teamAbbreviations: Record<string, string> = {
   'Washington Wizards': 'WAS',
 };
 
+const abbreviationToTeamName: Record<string, string> = Object.fromEntries(
+  Object.entries(teamAbbreviations).map(([name, abbr]) => [abbr, name])
+);
+
 
 
 
@@ -272,12 +276,23 @@ const teamAbbreviations: Record<string, string> = {
 // Dashboard Compact Components
 // ============================
 
-const DashboardTeamMiniCard = ({ team }: { team: NBATeam }) => {
+const DashboardTeamMiniCard = React.forwardRef<HTMLDivElement, { team: NBATeam; highlight?: boolean }>(
+  ({ team, highlight = false }, ref) => {
   const abbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
   const colors = teamColors[abbr] || { primary: '#222', secondary: '#555' };
   return (
     <div
-      className="relative rounded-xl overflow-hidden"
+      ref={ref}
+      className={`relative rounded-xl overflow-hidden transition-all duration-300`}
+      style={
+        highlight
+          ? {
+              boxShadow: `0 0 18px rgba(255,255,255,0.55)`,
+              outline: `2px solid rgba(255,255,255,0.85)`,
+              outlineOffset: '0px',
+            }
+          : undefined
+      }
 //            style={{
 //        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
 //        padding: '2px',
@@ -301,13 +316,14 @@ const DashboardTeamMiniCard = ({ team }: { team: NBATeam }) => {
         <div className="min-w-0">
           <div className="text-sm font-semibold truncate">{team.TEAM_NAME}</div>
         </div>
-         <Badge className="ml-auto text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+        <Badge className="ml-auto text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
           {team.W} - {team.L}
         </Badge>
       </div>
     </div>
   );
-};
+});
+DashboardTeamMiniCard.displayName = 'DashboardTeamMiniCard';
 
 const DashboardPlayerMiniCard = ({ player, logoMap, rank }: { player: Player; logoMap: Record<string, string>; rank?: number }) => {
   const abbr = player.TEAM_ABBREVIATION || 'UNK';
@@ -356,11 +372,13 @@ const DashboardTodaySchedule = ({
   logoMap,
   recordMap,
   onGapChange,
+  onTeamFocus,
 }: {
   scheduleData: NBAScheduleData | null;
   logoMap: Record<string, string>;
   recordMap: Record<string, string>;
   onGapChange?: (gap: number) => void;
+  onTeamFocus?: (info: { teamName?: string; teamAbbr?: string }) => void;
 }) => {
   const todayKey = React.useMemo(() => {
     const now = new Date();
@@ -432,6 +450,14 @@ const DashboardTodaySchedule = ({
     };
   }, [games.length, scheduleData]);
 
+  const focusTeam = React.useCallback(
+    (teamAbbr?: string, fallbackName?: string) => {
+      if (!onTeamFocus) return;
+      onTeamFocus({ teamAbbr, teamName: fallbackName });
+    },
+    [onTeamFocus]
+  );
+
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
   if (games.length === 0) return <div className="text-sm text-muted-foreground">No games today</div>;
 
@@ -453,15 +479,19 @@ const DashboardTodaySchedule = ({
       {games.map((g) => {
         let awayAbbr = (g as any).away as string | undefined;
         let homeAbbr = (g as any).home as string | undefined;
+        let awayName: string | undefined;
+        let homeName: string | undefined;
         if ((!awayAbbr || !homeAbbr) && g.matchup) {
           const parts = g.matchup.split('@');
-          const awayName = parts[0]?.trim();
-          const homeName = parts[1]?.trim();
+          awayName = parts[0]?.trim();
+          homeName = parts[1]?.trim();
           const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
           const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
           if (a) awayAbbr = a;
           if (h) homeAbbr = h;
         }
+        const normalizedAwayName = awayName || (awayAbbr ? abbreviationToTeamName[awayAbbr] : undefined);
+        const normalizedHomeName = homeName || (homeAbbr ? abbreviationToTeamName[homeAbbr] : undefined);
         const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
         const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
         const aScore = Number((g as any).away_score);
@@ -480,8 +510,6 @@ const DashboardTodaySchedule = ({
                 .filter(Boolean)
             : [];
 
-        const awayName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
-        const homeName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
         const statusText = String((g as any).status || '').toLowerCase();
         const isFinal = statusText.includes('final') || Boolean((g as any).winner);
 
@@ -526,19 +554,27 @@ const DashboardTodaySchedule = ({
                 {/* Away side */}
                <div className="flex flex-col items-center justify-center gap-1">
                   {awayLogo && (
-                    <img
-                      src={awayLogo}
-                      alt={awayAbbr || 'Away'}
-                      className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                      style={{ width: logoSize, height: logoSize, filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))' : undefined }}
-                      loading="lazy"
-                      width={64}
-                      height={64}
-                    />
+                    <button
+                      type="button"
+                      onClick={() => focusTeam(awayAbbr, normalizedAwayName)}
+                      className="rounded-sm focus:outline-none"
+                      style={{ width: logoSize, height: logoSize }}
+                      title={normalizedAwayName || awayAbbr || 'Away team'}
+                    >
+                      <img
+                        src={awayLogo}
+                        alt={awayAbbr || 'Away'}
+                        className={`rounded-sm object-contain cursor-pointer ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                        style={{ width: '100%', height: '100%', filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))' : undefined }}
+                        loading="lazy"
+                        width={64}
+                        height={64}
+                      />
+                    </button>
                   )}
                   <div className="text-center">
                     <div className="font-semibold truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
-                      {awayName || awayAbbr || 'Away'}
+                      {normalizedAwayName || awayAbbr || 'Away'}
                     </div>
                 
                   </div>
@@ -577,21 +613,29 @@ const DashboardTodaySchedule = ({
                 {/* Home side */}
                 <div className="flex flex-col items-center justify-center gap-1">
                   {homeLogo && (
-                    <img
-                      src={homeLogo}
-                      alt={homeAbbr || 'Home'}
-                      className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                      style={{ width: logoSize, height: logoSize, filter: isFinal && homeWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' : undefined }}
-                      loading="lazy"
-                      width={64}
-                      height={64}
-                    />
+                    <button
+                      type="button"
+                      onClick={() => focusTeam(homeAbbr, normalizedHomeName)}
+                      className="rounded-sm focus:outline-none"
+                      style={{ width: logoSize, height: logoSize }}
+                      title={normalizedHomeName || homeAbbr || 'Home team'}
+                    >
+                      <img
+                        src={homeLogo}
+                        alt={homeAbbr || 'Home'}
+                        className={`rounded-sm object-contain cursor-pointer ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                        style={{ width: '100%', height: '100%', filter: isFinal && homeWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' : undefined }}
+                        loading="lazy"
+                        width={64}
+                        height={64}
+                      />
+                    </button>
                   )}
 
                   
                   <div className="text-center">
                     <div className="font-semibold truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
-                      {homeName || homeAbbr || 'Home'}
+                      {normalizedHomeName || homeAbbr || 'Home'}
                     </div>
 
                   </div>
@@ -1150,9 +1194,6 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
         <div className="sticky top-0 bg-background border-b p-6 flex items-center justify-between z-10">
           <div className="flex-1 min-h-0 flex flex-col">
             <h2 className="text-3xl font-bold">{team.TEAM_NAME}</h2>
-            <p className="text-muted-foreground mt-1">
-              {team.W}-{team.L} • {team.division} Division • {(team.WIN_PCT * 100).toFixed(1)}% Win Rate
-            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors">
             <X className="w-6 h-6" />
@@ -1497,6 +1538,9 @@ const NBA = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
   const logosScrollRef = useRef<HTMLDivElement | null>(null);
+  const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
   // League-wide maxima for radar normalization (memoized for smooth animation)
   const teamMaxima = useMemo(() => {
     return nbaTeams.reduce(
@@ -1973,11 +2017,43 @@ const sortTeams = (teams: NBATeam[]) => {
       .slice(0, 50);
   }, [nbaPlayerData]);
 
+  const handleDashboardTeamFocus = React.useCallback(
+    ({ teamName, teamAbbr }: { teamName?: string; teamAbbr?: string }) => {
+      const normalizedName = teamName?.trim().toLowerCase();
+      const normalizedAbbr = teamAbbr?.trim().toUpperCase();
+      const target = dashboardTeamList.find((t) => {
+        const teamAbbr = ((t as any).TEAM_ABBREVIATION || teamAbbreviations[t.TEAM_NAME] || '').toUpperCase();
+        return (
+          (normalizedName && t.TEAM_NAME.toLowerCase() === normalizedName) ||
+          (normalizedAbbr && teamAbbr === normalizedAbbr)
+        );
+      });
+      if (!target) return;
+      const node = dashboardTeamRefs.current[target.TEAM_ID];
+      if (!node) return;
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setDashboardHighlightTeamId(target.TEAM_ID);
+      if (dashboardHighlightTimeout.current) clearTimeout(dashboardHighlightTimeout.current);
+      dashboardHighlightTimeout.current = setTimeout(() => {
+        setDashboardHighlightTeamId(null);
+      }, 1500);
+    },
+    [dashboardTeamList]
+  );
+
   useEffect(() => {
     if (logosScrollRef.current) {
       logosScrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
     }
   }, [sortField, sortOrder]);
+
+  useEffect(() => {
+    return () => {
+      if (dashboardHighlightTimeout.current) {
+        clearTimeout(dashboardHighlightTimeout.current);
+      }
+    };
+  }, []);
 
 
 
@@ -2025,7 +2101,18 @@ const sortTeams = (teams: NBATeam[]) => {
               return list.length ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {list.map((t) => (
-                    <DashboardTeamMiniCard key={t.TEAM_ID} team={t} />
+                    <DashboardTeamMiniCard
+                      key={t.TEAM_ID}
+                      team={t}
+                      highlight={dashboardHighlightTeamId === t.TEAM_ID}
+                      ref={(el) => {
+                        if (el) {
+                          dashboardTeamRefs.current[t.TEAM_ID] = el;
+                        } else {
+                          delete dashboardTeamRefs.current[t.TEAM_ID];
+                        }
+                      }}
+                    />
                   ))}
                 </div>
               ) : (
@@ -2064,7 +2151,12 @@ const sortTeams = (teams: NBATeam[]) => {
     <div className="lg:col-span-5 h-full overflow-hidden">
       <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
         <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
-          <DashboardTodaySchedule scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} />
+          <DashboardTodaySchedule
+            scheduleData={scheduleData}
+            logoMap={abbrToLogo}
+            recordMap={abbrToRecord}
+            onTeamFocus={handleDashboardTeamFocus}
+          />
         </CardContent>
       </Card>
     </div>
