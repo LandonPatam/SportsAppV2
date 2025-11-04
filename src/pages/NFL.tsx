@@ -1266,8 +1266,8 @@ const NFLTeamMiniCard = ({
   const record = `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ''}`;
   const primaryBadgeText = badgeText ?? record;
   return (
-    <div className="relative rounded-xl overflow-hidden border border-white/10">
-      <div className="absolute inset-0.5 rounded-lg" style={{ backgroundColor: '#14141437' }} aria-hidden />
+    <div className="relative rounded-xl overflow-hidden border border-[1px]">
+      <div className="absolute inset-0.5 rounded-lg" style={{ backgroundColor: '#1414146f' }} aria-hidden />
       <div className="relative z-10 flex flex-col gap-2 p-3 bg-card/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           {team.logo && (
