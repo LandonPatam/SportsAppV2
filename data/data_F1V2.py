@@ -5,65 +5,6 @@ import re
 import sys
 from collections import defaultdict
 
-# Driver Standings (Points)
-
-url = "https://www.espn.com/f1/standings/_/season/2025"
-
-payload = {}
-headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.5',
-  'Accept-Encoding': 'gzip, deflate, br, zstd',
-  'Connection': 'keep-alive',
-  'Cookie': 'SWID=1BC12018-76AD-4298-C23C-5EB9DD70B6BB; edition=espn-en-us; edition-view=espn-en-us; region=ccpa; tveAuth=espn3; cookieMonster=1; connectionspeed=full; __fitt-sess-device.prod=ce855d3a-c6af-4583-8995-a9489db1e9b6; dtcAuth=; mbox=PC^#1675cae4ea40400982cd551583a6f1a9.35_0^#1824862869|session^#eb8c6f4ac51e4586b74f7a05490cdbcc^#1761704477; s_ensNR=1761618067402-New; OptanonConsent=isGpcEnabled=0&datestamp=Mon+Oct+27+2025+19%3A23%3A27+GMT-0700+(Pacific+Daylight+Time)&version=202407.2.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=e9d9a673-36ea-482a-bbc0-be0a0c2e9a66&interactionCount=1&isAnonUser=1&landingPath=https%3A%2F%2Fwww.espn.com%2Fnba%2Fstandings&groups=C0001%3A1%2CC0003%3A1%2CBG407%3A1%2CC0002%3A1%2CC0004%3A1%2CC0005%3A1; usprivacy=1YNY; AMCV_EE0201AC512D2BE80A490D4C%40AdobeOrg=-50417514%7CMCMID%7C21080104722962798112362429104193239130%7CMCAAMLH-1762222871%7C9%7CMCAAMB-1762222871%7C6G1ynYcLPuiQxYZrsz_pkqfLG9yMXBpb2zX5dvJdYQJzPXImdj0y%7CMCOPTOUT-1761625272s%7CNONE%7CMCAID%7CNONE%7CvVersion%7C5.5.0; _cb=7wPu32JWTGDRHnlv; _chartbeat2=.1761618071782.1761618071782.1.D7xZXhDdqSFLQsx9hB2p1CxBWavfN.1; ab.storage.userId.96ad02b7-2edc-4238-8442-bc35ba85853c=g%3A1BC12018-76AD-4298-C23C-5EB9DD70B6BB%7Ce%3Aundefined%7Cc%3A1761618071793%7Cl%3A1761618071794; ab.storage.sessionId.96ad02b7-2edc-4238-8442-bc35ba85853c=g%3A618d7a20-942d-6bde-6155-fddbba6d0a31%7Ce%3A1761619871802%7Cc%3A1761618071793%7Cl%3A1761618071802; ab.storage.deviceId.96ad02b7-2edc-4238-8442-bc35ba85853c=g%3A675b46c1-c25d-8cfa-f9c5-167bb80dd0eb%7Ce%3Aundefined%7Cc%3A1761618071794%7Cl%3A1761618071794; s_ecid=MCMID%7C21080104722962798112362429104193239130; nol_fpid=4xrlotegxpquurxzsizqc21cqjeys1761618072|1761618072742|1761618072742|1761618072742; _scor_uid=ae659a55ede4490d944632b84ae8ab23; cto_bundle=JEfh-l8lMkZnbEd2WGNTQVlYdjdqSkMlMkZLRDdKZUt1UERMbWlVdzh0YmRPdHk1ZVkzT1BHOWI1YyUyQlk5aGxkV1NOJTJCRnB1WlRwTkM2SDFTaVhkWVNaekVwRHhUeXlONUc2UDc3MTRydHBoU3JvcXZMMnRCV0lMR1lsdHRnWDIlMkZORTJGZUlmTEVrb2Z2NTdnbFZ0RDU5REM1ekpkbUdUOW9GVDQ2dHNybmVJMkltNU0yVkVVJTNE; _cc_id=5841a92d1e3e143af8abb2bbe75ad7d5; panoramaId_expiry=1762222863842; panoramaId=483fa7555f1093ad79db952527d7185ca02c03eab0d02fc65c748e4f33b595c2; panoramaIdType=panoDevice; connectId={"ttl":86400000,"lastUsed":1761618074543,"lastSynced":1761618074543}; __gads=ID=004e9c5f3cff2d56:T=1761618064:RT=1761618064:S=ALNI_MbxIjptHk03T2ZOpy_qKwrO9sDLnA; __gpi=UID=000012b915e0787d:T=1761618064:RT=1761618064:S=ALNI_MbdhHDRDUUk5XKaAkE_8nB0-3jTJg; __eoi=ID=e292e959d05a8c28:T=1761618064:RT=1761618064:S=AA-AfjZFdCPFJxDNzTNtD4AVn8Su; _gcl_au=1.1.1448530675.1761618075; tveMVPDAuth=; country=us; _dcf=1; check=true; block.check=false%7Ctrue; userZip=91744; country=us; hashedIp=e254a6954ed7a8f960da0d43231c9bcd91eef4d566fd72f864c24baa1fdebff9; _dd_s=rum=0&expire=1761703552734; client_type=html5; client_version=4.7.1; espn-prev-page=espn%3Af1%3Astandings; country=us; edition=espn-en-us; edition-view=espn-en-us; region=ccpa',
-  'Upgrade-Insecure-Requests': '1',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'none',
-  'Sec-Fetch-User': '?1',
-  'If-Modified-Since': 'Wed, 29 Oct 2025 01:52:06 GMT',
-  'Priority': 'u=0, i',
-  'TE': 'trailers'
-}
-
-response = requests.get(url, headers=headers)
-
-f1_data = response.text
-
-soup = BeautifulSoup(f1_data, "html.parser")
-
-table = soup.find("table", class_="Table")
-
-drivers_data = []
-
-for row in table.find_all("tr")[1:]: 
-    cols = row.find_all("td")
-    if len(cols) < 2:
-        continue
-    name_text = None
-    link = cols[0].find("a")
-    if link and link.get_text(strip=True):
-        name_text = link.get_text(strip=True)
-    else:
-        raw_text = cols[0].get_text(separator=" ", strip=True)
-        m = re.match(r"^(\d+)\s*[A-Z]{2,3}\s+(.*)$", raw_text)
-        name_text = m.group(2) if m else raw_text
-    points = cols[1].get_text(strip=True)
-    drivers_data.append({
-        "driver": name_text,
-        "points": int(points) if points.isdigit() else points,
-        "results": []
-    })
-
-
-with open("public/data/espn_driver_standings.json", "w", encoding="utf-8") as out:
-    json.dump(drivers_data, out, indent=2, ensure_ascii=False)
-
-print("[OK] Driver Standings")
-
-
-#Race Results
 
 
 
@@ -98,6 +39,9 @@ event_ids = re.findall(pattern, f1_calender)
 
 
 unique_sorted = sorted(set(event_ids))
+
+# --- Extract schedule data from calendar page ---
+schedule_data = []
 
 # Separate session containers
 race_sessions = []
@@ -138,6 +82,22 @@ for race_ID in unique_sorted:
     # --- Extract country from embedded JSON ---
     country_match = re.search(r'"address"\s*:\s*{[^}]*"country"\s*:\s*"([^"]+)"', f1_race_data)
     country = country_match.group(1) if country_match else "Unknown"
+
+    # --- Store current round number before incrementing (used for both schedule and session data) ---
+    current_round = round_number
+
+    # --- Add to schedule data (only once per race, before processing sessions) ---
+    schedule_data.append({
+        "round": current_round,
+        "event_name": event_name,
+        "circuit_name": circuit_name,
+        "country": country,
+        "date": date_text,
+        "event_id": race_ID
+    })
+
+    # Increment round after adding to schedule (before processing sessions)
+    round_number += 1
 
     # --- Extract session data ---
     pattern = r'"title"\s*:\s*"([^"]+)"[\s\S]*?"data":\s*\[(.*?)\]\s*[,}]'
@@ -182,7 +142,7 @@ for race_ID in unique_sorted:
 
         # --- Build session JSON ---
         session_json = {
-            "round": round_number,
+            "round": current_round,
             "event_name": event_name,
             "circuit_name": circuit_name,
             "country": country,
@@ -235,21 +195,20 @@ for race_ID in unique_sorted:
         elif session_type.lower() == "practice":
             fp_sessions.append(session_json)
 
-    # Increment round after all sessions for this event are processed
-    round_number += 1
-
 
 # --- ✅ Save all results separately ---
 def save_json(filename, data):
     with open(filename, "w", encoding="utf-8") as out:
         json.dump(data, out, indent=2, ensure_ascii=False)
 
+save_json("public/data/f1_schedule.json", schedule_data)
 save_json("public/data/espn_race_data.json", race_sessions)
 save_json("public/data/espn_sprint_data.json", sprint_sessions)
 
 save_json("public/data/espn_fp_data.json", fp_sessions)
 
-print ("[OK] Race Data saved")
+print("[OK] Schedule Data saved")
+print("[OK] Race Data saved")
 
 
 

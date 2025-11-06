@@ -1158,7 +1158,7 @@ const NFL = () => {
         ))}
 
         {/* Schedule Tab */}
-        <TabsContent value="schedule">
+        <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-4">
           <ScheduleNFLViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
         </TabsContent>
       </Tabs>
@@ -1502,7 +1502,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {games.map((g) => {
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
@@ -1530,11 +1530,11 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
               : [];
 
             return (
-              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border">
+              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-2">
                 {/* TV Badges */}
                 {/* TV provider badges removed as requested */}
 
-                <CardContent className="p-4">
+                <CardContent className="pt-3">
                   <div className="grid grid-cols-3 items-center">
                     {/* Away */}
                     <div className="flex flex-col items-center justify-center gap-1">
@@ -1542,20 +1542,14 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                         <img
                           src={awayLogo}
                           alt={awayAbbr || 'Away'}
-                          className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            filter: isFinal && awayWin
-                              ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
-                              : undefined,
-                          }}
+                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
                           width={64}
                           height={64}
                         />
                       )}
-                      <div className="text-sm font-semibold text-center truncate max-w-[9rem]">
+                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
                         {g.matchup ? g.matchup.split('@')[0]?.trim() : (awayAbbr || 'Away')}
                       </div>
                     </div>
@@ -1566,7 +1560,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                         const s = String(g.status || '').toLowerCase();
                         if (s === 'final') {
                           return (
-                            <div className="font-extrabold tracking-wide text-2xl">
+                            <div className="font-extrabold tracking-wide text-xl md:text-2xl">
                               <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                               <span className="mx-2 text-muted-foreground">-</span>
                               <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
@@ -1574,9 +1568,9 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                           );
                         }
                         if (s.includes('live')) {
-                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>;
+                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
                         }
-                        return <div className="font-bold text-base">{g.time || 'TBA'}</div>;
+                        return <div className="font-bold text-lg md:text-xl">{g.time || 'TBA'}</div>;
                       })()}
                       {g.tv && providers.length === 0 && (
                         <div className="text-[10px] text-muted-foreground truncate mx-auto max-w-[140px]">{String(g.tv)}</div>
@@ -1589,27 +1583,21 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                         <img
                           src={homeLogo}
                           alt={homeAbbr || 'Home'}
-                          className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            filter: isFinal && homeWin
-                              ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
-                              : undefined,
-                          }}
+                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
                           width={64}
                           height={64}
                         />
                       )}
-                      <div className="text-sm font-semibold text-center truncate max-w-[9rem]">
+                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
                         {g.matchup ? g.matchup.split('@')[1]?.trim() : (homeAbbr || 'Home')}
                       </div>
                     </div>
                   </div>
 
                   {/* Footer: location */}
-                  <div className="mt-3 text-xs text-muted-foreground text-center">{g.location || ''}</div>
+                  <div className="mt-2 text-xs text-muted-foreground text-center">{g.location || ''}</div>
                 </CardContent>
               </Card>
             );

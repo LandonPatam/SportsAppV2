@@ -51,6 +51,16 @@ interface RaceResult {
  * DATA PROCESSING
  * ============================================================================ */
 
+// Schedule interface
+interface ScheduleItem {
+  round: number;
+  event_name: string;
+  circuit_name: string;
+  country: string;
+  date: string;
+  event_id: string;
+}
+
 // Dynamic data state (loaded from public/data)
 const useF1Data = () => {
   const [driversRaw, setDriversRaw] = useState<any[]>([]);
@@ -58,6 +68,7 @@ const useF1Data = () => {
   const [qualData, setQualData] = useState<RaceResult[]>([]);
   const [sprintData, setSprintData] = useState<RaceResult[]>([]);
   const [fpData, setFpData] = useState<RaceResult[]>([]);
+  const [scheduleData, setScheduleData] = useState<ScheduleItem[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -73,12 +84,13 @@ const useF1Data = () => {
     };
 
     const loadAll = async () => {
-      const [drivers, race, qual, sprint, fp] = await Promise.all([
+      const [drivers, race, qual, sprint, fp, schedule] = await Promise.all([
         fetchJson<any[]>(`/data/espn_driver_standings.json`, []),
         fetchJson<RaceResult[]>(`/data/espn_race_data.json`, []),
         fetchJson<RaceResult[]>(`/data/espn_qualifying_data.json`, []),
         fetchJson<RaceResult[]>(`/data/espn_sprint_data.json`, []),
         fetchJson<RaceResult[]>(`/data/espn_fp_data.json`, []),
+        fetchJson<ScheduleItem[]>(`/data/f1_schedule.json`, []),
       ]);
       if (!alive) return;
       setDriversRaw(drivers || []);
@@ -86,6 +98,7 @@ const useF1Data = () => {
       setQualData(qual || []);
       setSprintData(sprint || []);
       setFpData(fp || []);
+      setScheduleData(schedule || []);
     };
 
     loadAll();
@@ -131,7 +144,48 @@ const useF1Data = () => {
     );
   }, [raceData, sprintData, qualData, fpData]);
 
-  return { sortedDrivers, f1Drivers, raceResults };
+  // Find next race from schedule
+  const lastCompletedRound = useMemo(() => {
+    const racesOnly = (raceData || []).filter((x) => x.session_type === 'Race');
+    if (racesOnly.length === 0) return 0;
+    return racesOnly.reduce((max, r) => (r.round > max ? r.round : max), 0);
+  }, [raceData]);
+
+  const nextRace = useMemo(() => {
+    if (!scheduleData || scheduleData.length === 0) return null;
+
+    // Primary: next round after the last completed Race in results
+    if (lastCompletedRound > 0) {
+      const byRound = scheduleData.find((s) => s.round === lastCompletedRound + 1);
+      if (byRound) return byRound;
+    }
+
+    // Fallback: date-based selection
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const parseRaceDate = (dateStr: string): Date | null => {
+      if (!dateStr || dateStr === 'Unknown Date') return null;
+      try {
+        const d1 = new Date(dateStr);
+        if (!isNaN(d1.getTime())) return d1;
+        const rangeMatch = dateStr.match(/(?:\w+\s+\d{1,2})\s*-\s*(\w+\s+\d{1,2},\s*\d{4})/);
+        if (rangeMatch && rangeMatch[1]) {
+          const d2 = new Date(rangeMatch[1]);
+          if (!isNaN(d2.getTime())) return d2;
+        }
+      } catch {}
+      return null;
+    };
+
+    for (const race of scheduleData) {
+      const raceDate = parseRaceDate(race.date);
+      if (raceDate && raceDate >= now) return race;
+    }
+    return null;
+  }, [scheduleData, lastCompletedRound]);
+
+  return { sortedDrivers, f1Drivers, raceResults, scheduleData, nextRace };
 };
 
 /* ============================================================================
@@ -143,13 +197,28 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Red Bull': { primary: '#001F3F', secondary: '#DC1E2D' },
   'Ferrari': { primary: '#ff0000ff', secondary: '#ff0000ff' },
   'Mercedes': { primary: '#00A19C', secondary: '#000000' },
-  'McLaren': { primary: '#FF8700', secondary: '#5c5b5bff' },
+  'McLaren': { primary: '#FF8700', secondary: '#FF8700' },
   'Aston Martin': { primary: '#00665E', secondary: '#000000ff' },
   'Alpine': { primary: '#0071C2', secondary: '#FF4F5E' },
   'Williams': { primary: '#00AEEF', secondary: '#002F6C' },
   'Racing Bulls': { primary: '#001F3F', secondary: '#000dffff' },
   'Haas': { primary: '#da0202ff', secondary: '#000000ff' },
   'Sauber': { primary: '#00FF00', secondary: '#000000' },
+};
+
+// Team gradient colors for card borders (similar to NBA)
+const teamGradientColors: Record<string, { start: string; end: string }> = {
+  'Red Bull Racing': { start: '#001F3F', end: '#DC1E2D' },
+  'Red Bull': { start: '#DC1E2D', end: '#001F3F' },
+  'Ferrari': { start: '#ff0000ff', end: '#600013ff' },
+  'Mercedes': { start: '#00A19C', end: '#004442ff' },
+  'McLaren': { start: '#FF8700', end: '#8c4b00ff' },
+  'Aston Martin': { start: '#00665E', end: '#00302cff' },
+  'Alpine': { start: '#0071C2', end: '#FF4F5E' },
+  'Williams': { start: '#00AEEF', end: '#002F6C' },
+  'Racing Bulls': { start: '#000dffff', end: '#001F3F' },
+  'Haas': { start: '#da0202ff', end: '#000000ff' },
+  'Sauber': { start: '#00FF00', end: '#000000' },
 };
 
 /* ============================================================================
@@ -246,6 +315,107 @@ const DarkModeToggle = () => {
 
 
 
+
+/* ============================================================================
+ * DASHBOARD DRIVER MINI CARD COMPONENT (NBA Style)
+ * ============================================================================ */
+
+const DashboardDriverMiniCard = React.forwardRef<HTMLDivElement, { driver: F1Driver; onClick: () => void; highlight?: boolean }>(
+  ({ driver, onClick, highlight = false }, ref) => {
+    const colors = teamColors[driver.team] || { primary: '#888', secondary: '#ccc' };
+    return (
+      <div
+        ref={ref}
+        className={`relative rounded-xl overflow-hidden transition-all duration-300 cursor-pointer`}
+        onClick={onClick}
+        style={
+          highlight
+            ? {
+                boxShadow: `0 0 18px rgba(255,255,255,0.55)`,
+                outline: `2px solid rgba(255,255,255,0.85)`,
+                outlineOffset: '0px',
+              }
+            : undefined
+        }
+      >
+        <div 
+          className="absolute inset-0.5 rounded-lg" 
+          style={{ backgroundColor: '#16181d47' }}
+          aria-hidden 
+        />
+        <div className="relative z-10 flex items-center gap-4 p-3 border">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold truncate">{driver.name}</div>
+            <div className="text-xs text-muted-foreground truncate">{driver.team}</div>
+          </div>
+          <Badge 
+            className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black"
+            style={{
+              backgroundColor: colors.primary,
+              color: 'white',
+            }}
+          >
+            P{driver.position}
+          </Badge>
+          <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+            {driver.points} pts
+          </Badge>
+        </div>
+      </div>
+    );
+  }
+);
+DashboardDriverMiniCard.displayName = 'DashboardDriverMiniCard';
+
+/* ============================================================================
+ * F1 TEAM CARD COMPONENT (NBA Style with Gradient Border)
+ * ============================================================================ */
+
+interface F1TeamData {
+  team: string;
+  points: number;
+  drivers: F1Driver[];
+}
+
+const F1TeamCard = ({ teamData }: { teamData: F1TeamData }) => {
+  const colors = teamColors[teamData.team] || { primary: '#888', secondary: '#ccc' };
+  const gradient = teamGradientColors[teamData.team] || { start: '#888', end: '#ccc' };
+  const totalWins = teamData.drivers.reduce((sum, d) => sum + d.wins, 0);
+  const totalPodiums = teamData.drivers.reduce((sum, d) => sum + d.podiums, 0);
+
+  return (
+    <div
+      className="relative rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(300deg, ${gradient.end}, ${gradient.start})`,
+        padding: '5px',
+      }}
+    >
+      {/* === Dark overlay over the gradient === */}
+      <div
+        className="absolute inset-1 rounded-xl"
+        style={{
+          backgroundColor: '#1d1d1dff',
+          opacity: 1,
+        }}
+        aria-hidden
+      />
+
+      {/* === Foreground content (same structure as driver card) === */}
+      <div className="relative z-10 flex items-center gap-4 p-2 border-none">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold truncate">{teamData.team}</div>
+          <div className="text-xs text-muted-foreground truncate">
+            {totalWins} Wins • {totalPodiums} Podiums
+          </div>
+        </div>
+        <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+          {teamData.points} pts
+        </Badge>
+      </div>
+    </div>
+  );
+};
 
 /* ============================================================================
  * DRIVER CARD COMPONENT
@@ -773,56 +943,238 @@ const RaceModal = ({
  * ============================================================================ */
 
 const F1 = () => {
-  const { sortedDrivers, f1Drivers, raceResults } = useF1Data();
+  const { sortedDrivers, f1Drivers, raceResults, nextRace } = useF1Data();
   const [selectedTab, setSelectedTab] = useState<string>('standings');
   const [selectedDriver, setSelectedDriver] = useState<F1Driver | null>(null);
   const [selectedRace, setSelectedRace] = useState<RaceResult | null>(null);
 
+  // Lock page scrolling only on the Dashboard tab; allow scroll on Race Results
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlOverscroll = (html.style as any).overscrollBehavior;
+    const prevBodyOverscroll = (body.style as any).overscrollBehavior;
+
+    if (selectedTab === 'standings') {
+      html.style.overflow = 'hidden';
+      body.style.overflow = 'hidden';
+      (html.style as any).overscrollBehavior = 'none';
+      (body.style as any).overscrollBehavior = 'none';
+    } else {
+      html.style.overflow = prevHtmlOverflow || '';
+      body.style.overflow = prevBodyOverflow || '';
+      (html.style as any).overscrollBehavior = prevHtmlOverscroll || '';
+      (body.style as any).overscrollBehavior = prevBodyOverscroll || '';
+    }
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      (html.style as any).overscrollBehavior = prevHtmlOverscroll || '';
+      (body.style as any).overscrollBehavior = prevBodyOverscroll || '';
+    };
+  }, [selectedTab]);
+
   const resultsByDriver = useMemo(() => raceResults, [raceResults]);
+
+  // Calculate team standings (aggregate points by team)
+  const teamStandings = useMemo(() => {
+    const teamMap = new Map<string, F1TeamData>();
+    
+    f1Drivers.forEach((driver) => {
+      const existing = teamMap.get(driver.team);
+      if (existing) {
+        existing.points += driver.points;
+        existing.drivers.push(driver);
+      } else {
+        teamMap.set(driver.team, {
+          team: driver.team,
+          points: driver.points,
+          drivers: [driver],
+        });
+      }
+    });
+
+    return Array.from(teamMap.values()).sort((a, b) => b.points - a.points);
+  }, [f1Drivers]);
 
   return (
     <PageLayout>
       {/* Dark mode toggle */}
-      <div className="flex justify-end">
+      <div className="flex justify-end overflow-hidden">
       </div>
 
-      <Tabs defaultValue="standings" className="w-full" onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
-          <TabsTrigger value="standings">Championship</TabsTrigger>
+      <div className="h-[calc(100vh-30px)] overflow-hidden">
+      <Tabs defaultValue="standings" className="w-full h-full" onValueChange={setSelectedTab}>
+        <TabsList className="grid w-full grid-cols-2 mb-6 max-w-none">
+          <TabsTrigger value="standings">Dashboard</TabsTrigger>
           <TabsTrigger value="races">Race Results</TabsTrigger>
         </TabsList>
 
         {/* Championship Standings Tab */}
-        <TabsContent value="standings">
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold mb-4">Drivers' Championship</h2>
-            <div className="grid grid-cols-1 gap-3">
-              {sortedDrivers.map((driver) => (
-                <DriverCard
-                  key={driver.id}
-                  driver={driver}
-                  onClick={() => setSelectedDriver(driver)}
-                />
-              ))}
+        <TabsContent value="standings" className="overflow-hidden">
+          {/* === Outer Grid === */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-100px)] overflow-hidden -mt-0">
+            
+            {/* === LEFT COLUMN (2 equal static cards) === */}
+            <div className="flex flex-col gap-4 lg:col-span-7 h-full overflow-hidden">
+              {/* Top Drivers */}
+              <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
+                  <div className="mb-3 px-1 flex-shrink-0">
+                  </div>
+                  <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
+                    {(() => {
+                      const topDrivers = sortedDrivers.slice(0, Math.ceil(sortedDrivers.length));
+                      return topDrivers.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {topDrivers.map((driver) => (
+                            <DashboardDriverMiniCard
+                              key={driver.id}
+                              driver={driver}
+                              onClick={() => setSelectedDriver(driver)}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground py-4">No driver data</div>
+                      );
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Teams */}
+              <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
+                  <div className="mb-3 px-0 flex-shrink-0">
+                  </div>
+                  <div className="flex-1 min-h-0 px-3 pb-4 overflow-hidden">
+                    {teamStandings.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {teamStandings.map((teamData) => (
+                          <F1TeamCard key={teamData.team} teamData={teamData} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground py-4">No team data</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* === RIGHT COLUMN === */}
+            <div className="lg:col-span-5 h-full overflow-hidden">
+              <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
+                  <div className="mb-5 px-1 flex-shrink-0">
+                    <h2 className="text-2xl font-bold mb-4 px-4 pt-4">Next Race</h2>
+                  </div>
+                  <div className="flex-1 min-h-0 px-4 pb-4 overflow-hidden">
+                    {nextRace ? (
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge
+                              variant="default"
+                              style={{ backgroundColor: "#00e5ffff", color: "#000000c4" }}
+                              className="text-sm"
+                            >
+                              Round {nextRace.round}
+                            </Badge>
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2">{nextRace.event_name}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{nextRace.circuit_name}</p>
+                          <p className="text-xs text-muted-foreground">{nextRace.country}   {nextRace.date}</p>
+                        </div>
+                        <NeonTrack circuitId={nextRace.round} />
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground py-4">No upcoming races scheduled</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Next Race Card */}
+              <Card className="bg-card border w-full h-full flex flex-col overflow-hidden mt-4">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
+                  <div className="mb-5 px-1 flex-shrink-0">
+                    <h2 className="text-2xl font-bold mb-4 px-4 pt-4">Next Race</h2>
+                  </div>
+                  <div className="flex-1 min-h-0 px-4 pb-4 overflow-hidden">
+                    {nextRace ? (
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="default" style={{ backgroundColor: "#00e5ffff", color: "#000000c4" }} className="text-sm">
+                              Round {nextRace.round}
+                            </Badge>
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2">{nextRace.event_name}</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {nextRace.circuit_name}   {nextRace.country}
+                          </p>
+                          <div className="text-sm text-muted-foreground">
+                            <span className="font-semibold">Date:</span> {nextRace.date}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground py-4">No upcoming races scheduled</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
 
         {/* Race Results Tab */}
-        <TabsContent value="races">
-          <div className="space-y-6">
+        <TabsContent value="races" className="h-full overflow-y-auto">
+          <div className="space-y-4">
             <h2 className="text-2xl font-bold mb-4">2025 Season Race Results</h2>
 
             {raceResults.length > 0 ? (
               // Group races by round number (combines GP + Sprint into one card)
               (() => {
-                const grouped = Object.values(
-                  raceResults.reduce((acc: any, race) => {
-                    if (!acc[race.round]) acc[race.round] = [];
-                    acc[race.round].push(race);
-                    return acc;
-                  }, {})
-                );
+                const groupedObj = raceResults.reduce((acc: any, race) => {
+                  if (!acc[race.round]) acc[race.round] = [];
+                  acc[race.round].push(race);
+                  return acc;
+                }, {});
+
+                // Sort by round number and convert to array
+                // Deduplicate: if multiple races have same round+event, keep only the Race type
+                const grouped = Object.entries(groupedObj)
+                  .map(([round, races]: [string, any]) => {
+                    const raceList = races as RaceResult[];
+                    // Deduplicate by event_name - prefer Race type
+                    const seen = new Map<string, RaceResult>();
+                    for (const race of raceList) {
+                      const key = race.event_name;
+                      if (!seen.has(key)) {
+                        seen.set(key, race);
+                      } else {
+                        const existing = seen.get(key)!;
+                        // Prefer Race over Sprint, Sprint over other types
+                        if (race.session_type === 'Race' && existing.session_type !== 'Race') {
+                          seen.set(key, race);
+                        } else if (race.session_type === 'Sprint' && existing.session_type !== 'Race' && existing.session_type !== 'Sprint') {
+                          seen.set(key, race);
+                        }
+                      }
+                    }
+                    return {
+                      round: parseInt(round, 10),
+                      races: Array.from(seen.values())
+                    };
+                  })
+                  .sort((a, b) => a.round - b.round)
+                  .map(({ races }) => races);
 
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -914,6 +1266,7 @@ const F1 = () => {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Render modals when driver or race is selected */}
       {selectedDriver && (
@@ -1053,7 +1406,7 @@ const trackStyles: Record<number, React.CSSProperties & { orbSize?; orbSpeed?: s
     orbSize: 6 / 0.8
   },
    18: {
-    transform: "scale(0.71) translate(-20%, -3%) rotate(-20deg)",
+    transform: "scale(0.71) translate(-16%, -3%) rotate(-12deg)",
     transformOrigin: "center",
     orbSize: 6 / 0.71
   },
@@ -1096,14 +1449,15 @@ const trackStyles: Record<number, React.CSSProperties & { orbSize?; orbSpeed?: s
 interface NeonTrackProps {
   circuitName?: string;
   circuitId?: number;
+  // Positioning controls (in SVG units)
+  offsetX?: number;
+  offsetY?: number;
+  // Optional styling hooks
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-interface NeonTrackProps {
-  circuitName?: string;
-  circuitId?: number;
-}
-
-const NeonTrack = ({ circuitId }: NeonTrackProps) => {
+const NeonTrack = ({ circuitId, offsetX = 0, offsetY = 0, className, style }: NeonTrackProps) => {
   const id = circuitId ?? null;
   const path = (id && trackPaths[id]) || trackPaths[1]; // fallback (e.g., Bahrain)
   const customStyle = (id && trackStyles[id]) || {};
@@ -1114,7 +1468,7 @@ const NeonTrack = ({ circuitId }: NeonTrackProps) => {
   const orbSize = (customStyle as any).orbSize || 8;
 
   return (
-    <div className="flex justify-center w-full overflow-visible">
+    <div className={`flex justify-center w-full overflow-visible ${className ?? ''}`} style={style}>
       <svg
         viewBox="0 0 400 120"
         xmlns="http://www.w3.org/2000/svg"
@@ -1123,7 +1477,6 @@ const NeonTrack = ({ circuitId }: NeonTrackProps) => {
           overflow: "visible",
           width: "100%",
           height: "auto",
-          transform: "scale(0.9) rotate(-55deg)",
           transformOrigin: "center",
           transformBox: "fill-box",
         }}
@@ -1144,7 +1497,8 @@ const NeonTrack = ({ circuitId }: NeonTrackProps) => {
           </linearGradient>
         </defs>
 
-        <g style={customStyle}>
+        {/* Outer transform to allow manual positioning */}
+        <g transform={`translate(${offsetX}, ${offsetY})`} style={customStyle}>
           {/* === Main neon track === */}
           <path
             id={`track-${id ?? "default"}`}
@@ -1173,6 +1527,14 @@ const NeonTrack = ({ circuitId }: NeonTrackProps) => {
   >
     <mpath href={`#track-${id ?? "default"}`} />
   </animateMotion>
+  {/* Fade out/in at loop boundary to hide jump */}
+  <animate
+    attributeName="opacity"
+    values="0.4;0.4;0;0;0.4"
+    keyTimes="0;0.92;0.96;0.98;1"
+    dur={orbSpeed}
+    repeatCount="indefinite"
+  />
 </circle>
 
 {/* === Main bright orb with smooth easing === */}
@@ -1192,6 +1554,14 @@ const NeonTrack = ({ circuitId }: NeonTrackProps) => {
   >
     <mpath href={`#track-${id ?? "default"}`} />
   </animateMotion>
+  {/* Fade out/in at loop boundary to hide jump */}
+  <animate
+    attributeName="opacity"
+    values="1;1;0;0;1"
+    keyTimes="0;0.92;0.96;0.98;1"
+    dur={orbSpeed}
+    repeatCount="indefinite"
+  />
 </circle>
         </g>
 

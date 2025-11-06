@@ -428,9 +428,12 @@ const DashboardTodaySchedule = ({
       setAvailPx(available);
 
       // Estimate natural height based on baseline sizes
-      const n = Math.max(1, games.length);
+      // If there's only 1 game, size as if there were 2 so the single card
+      // doesn't expand to fill the entire column height.
+      const nActual = Math.max(1, games.length);
+      const nForScale = Math.max(2, nActual);
       // Include top and bottom edge gap so inter-card gap equals edge gap
-      const naturalHeight = n * BASE_CARD + (n - 1 + 2) * BASE_GAP;
+      const naturalHeight = nForScale * BASE_CARD + (nForScale - 1 + 2) * BASE_GAP;
       const FUDGE = 0.97; // slight undershoot to avoid cutoff
       const sRaw = (available / naturalHeight) * FUDGE;
       const s = Math.max(MIN_SCALE, Math.min(MAX_SCALE, sRaw * FUDGE));
@@ -465,7 +468,7 @@ const DashboardTodaySchedule = ({
   return (
     <div
       ref={containerRef}
-      className="grid grid-cols-1"
+      className="grid grid-cols-1 auto-rows-max items-start content-start"
       style={{
         rowGap: gap,
         paddingTop: gap,
@@ -957,7 +960,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {games.map((g) => {
             // Derive home/away abbreviations and logos
             let awayAbbr = (g as any).away as string | undefined;
@@ -995,10 +998,10 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
             const homeName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
 
             return (
-              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-4">
+              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-2">
                 {/* TV Badges top-right */}
                 {providers.length > 0 && (
-                  <div className="absolute top-2 right-2 flex flex-wrap justify-end gap-1 max-w-[220px]">
+                  <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px]">
                     {providers.map((p) => {
                       const name = String(p).toLowerCase();
                       let style: React.CSSProperties | undefined;
@@ -1010,7 +1013,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         style = { backgroundColor: '#C8102E', color: '#ffffff' };
                       }
                       return (
-                        <Badge key={p} className="text-[10px] font-semibold px-2 py-0.5" style={style}>
+                        <Badge key={p} className="text-[9px] font-semibold px-1.5 py-0.5" style={style}>
                           {p}
                         </Badge>
                       );
@@ -1018,7 +1021,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                   </div>
                 )}
 
-                <CardContent className="pt-6">
+                <CardContent className="pt-3">
                   <div className="grid grid-cols-3 items-center">
                     {/* Away side */}
                     <div className="flex flex-col items-center justify-center gap-2">
@@ -1026,14 +1029,14 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         <img
                           src={awayLogo}
                           alt={awayAbbr || 'Away'}
-                          className={`h-10 w-10 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
                           style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
                           width={64}
                           height={64}
                         />
                       )}
-                      <div className="text-sm font-semibold text-center truncate max-w-[9rem]">
+                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
                         {awayName || awayAbbr || 'Away'}
                       </div>
                     </div>
@@ -1046,20 +1049,20 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         const isFinal2 = statusText2.includes('final') || Boolean((g as any).winner);
                         const isLive2 = (statusText2.includes('live') || statusText2.includes('in progress')) || (hasScores2 && !isFinal2);
                         if (isLive2) {
-                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>;
+                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
                         }
                         if (hasScores2) {
                           const a = parseInt((g as any).away_score as string, 10);
                           const h = parseInt((g as any).home_score as string, 10);
                           return (
-                            <div className="text-2xl md:text-3xl font-extrabold tracking-wide">
+                            <div className="text-xl md:text-2xl font-extrabold tracking-wide">
                               <span className={(a >= h) ? 'text-white' : 'text-white/50'}>{(g as any).away_score}</span>
                               <span className="mx-2 text-muted-foreground">-</span>
                               <span className={(h >= a) ? 'text-white' : 'text-white/50'}>{(g as any).home_score}</span>
                             </div>
                           );
                         }
-                        return <div className="text-xl md:text-2xl font-bold">{g.time || 'TBA'}</div>;
+                        return <div className="text-lg md:text-xl font-bold">{g.time || 'TBA'}</div>;
                       })()}
                     </div>
 
@@ -1069,21 +1072,21 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         <img
                           src={homeLogo}
                           alt={homeAbbr || 'Home'}
-                          className={`h-10 w-10 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
                           style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
                           width={64}
                           height={64}
                         />
                       )}
-                      <div className="text-sm font-semibold text-center truncate max-w-[9rem]">
+                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
                         {homeName || homeAbbr || 'Home'}
                       </div>
                     </div>
                   </div>
 
                   {/* Footer: arena centered */}
-                  <div className="mt-4 text-xs text-muted-foreground text-center">
+                  <div className="mt-2 text-xs text-muted-foreground text-center">
                     {(g as any).location || ''}
                   </div>
                 </CardContent>
@@ -1446,7 +1449,7 @@ return (
               <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
               <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
               <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
-              <StatRow label="APG" value={team.AST.toFixed(1)} highlight={getHighlight('AST')} />
+              <StatRow label="BPI" value={typeof (team as any).bpi === 'number' ? (team as any).bpi.toFixed(1) : ((team as any).bpi ?? '-')} />
             </div>
             <div className="space-y-2">
               <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
@@ -1461,10 +1464,10 @@ return (
               <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
             </div>
             <div className="space-y-2">
-              <StatRow label="3PM" value={team.FG3M.toFixed(1)} highlight={getHighlight('FG3M')} />
-              <StatRow label="3PA" value={team.FG3A.toFixed(1)} highlight={getHighlight('FG3A')} />
-              <StatRow label="FTM" value={team.FTM.toFixed(1)} highlight={getHighlight('FTM')} />
-              <StatRow label="FTA" value={team.FTA.toFixed(1)} highlight={getHighlight('FTA')} />
+              <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')} />
+              <StatRow label="DEF" value={typeof (team as any).def === 'number' ? (team as any).def.toFixed(1) : ((team as any).def ?? '-')} />
+              <StatRow label="PBPI" value={typeof (team as any).pbpi === 'number' ? (team as any).pbpi.toFixed(1) : ((team as any).pbpi ?? '-')} />
+              <StatRow label="BPI RK" value={(team as any).bpirank ?? '-'} />
             </div>
           </div>
         </CardContent>
