@@ -1003,10 +1003,10 @@ const F1 = () => {
   return (
     <PageLayout>
       {/* Dark mode toggle */}
-      <div className="flex justify-end overflow-hidden">
+      <div className="flex justify-end">
       </div>
 
-      <div className="h-[calc(100vh-30px)] overflow-hidden">
+      <div className="">
       <Tabs defaultValue="standings" className="w-full h-full" onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-2 mb-6 max-w-none">
           <TabsTrigger value="standings">Dashboard</TabsTrigger>
@@ -1016,7 +1016,7 @@ const F1 = () => {
         {/* Championship Standings Tab */}
         <TabsContent value="standings" className="overflow-hidden">
           {/* === Outer Grid === */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-100px)] overflow-hidden -mt-0">
+  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
             
             {/* === LEFT COLUMN (2 equal static cards) === */}
             <div className="flex flex-col gap-4 lg:col-span-7 h-full overflow-hidden">

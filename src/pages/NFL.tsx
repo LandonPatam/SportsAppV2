@@ -913,8 +913,8 @@ const NFL = () => {
             </div>
 
             {/* Right column: today's schedule + strength chart */}
-            <div className="lg:col-span-5 space-y-4">
-              <Card className="bg-card border w-full overflow-hidden">
+    <div className="lg:col-span-5 h-full overflow-hidden">
+      <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
                 <CardHeader className="p-0" />
                 <CardContent className="py-3 px-3">
                   <DashboardTodayScheduleNFL scheduleData={scheduleData} logoMap={abbrToLogo} />
