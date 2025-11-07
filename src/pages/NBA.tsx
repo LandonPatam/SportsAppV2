@@ -119,6 +119,9 @@ interface Player {
   THING?: number;
 }
 
+// Cache of the latest full team list for cross-component best-stat checks
+let ALL_TEAMS_CACHE: NBATeam[] = [];
+
 // ============================
 // Schedule Types (support multiple shapes)
 // ============================
@@ -269,6 +272,41 @@ const abbreviationToTeamName: Record<string, string> = Object.fromEntries(
   Object.entries(teamAbbreviations).map(([name, abbr]) => [abbr, name])
 );
 
+interface ResolvedGameTeams {
+  homeAbbr?: string;
+  awayAbbr?: string;
+  homeName?: string;
+  awayName?: string;
+}
+
+const resolveMatchupTeams = (game: ScheduleGameAny): ResolvedGameTeams => {
+  let awayAbbr = ((game as any).away || '').toString().trim().toUpperCase();
+  let homeAbbr = ((game as any).home || '').toString().trim().toUpperCase();
+  awayAbbr = awayAbbr || undefined;
+  homeAbbr = homeAbbr || undefined;
+  let awayName: string | undefined = (game as any).away_name;
+  let homeName: string | undefined = (game as any).home_name;
+
+  if ((!awayAbbr || !homeAbbr) && game.matchup) {
+    const parts = game.matchup.split('@');
+    const rawAway = parts[0]?.trim();
+    const rawHome = parts[1]?.trim();
+    if (rawAway) {
+      awayName = rawAway;
+      const abbr = (teamAbbreviations as any)[rawAway];
+      if (abbr) awayAbbr = String(abbr).toUpperCase();
+    }
+    if (rawHome) {
+      homeName = rawHome;
+      const abbr = (teamAbbreviations as any)[rawHome];
+      if (abbr) homeAbbr = String(abbr).toUpperCase();
+    }
+  }
+
+  if (!awayName && awayAbbr) awayName = abbreviationToTeamName[awayAbbr];
+  if (!homeName && homeAbbr) homeName = abbreviationToTeamName[homeAbbr];
+  return { awayAbbr, homeAbbr, awayName, homeName };
+};
 
 
 
@@ -327,21 +365,15 @@ DashboardTeamMiniCard.displayName = 'DashboardTeamMiniCard';
 
 const DashboardPlayerMiniCard = ({ player, logoMap, rank }: { player: Player; logoMap: Record<string, string>; rank?: number }) => {
   const abbr = player.TEAM_ABBREVIATION || 'UNK';
-  const colors = teamColors[abbr] || { primary: '#222', secondary: '#555' };
   const logo = logoMap[abbr];
   return (
-    <div
-      className="relative rounded-xl overflow-hidden"
-//      style={{
-//        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
-//        padding: '2px',
-//      }}
-    >
-<div 
-  className="absolute inset-0.5 rounded-lg" 
-  style={{ backgroundColor: '#16181d47' }}
-  aria-hidden 
-/>      <div className="relative z-10 flex items-center gap-4 p-3 border">
+    <div className="relative rounded-xl overflow-hidden">
+      <div
+        className="absolute inset-0.5 rounded-lg"
+        style={{ backgroundColor: '#16181d47' }}
+        aria-hidden
+      />
+      <div className="relative z-10 flex items-center gap-4 p-3 border">
         {logo && (
           <img
             src={logo}
@@ -396,62 +428,76 @@ const DashboardTodaySchedule = ({
     return arr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
   }, [scheduleData, todayKey]);
 
-  // Reactive scale so all cards fit without scrolling (vertical-only sizing)
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [scale, setScale] = React.useState(1);
-  const [availPx, setAvailPx] = React.useState(0);
-  const [ready, setReady] = React.useState(false);
+  // Keep cards auto-sized so the full slate fits without scrolling.
+  const shellRef = React.useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = React.useState(() => ({
+    gap: 12,
+    cardHeight: 120,
+    scale: 1,
+    ready: false,
+  }));
+
+  const recomputeLayout = React.useCallback(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    const rect = shell.getBoundingClientRect();
+    const available = rect.height;
+    if (!available || !Number.isFinite(available)) return;
+    const totalGames = Math.max(1, games.length);
+
+    // Push gaps down so cards can stretch taller within the column.
+    let gap = Math.max(2, Math.min(8, (available / (totalGames + 0.25)) * 0.25));
+    const gapBudget = gap * (totalGames + 1);
+    const maxGapBudget = available * 0.2;
+    if (gapBudget > maxGapBudget && maxGapBudget > 0) {
+      gap = maxGapBudget / (totalGames + 1);
+    }
+
+    const usable = Math.max(0, available - gap * (totalGames + 1));
+    const perCard = totalGames > 0 ? usable / totalGames : available;
+    const BASE_CARD = 105;
+    const scale = Math.max(0.6, Math.min(1.4, perCard / BASE_CARD));
+
+    setLayout((prev) => {
+      const next = {
+        gap,
+        cardHeight: perCard,
+        scale,
+        ready: true,
+      };
+      // Prevent extra renders if nothing changed meaningfully.
+      if (
+        Math.abs(prev.gap - next.gap) < 0.25 &&
+        Math.abs(prev.cardHeight - next.cardHeight) < 0.5 &&
+        Math.abs(prev.scale - next.scale) < 0.01 &&
+        prev.ready === next.ready
+      ) {
+        return prev;
+      }
+      try { onGapChange && onGapChange(Math.round(next.gap)); } catch {}
+      return next;
+    });
+  }, [games.length, onGapChange]);
+
   React.useLayoutEffect(() => {
-    const BASE_CARD = 92; // px baseline compact card height
-    const BASE_GAP = 12;  // px gap between cards
-    const MIN_SCALE = 0.6;
-    const MAX_SCALE = 1.5; // allow growing to fill the screen
-    const compute = () => {
-      const wrapper = containerRef.current as HTMLElement | null;
-      const rect = wrapper?.getBoundingClientRect();
-      const top = rect ? rect.top : 0;
+    if (typeof window === 'undefined') return;
+    const handleResize = () => recomputeLayout();
+    recomputeLayout();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize as any);
 
-      // Estimate extra space below the grid: padding/margins of CardContent/Card
-      let extraBottom = 16;
-      const contentEl = wrapper?.parentElement as HTMLElement | null; // CardContent
-      if (contentEl) {
-        const cs = window.getComputedStyle(contentEl);
-        extraBottom += (parseFloat(cs.paddingBottom || '0') || 0) + (parseFloat(cs.marginBottom || '0') || 0);
-      }
-      const cardEl = contentEl?.parentElement as HTMLElement | null; // Card
-      if (cardEl) {
-        const cs2 = window.getComputedStyle(cardEl);
-        extraBottom += (parseFloat(cs2.paddingBottom || '0') || 0) + (parseFloat(cs2.marginBottom || '0') || 0) + (parseFloat(cs2.borderBottomWidth || '0') || 0);
-      }
+    let observer: ResizeObserver | null = null;
+    if ('ResizeObserver' in window && shellRef.current) {
+      observer = new ResizeObserver(() => recomputeLayout());
+      observer.observe(shellRef.current);
+    }
 
-      const available = Math.max(100, window.innerHeight - top - extraBottom);
-      setAvailPx(available);
-
-      // Estimate natural height based on baseline sizes
-      // If there's only 1 game, size as if there were 2 so the single card
-      // doesn't expand to fill the entire column height.
-      const nActual = Math.max(1, games.length);
-      const nForScale = Math.max(2, nActual);
-      // Include top and bottom edge gap so inter-card gap equals edge gap
-      const naturalHeight = nForScale * BASE_CARD + (nForScale - 1 + 2) * BASE_GAP;
-      const FUDGE = 0.97; // slight undershoot to avoid cutoff
-      const sRaw = (available / naturalHeight) * FUDGE;
-      const s = Math.max(MIN_SCALE, Math.min(MAX_SCALE, sRaw * FUDGE));
-      setScale(s);
-      // compute current gap (used for equal edge spacing)
-      const g = Math.round(12 * s);
-      try { onGapChange && onGapChange(g); } catch {}
-      setReady(true);
-    };
-    compute();
-    const onResize = () => compute();
-    window.addEventListener('resize', onResize);
-    window.addEventListener('orientationchange', onResize as any);
     return () => {
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('orientationchange', onResize as any);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize as any);
+      observer?.disconnect();
     };
-  }, [games.length, scheduleData]);
+  }, [recomputeLayout]);
 
   const focusTeam = React.useCallback(
     (teamAbbr?: string, fallbackName?: string) => {
@@ -464,21 +510,21 @@ const DashboardTodaySchedule = ({
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
   if (games.length === 0) return <div className="text-sm text-muted-foreground">No games today</div>;
 
-  const gap = Math.round(12 * scale);
+  const gap = layout.gap;
+  const scale = layout.scale;
   return (
-    <div
-      ref={containerRef}
-      className="grid grid-cols-1 auto-rows-max items-start content-start"
-      style={{
-        rowGap: gap,
-        paddingTop: gap,
-        paddingBottom: gap,
-        height: availPx ? `${availPx}px` : undefined,
-        overflow: 'hidden',
-        opacity: ready ? 1 : 0,
-        transition: 'opacity 120ms ease-out',
-      }}
-    >
+    <div ref={shellRef} className="flex-1 min-h-0 w-full h-full overflow-hidden">
+      <div
+        className="grid grid-cols-1 h-full items-start content-start"
+        style={{
+          rowGap: gap,
+          paddingTop: gap,
+          paddingBottom: gap,
+          height: '100%',
+          opacity: layout.ready ? 1 : 0,
+          transition: 'opacity 140ms ease-out',
+        }}
+      >
       {games.map((g) => {
         let awayAbbr = (g as any).away as string | undefined;
         let homeAbbr = (g as any).home as string | undefined;
@@ -497,6 +543,8 @@ const DashboardTodaySchedule = ({
         const normalizedHomeName = homeName || (homeAbbr ? abbreviationToTeamName[homeAbbr] : undefined);
         const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
         const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+        const awayRecord = awayAbbr ? recordMap[awayAbbr] : undefined;
+        const homeRecord = homeAbbr ? recordMap[homeAbbr] : undefined;
         const aScore = Number((g as any).away_score);
         const hScore = Number((g as any).home_score);
         const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
@@ -516,18 +564,28 @@ const DashboardTodaySchedule = ({
         const statusText = String((g as any).status || '').toLowerCase();
         const isFinal = statusText.includes('final') || Boolean((g as any).winner);
 
-        const cardPadding = Math.max(8, Math.round(12 * scale));
-          const logoSize = Math.max(18, Math.round(40 * scale));
-          const scoreFont = Math.max(16, Math.round(24 * scale));
-          const timeFont = Math.max(14, Math.round(20 * scale));
-          const nameFont = Math.max(11, Math.round(14 * scale));
-          const contentPad = Math.max(6, Math.round(10 * scale));
-          const contentSkew = Math.max(2, Math.round(4 * scale));
-          const topPad = Math.max(0, contentPad - (2 * contentSkew));
-          const bottomPad = contentPad + (2 * contentSkew);
+        const cardPadding = Math.max(6, Math.round(10 * scale));
+        const logoSize = Math.max(30, Math.round(72 * scale));
+        const scoreFont = Math.max(20, Math.round(32 * scale));
+        const timeFont = Math.max(14, Math.round(22 * scale));
+        const contentPad = Math.max(4, Math.round(8 * scale));
+        const contentSkew = Math.max(2, Math.round(4 * scale));
+        const topPad = Math.max(0, contentPad - 2 * contentSkew);
+        const bottomPad = contentPad + 2 * contentSkew;
+        const cardHeight = layout.cardHeight > 0 ? layout.cardHeight : undefined;
+        const recordFont = Math.max(10, Math.round(17 * scale));
+        const recordOffset = Math.max(12, Math.round(45 * scale));
 
-            return (
-          <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border" style={{ padding: cardPadding }}>
+        return (
+          <Card
+            key={g.game_id || `${g.matchup}-${g.date}`}
+              className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col"
+            style={{
+              padding: cardPadding,
+              height: cardHeight ? `${cardHeight}px` : undefined,
+              minHeight: 0,
+            }}
+          >
             
 
             {/* TV Badges top-right */}
@@ -552,15 +610,24 @@ const DashboardTodaySchedule = ({
               </div>
             )}
 
-            <CardContent className="p-0" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
-              <div className="grid grid-cols-3 items-center">
+            <CardContent
+              className="p-0 flex-1 flex flex-col"
+              style={{ paddingTop: topPad, paddingBottom: bottomPad }}
+            >
+              <div
+                className="grid items-center h-full min-h-0"
+                style={{
+                  gridTemplateColumns: `1fr minmax(${Math.max(140, Math.round(180 * scale))}px, auto) 1fr`,
+                  columnGap: Math.max(18, Math.round(26 * scale)),
+                }}
+              >
                 {/* Away side */}
-               <div className="flex flex-col items-center justify-center gap-1">
+               <div className="flex flex-col items-center justify-center">
                   {awayLogo && (
                     <button
                       type="button"
                       onClick={() => focusTeam(awayAbbr, normalizedAwayName)}
-                      className="rounded-sm focus:outline-none"
+                      className="rounded-sm focus:outline-none relative"
                       style={{ width: logoSize, height: logoSize }}
                       title={normalizedAwayName || awayAbbr || 'Away team'}
                     >
@@ -573,14 +640,16 @@ const DashboardTodaySchedule = ({
                         width={64}
                         height={64}
                       />
+                      {awayRecord && (
+                        <span
+                          className="absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+                          style={{ fontSize: recordFont, marginLeft: recordOffset }}
+                        >
+                          ({awayRecord.replace('-', ' - ')})
+                        </span>
+                      )}
                     </button>
                   )}
-                  <div className="text-center">
-                    <div className="font-semibold truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
-                      {normalizedAwayName || awayAbbr || 'Away'}
-                    </div>
-                
-                  </div>
                 </div>
 
                 {/* Center time or score */}
@@ -614,12 +683,12 @@ const DashboardTodaySchedule = ({
                 </div>
 
                 {/* Home side */}
-                <div className="flex flex-col items-center justify-center gap-1">
+                <div className="flex flex-col items-center justify-center">
                   {homeLogo && (
                     <button
                       type="button"
                       onClick={() => focusTeam(homeAbbr, normalizedHomeName)}
-                      className="rounded-sm focus:outline-none"
+                      className="rounded-sm focus:outline-none relative"
                       style={{ width: logoSize, height: logoSize }}
                       title={normalizedHomeName || homeAbbr || 'Home team'}
                     >
@@ -632,22 +701,24 @@ const DashboardTodaySchedule = ({
                         width={64}
                         height={64}
                       />
+                      {homeRecord && (
+                        <span
+                          className="absolute right-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] text-right"
+                          style={{ fontSize: recordFont, marginRight: recordOffset }}
+                        >
+                          ({homeRecord.replace('-', ' - ')})
+                        </span>
+                      )}
                     </button>
                   )}
 
-                  
-                  <div className="text-center">
-                    <div className="font-semibold truncate max-w-[9rem]" style={{ fontSize: nameFont }}>
-                      {normalizedHomeName || homeAbbr || 'Home'}
-                    </div>
-
-                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         );
       })}
+      </div>
     </div>
   );
 };
@@ -734,6 +805,8 @@ const statDescriptions: Record<string, string> = {
   "PPG": 'Points per game',
   "OFF": 'Offensive rating',
   "DEF": 'Defensive rating',
+  "BPI": 'ESPN Basketball Power Index',
+  "PBPI": 'Projected BPI',
   "OREB" : 'Offensive Rebounds',
   "DREB" : 'Defensive Rebounds',
   "3PM" : 'Three pointers made',
@@ -750,10 +823,12 @@ const StatRow = ({
 }: {
   label: string;
   value: string | number;
-  highlight?: 'high' | 'low' | 'neutral';
+  highlight?: 'high' | 'low' | 'neutral' | 'best';
 }) => {
   const colorClass =
-    highlight === 'high'
+    highlight === 'best'
+      ? 'text-yellow-300'
+      : highlight === 'high'
       ? 'text-green-400 font-semibold'
       : highlight === 'low'
       ? 'text-red-400 font-semibold'
@@ -1029,11 +1104,11 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         <img
                           src={awayLogo}
                           alt={awayAbbr || 'Away'}
-                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
                           style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
-                          width={64}
-                          height={64}
+                          width={72}
+                          height={72}
                         />
                       )}
                       <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
@@ -1072,11 +1147,11 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         <img
                           src={homeLogo}
                           alt={homeAbbr || 'Home'}
-                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
                           style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
-                          width={64}
-                          height={64}
+                          width={72}
+                          height={72}
                         />
                       )}
                       <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
@@ -1107,17 +1182,129 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
 // Displays a team's full roster in a modal
 // ============================
 
+const getPlayerValueScore = (p: Player) => {
+  const fgm = p.FG_PCT * p.FGA;
+  const ftm = p.FT_PCT * p.FTA;
+  const fgMisses = p.FGA - fgm;
+  const ftMisses = p.FTA - ftm;
+
+  const rawScore =
+    1.0 * p.PTS +
+    0.8 * p.AST +
+    0.6 * p.REB +
+    1.0 * p.STL +
+    0.8 * p.BLK -
+    1.0 * p.TOV -
+    0.7 * fgMisses -
+    0.5 * ftMisses;
+
+  const normalized = ((rawScore + 20) / 69) * 100;
+  return Math.max(0, Math.min(100, Number(normalized.toFixed(1))));
+};
+
+
+
+
 const PlayerModal = ({
   team,
   nbaPlayerData,
+  scheduleData,
+  logoMap,
   onClose,
 }: {
   team: NBATeam;
   nbaPlayerData: Record<string, Player[]>;
+  scheduleData: NBAScheduleData | null;
+  logoMap: Record<string, string>;
   onClose: () => void;
 }) => {
   const players: Player[] = nbaPlayerData[team.TEAM_ID.toString()] || [];
-  
+  const sortedPlayers = React.useMemo(() => {
+    return [...players].sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
+  }, [players]);
+  const [modalTab, setModalTab] = useState<'roster' | 'matchups'>('roster');
+  const teamAbbrRaw = teamAbbreviations[team.TEAM_NAME] || (team as any).TEAM_ABBREVIATION || 'UNK';
+  const teamAbbr = (teamAbbrRaw || 'UNK').toUpperCase();
+  const teamLogo = team.LOGO_URL || logoMap[teamAbbr];
+  const getGameTimestamp = (game: ScheduleGameAny) => {
+    if (game.date) {
+      const ts = Date.parse(game.date as string);
+      if (!Number.isNaN(ts)) return ts;
+    }
+    return 0;
+  };
+
+  const teamMatchups = React.useMemo(() => {
+    if (!scheduleData) return [] as Array<
+      ScheduleGameAny & ResolvedGameTeams & { isHome: boolean }
+    >;
+    const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
+      ? (scheduleData as ScheduleGameAny[])
+      : (scheduleData?.games || []);
+    const matches = gamesArr
+      .map((g) => {
+        const teams = resolveMatchupTeams(g);
+        return { ...g, ...teams };
+      })
+      .filter((g) => {
+        const home = (g as any).homeAbbr || '';
+        const away = (g as any).awayAbbr || '';
+        return home === teamAbbr || away === teamAbbr;
+      })
+      .map((g) => ({
+        ...g,
+        isHome: ((g as any).homeAbbr || '') === teamAbbr,
+      }))
+      .sort((a, b) => getGameTimestamp(a) - getGameTimestamp(b));
+    return matches;
+  }, [scheduleData, teamAbbr]);
+
+  const teamMatchupsWithRecord = React.useMemo(() => {
+    let wins = 0;
+    let losses = 0;
+    let ties = 0;
+    return teamMatchups.map((game) => {
+      const teamScore = Number(game.isHome ? (game as any).home_score : (game as any).away_score);
+      const opponentScore = Number(game.isHome ? (game as any).away_score : (game as any).home_score);
+      let outcome: 'W' | 'L' | 'T' | null = null;
+      if (Number.isFinite(teamScore) && Number.isFinite(opponentScore)) {
+        if (teamScore > opponentScore) {
+          wins += 1;
+          outcome = 'W';
+        } else if (teamScore < opponentScore) {
+          losses += 1;
+          outcome = 'L';
+        } else {
+          ties += 1;
+          outcome = 'T';
+        }
+      }
+      const baseRecord = `${wins}-${losses}`;
+      const recordLabel = ties > 0 ? `${baseRecord}-${ties}` : baseRecord;
+      return { ...game, teamScore, opponentScore, outcome, recordLabel };
+    });
+  }, [teamMatchups]);
+
+  const latestCompletedMatchupId = React.useMemo(() => {
+    for (let i = teamMatchupsWithRecord.length - 1; i >= 0; i -= 1) {
+      if (teamMatchupsWithRecord[i].outcome) {
+        return `matchup-${teamMatchupsWithRecord[i].game_id}`;
+      }
+    }
+    return null;
+  }, [teamMatchupsWithRecord]);
+
+  useEffect(() => {
+    if (modalTab !== 'matchups') return;
+    if (!latestCompletedMatchupId) return;
+    try {
+      const el = document.getElementById(latestCompletedMatchupId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch {}
+  }, [modalTab, latestCompletedMatchupId]);
+
 
 // 🧮 Compute averages for this specific team
 const teamAverages = React.useMemo(() => {
@@ -1195,7 +1382,15 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
       >
         {/* Header */}
         <div className="sticky top-0 bg-background border-b p-6 flex items-center justify-between z-10">
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex items-center gap-3">
+            {teamLogo && (
+              <img
+                src={teamLogo}
+                alt={`${team.TEAM_NAME} logo`}
+                className="w-10 h-10 rounded-md object-contain"
+                loading="lazy"
+              />
+            )}
             <h2 className="text-3xl font-bold">{team.TEAM_NAME}</h2>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors">
@@ -1203,72 +1398,238 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
           </button>
         </div>
 
-        {/* Roster Grid */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)]">
-          <h3 className="text-xl font-semibold mb-4">Roster ({players.length} Players)</h3>
+        {/* Roster / Matchups */}
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)] space-y-4">
+          <div className="inline-flex rounded-full bg-muted p-1">
+            <button
+              type="button"
+              className={`px-4 py-1 text-sm font-semibold rounded-full transition ${
+                modalTab === 'roster' ? 'bg-background text-white shadow' : 'text-muted-foreground'
+              }`}
+              onClick={() => setModalTab('roster')}
+            >
+              Roster
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-1 text-sm font-semibold rounded-full transition ${
+                modalTab === 'matchups' ? 'bg-background text-white shadow' : 'text-muted-foreground'
+              }`}
+              onClick={() => setModalTab('matchups')}
+            >
+              Matchups
+            </button>
+          </div>
+          {modalTab === 'roster' && (
+            <>
+              <h3 className="text-xl font-semibold mb-4">Roster ({players.length} Players)</h3>
+              {sortedPlayers.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sortedPlayers.map((player, index) => {
+                    const primary = teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af';
+                    const secondary = teamColors[player.TEAM_ABBREVIATION]?.secondary || '#b91c1c';
+                    return (
+                      <div
+                        key={player.PLAYER_ID}
+                        className="relative rounded-2xl overflow-hidden"
+                        style={{
+                          backgroundImage: `linear-gradient(300deg, ${primary}, ${secondary})`,
+                          padding: '3px',
+                          animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+                        }}
+                      >
+                        <div
+                          className="absolute inset-1 rounded-2xl"
+                          style={{ backgroundColor: '#1d1d1d', opacity: 1 }}
+                          aria-hidden
+                        />
+                        <div className="relative z-10 rounded-[18px] bg-[#0f0f0f]/80 p-4 border border-white/5 text-white">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="text-lg font-bold">{player.PLAYER_NAME}</div>
+                              <Badge
+                                className="text-xs font-semibold border mt-1"
+                                style={{
+                                  color: secondary,
+                                  backgroundColor: primary,
+                                  borderColor: secondary,
+                                  borderWidth: '2px',
+                                  padding: '0.25rem 0.55rem',
+                                  borderRadius: '0.4rem',
+                                  letterSpacing: '0.5px',
+                                }}
+                              >
+                                {player.TEAM_ABBREVIATION}
+                              </Badge>
+                            </div>
+                            <Badge className="text-[11px] bg-white/90 text-black font-semibold">
+                              Value {getPlayerValueScore(player).toFixed(1)}
+                            </Badge>
+                          </div>
 
-          {players.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {players.map((player, index) => (
-                <Card
-                  key={player.PLAYER_ID}
-                  className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm"
-                  style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg font-bold">{player.PLAYER_NAME}</CardTitle>
-                        <Badge
-                          className="text-xs font-semibold border mt-1"
-                          style={{
-                            color: teamColors[player.TEAM_ABBREVIATION]?.secondary,
-                            backgroundColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#fff',
-                            borderColor: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#888',
-                            borderWidth: '2px',
-                            padding: '0.25rem 0.55rem',
-                            borderRadius: '0.4rem',
-                            letterSpacing: '0.5px',
-                          }}
-                        >
-                          {player.TEAM_ABBREVIATION}
-                        </Badge>
+                          <div className="mt-4 grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <StatRow label="GP" value={player.GP.toFixed(0)} />
+                              <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} />
+                              <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
+                              <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} />
+                              <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
+                              <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
+                              <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
+                            </div>
+                            <div className="space-y-2">
+                              <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} />
+                              <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} />
+                              <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} />
+                              <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} />
+                              <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
+                              <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
+                              <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">No player data available for this team</div>
+              )}
+            </>
+          )}
+          {modalTab === 'matchups' && (
+            <>
+              <h3 className="text-xl font-semibold mb-4">Matchups</h3>
+              {!scheduleData ? (
+                <div className="text-sm text-muted-foreground py-6 text-center">Schedule data unavailable.</div>
+              ) : teamMatchupsWithRecord.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-6 text-center">No games found for this team.</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                  {teamMatchupsWithRecord.map((game) => {
+                    const homeAbbrResolved = (game as any).homeAbbr;
+                    const awayAbbrResolved = (game as any).awayAbbr;
+                    const homeLogo = homeAbbrResolved ? logoMap[homeAbbrResolved] : undefined;
+                    const awayLogo = awayAbbrResolved ? logoMap[awayAbbrResolved] : undefined;
+                    const homeName = (game as any).homeName || homeAbbrResolved || 'Home';
+                    const awayName = (game as any).awayName || awayAbbrResolved || 'Away';
+                    const homeScore = Number((game as any).home_score);
+                    const awayScore = Number((game as any).away_score);
+                    const hasScore = Number.isFinite(homeScore) && Number.isFinite(awayScore);
+                    const homeWin = hasScore ? homeScore >= awayScore : false;
+                    const awayWin = hasScore ? awayScore >= homeScore : false;
+                    const statusText = String((game as any).status || '').toLowerCase();
+                    const isFinal = statusText.includes('final') || Boolean((game as any).winner);
+                    const isLive = (statusText.includes('live') || statusText.includes('in progress')) && !isFinal;
+                    const providers: string[] = Array.isArray((game as any).tv_providers)
+                      ? ((game as any).tv_providers as string[]).filter(Boolean)
+                      : (game as any).tv
+                        ? String((game as any).tv)
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                        : [];
+                    const dateLabel = (() => {
+                      if (!game.date) return 'Date TBA';
+                      const dt = new Date(game.date);
+                      if (Number.isNaN(dt.getTime())) return game.date;
+                      return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                    })();
+                    const matchupLabel = `${awayAbbrResolved || 'Away'} @ ${homeAbbrResolved || 'Home'}`;
+                    return (
+                      <Card
+                        key={`${game.game_id}-${matchupLabel}`}
+                        id={`matchup-${game.game_id}`}
+                        className="relative overflow-hidden transition-all duration-300 bg-card border p-2"
+                      >
+                        {/* TV badges */}
+                        {providers.length > 0 && (
+                          <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px]">
+                            {providers.map((p) => {
+                              const name = String(p).toLowerCase();
+                              let style: React.CSSProperties | undefined;
+                              if (name.includes('prime')) {
+                                style = { backgroundColor: '#00A8E1', color: '#ffffff' };
+                              } else if (name.includes('peacock')) {
+                                style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                              } else if (name.includes('espn')) {
+                                style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                              }
+                              return (
+                                <Badge key={p} className="text-[9px] font-semibold px-1.5 py-0.5" style={style}>
+                                  {p}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <CardContent className="pt-2 text-white space-y-1.5">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center justify-center flex-1 self-stretch translate-y-[15px]">
+                              {awayLogo && (
+                                <img
+                                  src={awayLogo}
+                                  alt={awayAbbrResolved || 'Away'}
+                                  className={`h-10 w-10 rounded-sm object-contain ${
+                                    isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''
+                                  }`}
+                                  style={
+                                    isFinal && awayWin
+                                      ? { filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.8)) drop-shadow(0 0 10px rgba(255,255,255,0.5))' }
+                                      : undefined
+                                  }
+                                  loading="lazy"
+                                />
+                              )}
+                            </div>
 
-                  <CardContent>
-  <div className="grid grid-cols-2 gap-4">
-    {/* Left column */}
-    <div className="space-y-2">
-      <StatRow label="GP" value={player.GP.toFixed(0)} />
-      <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} />
-      <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
-      <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} />
-      <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
-      <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
-      <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
-    </div>
+                            <div className="flex flex-col items-center justify-center gap-1 px-2 min-w-[120px] self-stretch">
+                              <div className="text-[11px] text-muted-foreground translate-y-[-10px]">{dateLabel}</div>
+                              {isLive && (
+                                <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-0.5 text-[10px]">
+                                  LIVE
+                                </Badge>
+                              )}
+                              {hasScore ? (
+                                <div className="text-2xl font-black tracking-wide">
+                                  <span className={awayWin ? 'text-white' : 'text-white/40'}>{awayScore}</span>
+                                  <span className="mx-2 text-muted-foreground">-</span>
+                                  <span className={homeWin ? 'text-white' : 'text-white/40'}>{homeScore}</span>
+                                </div>
+                              ) : (
+                                <div className="text-lg font-bold">{game.time || 'TBA'}</div>
+                              )}
+                            </div>
 
-    {/* Right column */}
-    <div className="space-y-2">
-      <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} />
-      <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} />
-      <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} />
-      <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} />
-      <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
-      <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
-      <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />             
+                            <div className="flex items-center justify-center flex-1 self-stretch translate-y-[12px]">
+                              {homeLogo && (
+                                <img
+                                  src={homeLogo}
+                                  alt={homeAbbrResolved || 'Home'}
+                                  className={`h-10 w-10 rounded-sm object-contain ${
+                                    isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''
+                                  }`}
+                                  style={
+                                    isFinal && homeWin
+                                      ? { filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.8)) drop-shadow(0 0 10px rgba(255,255,255,0.5))' }
+                                      : undefined
+                                  }
+                                  loading="lazy"
+                                />
+                              )}
+                            </div>
+                          </div>
 
-    </div>
-  </div>
-</CardContent>
-
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No player data available for this team</div>
+                          <div className="text-[10px] text-muted-foreground text-center translate-y-[20px]">
+                            {game.location || (game.tv || (game.tv_providers || []).join(', ')) || 'Venue TBA'}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1293,19 +1654,23 @@ const TeamCard = ({
   team,
   onClick,
   leagueAverages,
+  allTeams,
 }: {
   team: NBATeam;
   onClick?: () => void;
   leagueAverages: any;
+  allTeams?: NBATeam[];
 }) => {
+  const teamsForBest = allTeams ?? ALL_TEAMS_CACHE;
   const teamAbbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
   const teamColor = teamColors[teamAbbr];
   const winPercentage = (team.WIN_PCT * 100).toFixed(1);
 
-  // Helper to determine stat color vs league average
+// Helper to determine stat color vs league average
 const getHighlight = (statKey: TeamStatKey) => {
-    if (!leagueAverages) return undefined;
-    const diff = Number((team as any)[statKey]) - Number((leagueAverages as any)[statKey]);
+    const value = Number((team as any)[statKey]);
+    const avgValue = Number((leagueAverages as any)?.[statKey]);
+    const diff = value - avgValue;
   
   // 🔍 Detailed debug for TOV
   if (statKey === 'TOV') {
@@ -1320,6 +1685,25 @@ const getHighlight = (statKey: TeamStatKey) => {
     });
   }
   
+  // Gold highlight if best in league (handles lower-is-better like TOV)
+  try {
+    const epsilon = 0.01;
+    const values = teamsForBest
+      .map((t) => Number((t as any)[statKey]))
+      .filter((v) => Number.isFinite(v));
+    const lowerIsBetterSet = new Set([
+      'TOV',       // turnovers
+      'PF',        // personal fouls (if you track it)
+      'FGA_MISS',  // hypothetical example
+      'FTA_MISS',  // hypothetical example
+    ]);
+    if (values.length > 0 && Number.isFinite(value)) {
+      const best = lowerIsBetterSet.has(statKey as any) ? Math.min(...values) : Math.max(...values);
+      if (Math.abs(value - best) < epsilon) return 'best';
+    }
+  } catch {}
+
+  if (!Number.isFinite(avgValue)) return 'neutral';
   if (Math.abs(diff) < 0.01) return 'neutral';
   
   // 🧮 Stats where lower is better
@@ -1334,6 +1718,29 @@ const getHighlight = (statKey: TeamStatKey) => {
       // Flip the logic – lower = high (good)
       return diff < 0 ? 'high' : 'low';
     }
+    return diff > 0 ? 'high' : 'low';
+  };
+
+  // Highlight helper for advanced BPI metrics
+  const getBpiHighlight = (key: 'bpi' | 'off' | 'def' | 'pbpi'): 'high' | 'low' | 'neutral' | 'best' => {
+    const teamValue = Number((team as any)[key]);
+    const avgValue = Number((leagueAverages as any)?.[key]);
+    if (!Number.isFinite(teamValue)) return 'neutral';
+    const diff = teamValue - avgValue;
+    // Gold highlight if best team value in league for this metric
+    try {
+      const epsilon = 0.01;
+      const values = teamsForBest
+        .map((t) => Number((t as any)[key]))
+        .filter((v) => Number.isFinite(v));
+      if (values.length > 0) {
+        const best = Math.max(...values);
+        if (Math.abs(teamValue - best) < epsilon) return 'best';
+      }
+    } catch {}
+    if (!Number.isFinite(avgValue)) return 'neutral';
+    if (Math.abs(diff) < 0.01) return 'neutral';
+    // Higher is better for DEF and other BPI metrics
     return diff > 0 ? 'high' : 'low';
   };
 
@@ -1449,7 +1856,7 @@ return (
               <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
               <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
               <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
-              <StatRow label="BPI" value={typeof (team as any).bpi === 'number' ? (team as any).bpi.toFixed(1) : ((team as any).bpi ?? '-')} />
+              <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
             </div>
             <div className="space-y-2">
               <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
@@ -1461,12 +1868,20 @@ return (
               <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} />
               <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
               <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
-              <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
+              <StatRow label="BPI" value={typeof (team as any).bpi === 'number' ? (team as any).bpi.toFixed(1) : ((team as any).bpi ?? '-')}
+                highlight={getBpiHighlight('bpi')}
+              />
             </div>
             <div className="space-y-2">
-              <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')} />
-              <StatRow label="DEF" value={typeof (team as any).def === 'number' ? (team as any).def.toFixed(1) : ((team as any).def ?? '-')} />
-              <StatRow label="PBPI" value={typeof (team as any).pbpi === 'number' ? (team as any).pbpi.toFixed(1) : ((team as any).pbpi ?? '-')} />
+              <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')}
+                highlight={getBpiHighlight('off')}
+              />
+              <StatRow label="DEF" value={typeof (team as any).def === 'number' ? (team as any).def.toFixed(1) : ((team as any).def ?? '-')}
+                highlight={getBpiHighlight('def')}
+              />
+              <StatRow label="PBPI" value={typeof (team as any).pbpi === 'number' ? (team as any).pbpi.toFixed(1) : ((team as any).pbpi ?? '-')}
+                highlight={getBpiHighlight('pbpi')}
+              />
               <StatRow label="BPI RK" value={(team as any).bpirank ?? '-'} />
             </div>
           </div>
@@ -1543,19 +1958,43 @@ const NBA = () => {
   const logosScrollRef = useRef<HTMLDivElement | null>(null);
   const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
-  // League-wide maxima for radar normalization (memoized for smooth animation)
+const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
+const [focusedAllTeamPlayer, setFocusedAllTeamPlayer] = useState<Player | null>(null);
+  // League-wide extrema for radar normalization (memoized for smooth animation)
+  const radarMetricKeys = ['pts', 'reb', 'threes', 'ftm', 'blk', 'bpi', 'off', 'def', 'pbpi'] as const;
+  type RadarMetricKey = (typeof radarMetricKeys)[number];
   const teamMaxima = useMemo(() => {
-    return nbaTeams.reduce(
-      (acc, t) => ({
-        pts: Math.max(acc.pts, Number((t as any).PTS || 0)),
-        reb: Math.max(acc.reb, Number((t as any).REB || 0)),
-        threes: Math.max(acc.threes, Number((t as any).FG3M || 0)),
-        ftm: Math.max(acc.ftm, Number((t as any).FTM || 0)),
-        blk: Math.max(acc.blk, Number((t as any).BLK || 0)),
-      }),
-      { pts: 0, reb: 0, threes: 0, ftm: 0, blk: 0 }
-    );
+    const extremes = {
+      max: {} as Record<RadarMetricKey, number>,
+      min: {} as Record<RadarMetricKey, number>,
+    };
+    radarMetricKeys.forEach((key) => {
+      extremes.max[key] = -Infinity;
+      extremes.min[key] = Infinity;
+    });
+    nbaTeams.forEach((t) => {
+      const values: Record<RadarMetricKey, number> = {
+        pts: Number((t as any).PTS || 0),
+        reb: Number((t as any).REB || 0),
+        threes: Number((t as any).FG3M || 0),
+        ftm: Number((t as any).FTM || 0),
+        blk: Number((t as any).BLK || 0),
+        bpi: Number((t as any).bpi || 0),
+        off: Number((t as any).off || 0),
+        def: Number((t as any).def || 0),
+        pbpi: Number((t as any).pbpi || 0),
+      };
+      radarMetricKeys.forEach((key) => {
+        const val = values[key];
+        extremes.max[key] = Math.max(extremes.max[key], val);
+        extremes.min[key] = Math.min(extremes.min[key], val);
+      });
+    });
+    radarMetricKeys.forEach((key) => {
+      if (!Number.isFinite(extremes.max[key])) extremes.max[key] = 0;
+      if (!Number.isFinite(extremes.min[key])) extremes.min[key] = extremes.max[key];
+    });
+    return extremes;
   }, [nbaTeams]);
   // Lock page scroll while on NBA page; sections manage their own scroll
   useEffect(() => {
@@ -1609,6 +2048,7 @@ const fetchData = async () => {
     }));
     
     setNbaTeams(teamsWithConference);
+    ALL_TEAMS_CACHE = teamsWithConference;
     setNbaPlayerData(playerData);
 
     // Fetch schedule data (initial load only; polling handled separately)
@@ -1737,13 +2177,20 @@ const leagueAverages = React.useMemo(() => {
       acc.PF += t.PF;
       acc.PFD += t.PFD;
       acc.PLUS_MINUS += t.PLUS_MINUS;
+      // Advanced metrics may be present on team objects
+      acc.bpi += Number((t as any).bpi ?? 0);
+      acc.off += Number((t as any).off ?? 0);
+      acc.def += Number((t as any).def ?? 0);
+      acc.pbpi += Number((t as any).pbpi ?? 0);
       return acc;
     },
     { 
       WIN_PCT: 0, PTS: 0, REB: 0, AST: 0, FG_PCT: 0, FG3_PCT: 0, FT_PCT: 0,
       W_PCT: 0, MIN: 0, FGM: 0, FGA: 0, FG3M: 0, FG3A: 0, FTM: 0, FTA: 0,
       OREB: 0, DREB: 0, TOV: 0, STL: 0, BLK: 0, BLKA: 0, PF: 0, PFD: 0,
-      PLUS_MINUS: 0
+      PLUS_MINUS: 0,
+      // Advanced metrics
+      bpi: 0, off: 0, def: 0, pbpi: 0,
     }
   );
   const n = nbaTeams.length;
@@ -1772,6 +2219,11 @@ const leagueAverages = React.useMemo(() => {
     PF: totals.PF / n,
     PFD: totals.PFD / n,
     PLUS_MINUS: totals.PLUS_MINUS / n,
+    // Advanced metrics
+    bpi: totals.bpi / n,
+    off: totals.off / n,
+    def: totals.def / n,
+    pbpi: totals.pbpi / n,
   };
 }, [nbaTeams]);
 
@@ -1911,27 +2363,6 @@ const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('VALUE_S
 
 
 
-const getPlayerValueScore = (p: Player) => {
-  const fgm = p.FG_PCT * p.FGA;
-  const ftm = p.FT_PCT * p.FTA;
-  const fgMisses = p.FGA - fgm;
-  const ftMisses = p.FTA - ftm;
-
-  const rawScore =
-    1.0 * p.PTS +
-    0.8 * p.AST +
-    0.6 * p.REB +
-    1.0 * p.STL +
-    0.8 * p.BLK -
-    1.0 * p.TOV -
-    0.7 * fgMisses -
-    0.5 * ftMisses;
-
-  const normalized = ((rawScore + 20) / 69) * 100;
-
-  // Clamp between 0–100 just in case
-  return Math.max(0, Math.min(100, Number(normalized.toFixed(1))));
-};
 
 
 
@@ -2044,19 +2475,20 @@ const sortTeams = (teams: NBATeam[]) => {
     [dashboardTeamList]
   );
 
-  useEffect(() => {
-    if (logosScrollRef.current) {
-      logosScrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
-    }
-  }, [sortField, sortOrder]);
+useEffect(() => {
+  if (logosScrollRef.current) {
+    logosScrollRef.current.scrollTo({ top: 0, behavior: 'auto' });
+  }
+}, [sortField, sortOrder]);
 
-  useEffect(() => {
-    return () => {
-      if (dashboardHighlightTimeout.current) {
-        clearTimeout(dashboardHighlightTimeout.current);
-      }
-    };
-  }, []);
+useEffect(() => {
+  return () => {
+    if (dashboardHighlightTimeout.current) {
+      clearTimeout(dashboardHighlightTimeout.current);
+    }
+  };
+}, []);
+
 
 
 
@@ -2247,6 +2679,53 @@ const sortTeams = (teams: NBATeam[]) => {
     const topTeamPlayers = [...teamPlayers]
       .sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
 
+    // Teammate averages for roster highlighting (All Teams tab)
+    const teamAveragesAll = (() => {
+      if (!teamPlayers.length) return null as any;
+      const totals = teamPlayers.reduce(
+        (acc, p) => {
+          acc.GP += p.GP;
+          acc.MIN += p.MIN;
+          acc.PTS += p.PTS;
+          acc.REB += p.REB;
+          acc.AST += p.AST;
+          acc.STL += p.STL;
+          acc.BLK += p.BLK;
+          acc.TOV += p.TOV;
+          acc.FGA += p.FGA;
+          acc.FG3A += p.FG3A;
+          acc.FTA += p.FTA;
+          acc.FG_PCT += p.FG_PCT;
+          acc.FG3_PCT += p.FG3_PCT;
+          acc.FT_PCT += p.FT_PCT;
+          return acc;
+        },
+        {
+          GP: 0, MIN: 0, PTS: 0, REB: 0, AST: 0, STL: 0, BLK: 0,
+          TOV: 0, FGA: 0, FG3A: 0, FTA: 0, FG_PCT: 0, FG3_PCT: 0, FT_PCT: 0,
+        }
+      );
+      const n = teamPlayers.length;
+      const avg: any = {};
+      for (const k in totals) avg[k] = (totals as any)[k] / n;
+      return avg as typeof totals;
+    })();
+
+    const getTeammateHighlight = (
+      player: Player,
+      key: keyof NonNullable<typeof teamAveragesAll>
+    ): 'high' | 'low' | 'neutral' => {
+      if (!teamAveragesAll) return 'neutral';
+      const playerValue = Number((player as any)[key]);
+      const avgValue = Number((teamAveragesAll as any)[key]);
+      if (!Number.isFinite(playerValue) || !Number.isFinite(avgValue)) return 'neutral';
+      const diff = playerValue - avgValue;
+      if (Math.abs(diff) < 0.01) return 'neutral';
+      const lowerIsBetter = new Set<keyof NonNullable<typeof teamAveragesAll>>(['TOV']);
+      if (lowerIsBetter.has(key)) return diff < 0 ? 'high' : 'low';
+      return diff > 0 ? 'high' : 'low';
+    };
+
     return (
     <div className="flex flex-col xl:flex-row gap-4 h-[85vh] overflow-hidden">
         {/* Left: logos as rounded-square buttons */}
@@ -2286,7 +2765,7 @@ const sortTeams = (teams: NBATeam[]) => {
         </div>
 
         {/* Right: wide team card + players; parent does not scroll; inner players list scrolls */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4 w-0 pr-0">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-5 w-0 pr-0">
           {currentTeam && (() => {
             const teamAbbr = teamAbbreviations[currentTeam.TEAM_NAME] || 'UNK';
             const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
@@ -2335,24 +2814,28 @@ const sortTeams = (teams: NBATeam[]) => {
 };
 
             // Radar (spider) chart data and options
-            const radarLabels = ['PPG', 'RPG', '3PM', 'FTM', 'BLK'];
-            const rawValues = {
-              PPG: Number(currentTeam.PTS || 0),
-              RPG: Number(currentTeam.REB || 0),
-              '3PM': Number(currentTeam.FG3M || 0),
-              FTM: Number(currentTeam.FTM || 0),
-              BLK: Number(currentTeam.BLK || 0),
-            } as const;
-            const maxs = teamMaxima;
-            // Normalize each metric to a common 0–100 scale so categories with different units are comparable
-            const norm = (v: number, max: number) => (max > 0 ? (v / max) * 100 : 0);
-            const normalizedValues = [
-              norm(rawValues.PPG, maxs.pts),
-              norm(rawValues.RPG, maxs.reb),
-              norm(rawValues['3PM'], maxs.threes),
-              norm(rawValues.FTM, maxs.ftm),
-              norm(rawValues.BLK, maxs.blk),
-            ];
+            const radarMetrics = [
+              { label: 'PPG', key: 'pts', value: Number(currentTeam.PTS || 0) },
+              { label: 'RPG', key: 'reb', value: Number(currentTeam.REB || 0) },
+              { label: '3PM', key: 'threes', value: Number(currentTeam.FG3M || 0) },
+              { label: 'FTM', key: 'ftm', value: Number(currentTeam.FTM || 0) },
+              { label: 'BLK', key: 'blk', value: Number(currentTeam.BLK || 0) },
+              { label: 'BPI', key: 'bpi', value: Number((currentTeam as any).bpi || 0) },
+              { label: 'OFF', key: 'off', value: Number((currentTeam as any).off || 0) },
+              { label: 'DEF', key: 'def', value: Number((currentTeam as any).def || 0) },
+              { label: 'PBPI', key: 'pbpi', value: Number((currentTeam as any).pbpi || 0) },
+            ] as { label: string; key: RadarMetricKey; value: number }[];
+            const normalizeMetric = (value: number, key: RadarMetricKey) => {
+              const maxVal = teamMaxima.max[key];
+              const minVal = teamMaxima.min[key];
+              if (!Number.isFinite(maxVal) || !Number.isFinite(minVal)) return 0;
+              if (Math.abs(maxVal - minVal) < 1e-6) return 50;
+              return ((value - minVal) / (maxVal - minVal)) * 100;
+            };
+            const radarLabels = radarMetrics.map((metric) => metric.label);
+            const normalizedValues = radarMetrics.map((metric) =>
+              normalizeMetric(metric.value, metric.key)
+            );
             const bgColor = secondaryColor && secondaryColor.length === 7 ? `${secondaryColor}55` : primaryColor;
             const radarData = {
               labels: radarLabels,
@@ -2399,6 +2882,7 @@ const sortTeams = (teams: NBATeam[]) => {
                   <TeamCard
                     team={{ ...currentTeam, rank: (teams.findIndex(tt => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
                     leagueAverages={leagueAverages}
+                    allTeams={nbaTeams}
                     onClick={() => setSelectedTeam(currentTeam)}
                   />
                 </div>
@@ -2432,41 +2916,57 @@ const sortTeams = (teams: NBATeam[]) => {
                 style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {topTeamPlayers.map((p) => (
-                    <Card
-                      key={p.PLAYER_ID}
-                      className="overflow-hidden bg-card/60 backdrop-blur border snap-start"
-                      style={{ scrollMarginTop: '16px', scrollMarginBottom: '16px' }}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate">{p.PLAYER_NAME}</div>
-                            <div className="text-xs text-muted-foreground truncate">Value {getPlayerValueScore(p).toFixed(1)}</div>
+                  {topTeamPlayers.map((p) => {
+                    const primary = teamColors[p.TEAM_ABBREVIATION]?.primary || '#1e40af';
+                    const secondary = teamColors[p.TEAM_ABBREVIATION]?.secondary || '#dc2626';
+                    return (
+                      <div
+                        key={p.PLAYER_ID}
+                        className="relative rounded-xl overflow-hidden snap-start"
+                        style={{
+                          backgroundImage: `linear-gradient(300deg, ${primary}, ${secondary})`,
+                          padding: '3px',
+                          scrollMarginTop: '16px',
+                          scrollMarginBottom: '16px',
+                        }}
+                      >
+                        <div
+                          className="absolute inset-1 rounded-xl"
+                          style={{ backgroundColor: '#1f1f1f', opacity: 1 }}
+                          aria-hidden
+                        />
+                        <div className="relative z-10 rounded-[16px] bg-[#111]/85 p-3 text-white">
+                          <div className="flex items-center gap-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold truncate">{p.PLAYER_NAME}</div>
+                            </div>
+                            <Badge className="ml-auto text-[10px] font-semibold bg-white text-black hover:bg-white hover:text-black">
+                              Value {getPlayerValueScore(p).toFixed(1)}
+                            </Badge>
+                          </div>
+                          {/* Key stats (match previous fields) */}
+                          <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
+                            <div className="bg-background/40 rounded px-2 py-1 text-center">
+                              <div className="text-muted-foreground">PPG</div>
+                              <div className={`${getTeammateHighlight(p,'PTS')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'PTS')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{p.PTS.toFixed(1)}</div>
+                            </div>
+                            <div className="bg-background/40 rounded px-2 py-1 text-center">
+                              <div className="text-muted-foreground">RPG</div>
+                              <div className={`${getTeammateHighlight(p,'REB')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'REB')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{p.REB.toFixed(1)}</div>
+                            </div>
+                            <div className="bg-background/40 rounded px-2 py-1 text-center">
+                              <div className="text-muted-foreground">APG</div>
+                              <div className={`${getTeammateHighlight(p,'AST')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'AST')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{p.AST.toFixed(1)}</div>
+                            </div>
+                            <div className="bg-background/40 rounded px-2 py-1 text-center">
+                              <div className="text-muted-foreground">FG%</div>
+                              <div className={`${getTeammateHighlight(p,'FG_PCT')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'FG_PCT')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{(p.FG_PCT * 100).toFixed(1)}</div>
+                            </div>
                           </div>
                         </div>
-                        {/* Key stats */}
-                        <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
-                          <div className="bg-background/40 rounded px-2 py-1 text-center">
-                            <div className="text-muted-foreground">PPG</div>
-                            <div className="font-semibold">{p.PTS.toFixed(1)}</div>
-                          </div>
-                          <div className="bg-background/40 rounded px-2 py-1 text-center">
-                            <div className="text-muted-foreground">RPG</div>
-                            <div className="font-semibold">{p.REB.toFixed(1)}</div>
-                          </div>
-                          <div className="bg-background/40 rounded px-2 py-1 text-center">
-                            <div className="text-muted-foreground">APG</div>
-                            <div className="font-semibold">{p.AST.toFixed(1)}</div>
-                          </div>
-                          <div className="bg-background/40 rounded px-2 py-1 text-center">
-                            <div className="text-muted-foreground">FG%</div>
-                            <div className="font-semibold">{(p.FG_PCT * 100).toFixed(1)}</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -2690,6 +3190,8 @@ const sortTeams = (teams: NBATeam[]) => {
   <PlayerModal
     team={selectedTeam}
     nbaPlayerData={nbaPlayerData} // ✅ pass player data
+    scheduleData={scheduleData}
+    logoMap={abbrToLogo}
     onClose={() => setSelectedTeam(null)}
   />
 )}

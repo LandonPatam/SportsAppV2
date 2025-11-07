@@ -1,0 +1,35 @@
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
+  const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
+  // Separate selection for All Teams detail pane to avoid opening roster modal
+  const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
+  const [sortField, setSortField] = useState<'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT'>('WIN_PCT');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
+  const logosScrollRef = useRef<HTMLDivElement | null>(null);
+  const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
+  // League-wide maxima for radar normalization (memoized for smooth animation)
+  const teamMaxima = useMemo(() => {
+    return nbaTeams.reduce(
+      (acc, t) => ({
+        pts: Math.max(acc.pts, Number((t as any).PTS || 0)),
+        reb: Math.max(acc.reb, Number((t as any).REB || 0)),
+        threes: Math.max(acc.threes, Number((t as any).FG3M || 0)),
+        ftm: Math.max(acc.ftm, Number((t as any).FTM || 0)),
+        blk: Math.max(acc.blk, Number((t as any).BLK || 0)),
+      }),
+      { pts: 0, reb: 0, threes: 0, ftm: 0, blk: 0 }
+    );
+  }, [nbaTeams]);
+  // Lock page scroll while on NBA page; sections manage their own scroll
+  useEffect(() => {
+    const prevBody = document.body.style.overflow;
+    const prevDoc = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBody || '';

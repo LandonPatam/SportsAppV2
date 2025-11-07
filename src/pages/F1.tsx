@@ -1320,17 +1320,17 @@ const trackPaths: Record<string, string> = {
 const trackStyles: Record<number, React.CSSProperties & { orbSize?; orbSpeed?: string }> = {
 
   1: {
-    transform: "scale(0.9) translate(8%, 3%) rotate(-5deg)",
+    transform: "scale(0.85) translate(8%, 3%) rotate(-68deg)",
     transformOrigin: "center",
      orbSize: 6 / 0.9
   },
   2: {
-    transform: "scale(0.7) translate(-20%, 15%) rotate(-35deg)",
+    transform: "scale(0.65) translate(0%, 65%) rotate(-90deg)",
     transformOrigin: "center",
     orbSize: 6 / 0.7
   },
   3: {
-    transform: "scale(0.3) translate(210%, -150%) rotate(39deg)",
+    transform: "scale(0.27) translate(125%, -90%) rotate(-18deg)",
     strokeWidth: 12,
     orbSize: 6 / 0.3
 
@@ -1421,7 +1421,7 @@ const trackStyles: Record<number, React.CSSProperties & { orbSize?; orbSpeed?: s
     orbSize: 6 / 0.7
   },
   21: {
-    transform: "scale(0.75) translate(-9%, -40%) rotate(0deg)",
+    transform: "scale(0.85) translate(-15%, 0%) rotate(0deg)",
     transformOrigin: "center",
     orbSize: 6 / 0.75
   },

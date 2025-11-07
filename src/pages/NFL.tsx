@@ -916,7 +916,7 @@ const NFL = () => {
     <div className="lg:col-span-5 h-full overflow-hidden">
       <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
                 <CardHeader className="p-0" />
-                <CardContent className="py-3 px-3">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-3 px-3">
                   <DashboardTodayScheduleNFL scheduleData={scheduleData} logoMap={abbrToLogo} />
                 </CardContent>
               </Card>
@@ -1321,110 +1321,210 @@ const DashboardTodayScheduleNFL = ({
     return `${y}-${m}-${d}`;
   }, []);
 
-  const games = React.useMemo(() => {
-    if (!scheduleData) return [] as NFLScheduleGame[];
-    const arr: NFLScheduleGame[] = Array.isArray(scheduleData)
-      ? (scheduleData as NFLScheduleGame[])
-      : [];
-    const filtered = arr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
-    filtered.sort((a, b) => (Number(a.ts_utc || 0) - Number(b.ts_utc || 0)) || String(a.time || '').localeCompare(String(b.time || '')));
-    return filtered;
-  }, [scheduleData, todayKey]);
+  const gamesByDate = React.useMemo(() => {
+    if (!scheduleData) return {} as Record<string, NFLScheduleGame[]>;
+    const arr: NFLScheduleGame[] = Array.isArray(scheduleData) ? (scheduleData as NFLScheduleGame[]) : [];
+    const map: Record<string, NFLScheduleGame[]> = {};
+    for (const g of arr) {
+      const key = String(g.date || '').slice(0, 10);
+      if (!key) continue;
+      if (!map[key]) map[key] = [];
+      map[key].push(g);
+    }
+    Object.values(map).forEach((list) =>
+      list.sort(
+        (a, b) =>
+          Number(a.ts_utc || 0) - Number(b.ts_utc || 0) ||
+          String(a.time || '').localeCompare(String(b.time || ''))
+      )
+    );
+    return map;
+  }, [scheduleData]);
+
+  const dateKeys = React.useMemo(() => Object.keys(gamesByDate).sort(), [gamesByDate]);
+
+  const activeDateKey = React.useMemo(() => {
+    if (!dateKeys.length) return null;
+    if (gamesByDate[todayKey]?.length) return todayKey;
+    const nextKey = dateKeys.find((key) => key > todayKey);
+    return nextKey ?? null;
+  }, [dateKeys, gamesByDate, todayKey]);
+
+  const games = activeDateKey ? gamesByDate[activeDateKey] || [] : [];
+
+  const shellRef = React.useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = React.useState(() => ({
+    gap: 8,
+    cardHeight: 72,
+    scale: 1,
+    ready: false,
+  }));
+
+  const recomputeLayout = React.useCallback(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    const rect = shell.getBoundingClientRect();
+    const available = rect.height;
+    if (!Number.isFinite(available) || available <= 0) return;
+    const totalGames = Math.max(1, games.length);
+    let gap = Math.max(2, Math.min(10, (available / (totalGames + 0.5)) * 0.25));
+    const spacingBudget = gap * (totalGames + 1);
+    const maxSpacing = available * 0.22;
+    if (spacingBudget > maxSpacing && maxSpacing > 0) {
+      gap = maxSpacing / (totalGames + 1);
+    }
+    const usable = Math.max(0, available - gap * (totalGames + 1));
+    const perCard = totalGames > 0 ? usable / totalGames : available;
+    const BASE_CARD = 76;
+    const scale = Math.max(0.65, Math.min(1.35, perCard / BASE_CARD));
+    setLayout((prev) => {
+      const next = { gap, cardHeight: perCard, scale, ready: true };
+      if (
+        Math.abs(prev.gap - next.gap) < 0.2 &&
+        Math.abs(prev.cardHeight - next.cardHeight) < 0.5 &&
+        Math.abs(prev.scale - next.scale) < 0.01 &&
+        prev.ready === next.ready
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, [games.length]);
+
+  React.useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handle = () => recomputeLayout();
+    recomputeLayout();
+    window.addEventListener('resize', handle);
+    window.addEventListener('orientationchange', handle as any);
+    let observer: ResizeObserver | null = null;
+    if ('ResizeObserver' in window && shellRef.current) {
+      observer = new ResizeObserver(() => recomputeLayout());
+      observer.observe(shellRef.current);
+    }
+    return () => {
+      window.removeEventListener('resize', handle);
+      window.removeEventListener('orientationchange', handle as any);
+      observer?.disconnect();
+    };
+  }, [recomputeLayout]);
 
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
-  if (games.length === 0) return <div className="text-sm text-muted-foreground">No games today</div>;
+  if (!activeDateKey || games.length === 0) return <div className="text-sm text-muted-foreground">No schedule data</div>;
 
   return (
-    <div className="grid grid-cols-1" style={{ rowGap: 8 }}>
-      {games.map((g) => {
-        let awayAbbr = (g as any).away as string | undefined;
-        let homeAbbr = (g as any).home as string | undefined;
-        if ((!awayAbbr || !homeAbbr) && g.matchup) {
-          const parts = g.matchup.split('@');
-          const awayName = parts[0]?.trim();
-          const homeName = parts[1]?.trim();
-          const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
-          const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
-          if (a) awayAbbr = a;
-          if (h) homeAbbr = h;
-        }
-        const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
-        const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
-        const aScore = Number(g.away_score);
-        const hScore = Number(g.home_score);
-        const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
-        const awayWin = hasScores ? aScore >= hScore : false;
-        const homeWin = hasScores ? hScore >= aScore : false;
+    <div ref={shellRef} className="flex-1 min-h-0 w-full h-full overflow-hidden">
+      <div
+        className="grid grid-cols-1 h-full"
+        style={{
+          rowGap: layout.gap,
+          paddingTop: layout.gap,
+          paddingBottom: layout.gap,
+          height: '100%',
+          opacity: layout.ready ? 1 : 0,
+          transition: 'opacity 140ms ease-out',
+        }}
+      >
+        {games.map((g) => {
+          let awayAbbr = (g as any).away as string | undefined;
+          let homeAbbr = (g as any).home as string | undefined;
+          if ((!awayAbbr || !homeAbbr) && g.matchup) {
+            const parts = g.matchup.split('@');
+            const awayName = parts[0]?.trim();
+            const homeName = parts[1]?.trim();
+            const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
+            const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
+            if (a) awayAbbr = a;
+            if (h) homeAbbr = h;
+          }
+          const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
+          const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+          const aScore = Number(g.away_score);
+          const hScore = Number(g.home_score);
+          const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
+          const awayWin = hasScores ? aScore >= hScore : false;
+          const homeWin = hasScores ? hScore >= aScore : false;
 
-        const status = String(g.status || '').toLowerCase();
-        const isFinal = status === 'final' || status.includes('final');
-        const isLive = status.includes('live');
+          const status = String(g.status || '').toLowerCase();
+          const isFinal = status === 'final' || status.includes('final');
+          const isLive = status.includes('live');
 
-        return (
-          <Card key={g.game_id}     className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border w-full h-[68px]" style={{ padding: 8 }}>
-            <CardContent className="p-0" style={{ paddingTop: 4, paddingBottom: 4 }}>
-              <div className="grid grid-cols-3 items-center">
-                {/* Away */}
-                <div className="flex flex-col items-center justify-center gap-1">
-                  {awayLogo && (
-                    <img
-                      src={awayLogo}
-                      alt={awayAbbr || 'Away'}
-                      className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        filter: isFinal && awayWin
-                          ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
-                          : undefined,
-                      }}
-                      loading="lazy"
-                      width={64}
-                      height={64}
-                    />
-                  )}
+          const cardPadding = Math.max(6, Math.round(10 * layout.scale));
+          const cardHeight = layout.cardHeight > 0 ? layout.cardHeight : undefined;
+          const logoSize = Math.max(30, Math.round(52 * layout.scale));
+          const scoreFont = Math.max(18, Math.round(24 * layout.scale));
+          const timeFont = Math.max(14, Math.round(18 * layout.scale));
+
+          return (
+            <Card
+              key={g.game_id}
+              className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border flex flex-col"
+              style={{ padding: cardPadding, height: cardHeight ? `${cardHeight}px` : undefined }}
+            >
+              <CardContent className="p-0 flex-1 flex flex-col justify-center">
+                <div className="grid grid-cols-3 items-center">
+                  {/* Away */}
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    {awayLogo && (
+                      <img
+                        src={awayLogo}
+                        alt={awayAbbr || 'Away'}
+                        className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                        style={{
+                          width: logoSize,
+                          height: logoSize,
+                          filter: isFinal && awayWin
+                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
+                            : undefined,
+                        }}
+                        loading="lazy"
+                        width={64}
+                        height={64}
+                      />
+                    )}
+                  </div>
+
+                  {/* Center: status or score/time */}
+                  <div className="text-center">
+                    {isFinal ? (
+                      <div className="font-extrabold tracking-wide" style={{ fontSize: scoreFont }}>
+                        <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
+                        <span className="mx-2 text-muted-foreground">-</span>
+                        <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
+                      </div>
+                    ) : isLive ? (
+                      <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>
+                    ) : (
+                      <div className="font-bold" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
+                    )}
+                  </div>
+
+                  {/* Home */}
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    {homeLogo && (
+                      <img
+                        src={homeLogo}
+                        alt={homeAbbr || 'Home'}
+                        className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                        style={{
+                          width: logoSize,
+                          height: logoSize,
+                          filter: isFinal && homeWin
+                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
+                            : undefined,
+                        }}
+                        loading="lazy"
+                        width={64}
+                        height={64}
+                      />
+                    )}
+                  </div>
                 </div>
-
-                {/* Center: status or score/time */}
-                <div className="text-center">
-                  {isFinal ? (
-                    <div className="font-extrabold tracking-wide" style={{ fontSize: 24 }}>
-                      <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
-                      <span className="mx-2 text-muted-foreground">-</span>
-                      <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
-                    </div>
-                  ) : isLive ? (
-                    <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>
-                  ) : (
-                    <div className="font-bold" style={{ fontSize: 16 }}>{g.time || 'TBA'}</div>
-                  )}
-                </div>
-
-                {/* Home */}
-                <div className="flex flex-col items-center justify-center gap-1">
-                  {homeLogo && (
-                    <img
-                      src={homeLogo}
-                      alt={homeAbbr || 'Home'}
-                      className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        filter: isFinal && homeWin
-                          ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
-                          : undefined,
-                      }}
-                      loading="lazy"
-                      width={64}
-                      height={64}
-                    />
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -1542,11 +1642,11 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                         <img
                           src={awayLogo}
                           alt={awayAbbr || 'Away'}
-                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
                           style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
-                          width={64}
-                          height={64}
+                          width={72}
+                          height={72}
                         />
                       )}
                       <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
@@ -1583,11 +1683,11 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                         <img
                           src={homeLogo}
                           alt={homeAbbr || 'Home'}
-                          className={`h-8 w-8 md:h-10 md:w-10 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
                           style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
                           loading="lazy"
-                          width={64}
-                          height={64}
+                          width={72}
+                          height={72}
                         />
                       )}
                       <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
