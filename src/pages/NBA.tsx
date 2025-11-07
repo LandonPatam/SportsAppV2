@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs';
-import { X, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Sun, Moon, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -118,6 +118,27 @@ interface Player {
   HYBRID_SCORE?: number;
   THING?: number;
 }
+
+const PLAYER_STAT_KEYS: (keyof Player)[] = [
+  'MIN',
+  'PTS',
+  'REB',
+  'AST',
+  'STL',
+  'BLK',
+  'TOV',
+  'FGA',
+  'FG_PCT',
+  'FG3A',
+  'FG3_PCT',
+  'FTA',
+  'FT_PCT',
+];
+
+const PLAYER_LOWER_IS_BETTER = new Set<keyof Player>(['TOV']);
+const FAVORITE_TEAMS_STORAGE_KEY = 'nbaFavoriteTeamIds';
+
+type StatLeaderMap = Partial<Record<keyof Player, { value: number; playerIds: number[] }>>;
 
 // Cache of the latest full team list for cross-component best-stat checks
 let ALL_TEAMS_CACHE: NBATeam[] = [];
@@ -314,14 +335,24 @@ const resolveMatchupTeams = (game: ScheduleGameAny): ResolvedGameTeams => {
 // Dashboard Compact Components
 // ============================
 
-const DashboardTeamMiniCard = React.forwardRef<HTMLDivElement, { team: NBATeam; highlight?: boolean }>(
-  ({ team, highlight = false }, ref) => {
+const DashboardTeamMiniCard = React.forwardRef<HTMLDivElement, { team: NBATeam; highlight?: boolean; onClick?: () => void }>(
+  ({ team, highlight = false, onClick }, ref) => {
   const abbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
   const colors = teamColors[abbr] || { primary: '#222', secondary: '#555' };
   return (
     <div
       ref={ref}
-      className={`relative rounded-xl overflow-hidden transition-all duration-300`}
+      className={`relative rounded-xl overflow-hidden transition-all duration-300 ${onClick ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (!onClick) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={
         highlight
           ? {
@@ -363,7 +394,15 @@ const DashboardTeamMiniCard = React.forwardRef<HTMLDivElement, { team: NBATeam; 
 });
 DashboardTeamMiniCard.displayName = 'DashboardTeamMiniCard';
 
-const DashboardPlayerMiniCard = ({ player, logoMap, rank }: { player: Player; logoMap: Record<string, string>; rank?: number }) => {
+const DashboardPlayerMiniCard = ({
+  player,
+  logoMap,
+  rank,
+}: {
+  player: Player;
+  logoMap: Record<string, string>;
+  rank?: number;
+}) => {
   const abbr = player.TEAM_ABBREVIATION || 'UNK';
   const logo = logoMap[abbr];
   return (
@@ -405,13 +444,18 @@ const DashboardTodaySchedule = ({
   recordMap,
   onGapChange,
   onTeamFocus,
+  favoriteTeamIds = [],
+  abbrToTeamMap = {},
 }: {
   scheduleData: NBAScheduleData | null;
   logoMap: Record<string, string>;
   recordMap: Record<string, string>;
   onGapChange?: (gap: number) => void;
   onTeamFocus?: (info: { teamName?: string; teamAbbr?: string }) => void;
+  favoriteTeamIds?: number[];
+  abbrToTeamMap?: Record<string, NBATeam>;
 }) => {
+  const favoriteTeamSet = React.useMemo(() => new Set(favoriteTeamIds), [favoriteTeamIds]);
   const todayKey = React.useMemo(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -576,6 +620,19 @@ const DashboardTodaySchedule = ({
         const recordFont = Math.max(10, Math.round(17 * scale));
         const recordOffset = Math.max(12, Math.round(45 * scale));
 
+        const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
+        const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
+        const awayTeamObj = normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr] : undefined;
+        const homeTeamObj = normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr] : undefined;
+        const awayFavorite = !!(awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID));
+        const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
+        const awayHighlightColor = awayFavorite
+          ? teamColors[normalizedAwayAbbr]?.primary || '#facc15'
+          : undefined;
+        const homeHighlightColor = homeFavorite
+          ? teamColors[normalizedHomeAbbr]?.primary || '#facc15'
+          : undefined;
+
         return (
           <Card
             key={g.game_id || `${g.matchup}-${g.date}`}
@@ -627,15 +684,33 @@ const DashboardTodaySchedule = ({
                     <button
                       type="button"
                       onClick={() => focusTeam(awayAbbr, normalizedAwayName)}
-                      className="rounded-sm focus:outline-none relative"
+                      className="rounded-sm focus:outline-none relative overflow-visible"
                       style={{ width: logoSize, height: logoSize }}
                       title={normalizedAwayName || awayAbbr || 'Away team'}
                     >
+                      {awayFavorite && awayHighlightColor && (
+                        <span
+                          className="absolute inset-0 rounded-md opacity-90"
+                          style={{
+                            background: `radial-gradient(circle, ${awayHighlightColor} 0%, ${awayHighlightColor}55 60%, transparent 100%)`,
+                            boxShadow: `0 0 18px ${awayHighlightColor}88`,
+                          }}
+                          aria-hidden
+                        />
+                      )}
                       <img
                         src={awayLogo}
                         alt={awayAbbr || 'Away'}
                         className={`rounded-sm object-contain cursor-pointer ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                        style={{ width: '100%', height: '100%', filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))' : undefined }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          position: 'relative',
+                          zIndex: 1,
+                          filter: isFinal && awayWin
+                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
+                            : undefined,
+                        }}
                         loading="lazy"
                         width={64}
                         height={64}
@@ -688,15 +763,33 @@ const DashboardTodaySchedule = ({
                     <button
                       type="button"
                       onClick={() => focusTeam(homeAbbr, normalizedHomeName)}
-                      className="rounded-sm focus:outline-none relative"
+                      className="rounded-sm focus:outline-none relative overflow-visible"
                       style={{ width: logoSize, height: logoSize }}
                       title={normalizedHomeName || homeAbbr || 'Home team'}
                     >
+                      {homeFavorite && homeHighlightColor && (
+                        <span
+                          className="absolute inset-0 rounded-md opacity-90"
+                          style={{
+                            background: `radial-gradient(circle, ${homeHighlightColor} 0%, ${homeHighlightColor}55 60%, transparent 100%)`,
+                            boxShadow: `0 0 18px ${homeHighlightColor}88`,
+                          }}
+                          aria-hidden
+                        />
+                      )}
                       <img
                         src={homeLogo}
                         alt={homeAbbr || 'Home'}
                         className={`rounded-sm object-contain cursor-pointer ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                        style={{ width: '100%', height: '100%', filter: isFinal && homeWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' : undefined }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          position: 'relative',
+                          zIndex: 1,
+                          filter: isFinal && homeWin
+                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
+                            : undefined,
+                        }}
                         loading="lazy"
                         width={64}
                         height={64}
@@ -1223,9 +1316,12 @@ const PlayerModal = ({
     return [...players].sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
   }, [players]);
   const [modalTab, setModalTab] = useState<'roster' | 'matchups'>('roster');
+  const [highlightedMatchupId, setHighlightedMatchupId] = useState<string | null>(null);
   const teamAbbrRaw = teamAbbreviations[team.TEAM_NAME] || (team as any).TEAM_ABBREVIATION || 'UNK';
   const teamAbbr = (teamAbbrRaw || 'UNK').toUpperCase();
   const teamLogo = team.LOGO_URL || logoMap[teamAbbr];
+  const navPrimary = teamColors[teamAbbr]?.primary || '#1e40af';
+  const navSecondary = teamColors[teamAbbr]?.secondary || '#b91c1c';
   const getGameTimestamp = (game: ScheduleGameAny) => {
     if (game.date) {
       const ts = Date.parse(game.date as string);
@@ -1294,16 +1390,22 @@ const PlayerModal = ({
     return null;
   }, [teamMatchupsWithRecord]);
 
-  useEffect(() => {
-    if (modalTab !== 'matchups') return;
+  const scrollToLatestMatchup = React.useCallback(() => {
     if (!latestCompletedMatchupId) return;
+    setHighlightedMatchupId(latestCompletedMatchupId);
     try {
       const el = document.getElementById(latestCompletedMatchupId);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     } catch {}
-  }, [modalTab, latestCompletedMatchupId]);
+  }, [latestCompletedMatchupId]);
+
+  useEffect(() => {
+    if (!highlightedMatchupId) return;
+    const timer = setTimeout(() => setHighlightedMatchupId(null), 3500);
+    return () => clearTimeout(timer);
+  }, [highlightedMatchupId]);
 
 
 // 🧮 Compute averages for this specific team
@@ -1339,10 +1441,45 @@ const teamAverages = React.useMemo(() => {
   for (const key in totals) avg[key] = totals[key] / n;
   return avg as typeof totals;
 }, [players]);
+const teamStatLeaders = React.useMemo<StatLeaderMap>(() => {
+  const leaderMap: StatLeaderMap = {};
+  const epsilon = 0.01;
+  PLAYER_STAT_KEYS.forEach((key) => {
+    let bestValue: number | null = null;
+    let leaderIds: number[] = [];
+    players.forEach((p) => {
+      const value = Number((p as any)[key]);
+      if (!Number.isFinite(value)) return;
+      if (bestValue === null) {
+        bestValue = value;
+        leaderIds = [p.PLAYER_ID];
+        return;
+      }
+      const better = PLAYER_LOWER_IS_BETTER.has(key)
+        ? value < bestValue - epsilon
+        : value > bestValue + epsilon;
+      if (better) {
+        bestValue = value;
+        leaderIds = [p.PLAYER_ID];
+        return;
+      }
+      if (Math.abs(value - bestValue) <= epsilon) {
+        leaderIds.push(p.PLAYER_ID);
+      }
+    });
+    if (bestValue !== null && leaderIds.length > 0) {
+      leaderMap[key] = { value: bestValue, playerIds: leaderIds };
+    }
+  });
+  return leaderMap;
+}, [players]);
 
-
-  // 🎨 Highlight player stat vs. team average
-const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
+  // ???? Highlight player stat vs. team average
+const getTeamHighlight = (player: Player, key: keyof Player) => {
+  const leaderEntry = teamStatLeaders[key];
+  if (leaderEntry?.playerIds.includes(player.PLAYER_ID)) {
+    return 'best';
+  }
   if (!teamAverages) return 'neutral';
 
   const playerValue = Number((player as any)[key]);
@@ -1352,9 +1489,8 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
   const diff = playerValue - avgValue;
   if (Math.abs(diff) < 0.01) return 'neutral';
 
-  // 🟥 Stats where lower is better
-  const lowerIsBetter = new Set<keyof typeof teamAverages>(['TOV']);
-  if (lowerIsBetter.has(key)) {
+  // dYY? Stats where lower is better
+  if (PLAYER_LOWER_IS_BETTER.has(key)) {
     return diff < 0 ? 'high' : 'low';
   }
 
@@ -1400,29 +1536,39 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
 
         {/* Roster / Matchups */}
         <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)] space-y-4">
-          <div className="inline-flex rounded-full bg-muted p-1">
-            <button
-              type="button"
-              className={`px-4 py-1 text-sm font-semibold rounded-full transition ${
-                modalTab === 'roster' ? 'bg-background text-white shadow' : 'text-muted-foreground'
-              }`}
-              onClick={() => setModalTab('roster')}
-            >
-              Roster
-            </button>
-            <button
-              type="button"
-              className={`px-4 py-1 text-sm font-semibold rounded-full transition ${
-                modalTab === 'matchups' ? 'bg-background text-white shadow' : 'text-muted-foreground'
-              }`}
-              onClick={() => setModalTab('matchups')}
-            >
-              Matchups
-            </button>
+          <div className="w-full">
+            <div className="inline-flex w-full items-center justify-center rounded-full bg-muted/40 p-1 shadow-inner backdrop-blur-sm">
+              {(['roster', 'matchups'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`relative flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 ${
+                    modalTab === tab
+                      ? 'text-white shadow-md'
+                      : 'text-muted-foreground hover:scale-[1.05] active:scale-95'
+                  }`}
+                  onClick={() => setModalTab(tab)}
+                  style={
+                    modalTab === tab
+                      ? {
+                          backgroundImage: `linear-gradient(120deg, ${navSecondary}, ${navPrimary})`,
+                        }
+                      : undefined
+                  }
+                >
+                  <span className="capitalize">{tab === 'matchups' ? 'Schedule' : tab}</span>
+                  <span
+                    className={`pointer-events-none absolute inset-0 rounded-full bg-white/10 transition-all duration-300 ${
+                      modalTab === tab ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                    }`}
+                    aria-hidden
+                  />
+                </button>
+              ))}
+            </div>
           </div>
           {modalTab === 'roster' && (
             <>
-              <h3 className="text-xl font-semibold mb-4">Roster ({players.length} Players)</h3>
               {sortedPlayers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {sortedPlayers.map((player, index) => {
@@ -1431,7 +1577,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
                     return (
                       <div
                         key={player.PLAYER_ID}
-                        className="relative rounded-2xl overflow-hidden"
+                        className="relative rounded-xl overflow-hidden"
                         style={{
                           backgroundImage: `linear-gradient(300deg, ${primary}, ${secondary})`,
                           padding: '3px',
@@ -1439,54 +1585,61 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
                         }}
                       >
                         <div
-                          className="absolute inset-1 rounded-2xl"
-                          style={{ backgroundColor: '#1d1d1d', opacity: 1 }}
+                          className="absolute inset-1 rounded-xl"
+                          style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
                           aria-hidden
                         />
-                        <div className="relative z-10 rounded-[18px] bg-[#0f0f0f]/80 p-4 border border-white/5 text-white">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="text-lg font-bold">{player.PLAYER_NAME}</div>
-                              <Badge
-                                className="text-xs font-semibold border mt-1"
-                                style={{
-                                  color: secondary,
-                                  backgroundColor: primary,
-                                  borderColor: secondary,
-                                  borderWidth: '2px',
-                                  padding: '0.25rem 0.55rem',
-                                  borderRadius: '0.4rem',
-                                  letterSpacing: '0.5px',
-                                }}
-                              >
-                                {player.TEAM_ABBREVIATION}
-                              </Badge>
+                        <div className="relative z-10 p-4 text-white">
+                          <div className="flex items-center gap-2 mb-4">
+                            {logoMap[player.TEAM_ABBREVIATION] && (
+                              <img
+                                src={logoMap[player.TEAM_ABBREVIATION]}
+                                alt={`${player.TEAM_ABBREVIATION} logo`}
+                                className="w-8 h-8 rounded-sm object-contain"
+                                loading="lazy"
+                                width={32}
+                                height={32}
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-lg font-bold truncate">{player.PLAYER_NAME}</h3>
                             </div>
-                            <Badge className="text-[11px] bg-white/90 text-black font-semibold">
+                            <Badge
+                              className="ml-auto text-xs font-semibold mt-1 bg-white text-black hover:bg-white hover:text-black flex-shrink-0"
+                              style={{ letterSpacing: '0.3px', padding: '0.25rem 0.5rem' }}
+                            >
                               Value {getPlayerValueScore(player).toFixed(1)}
                             </Badge>
                           </div>
 
-                          <div className="mt-4 grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <StatRow label="GP" value={player.GP.toFixed(0)} />
-                              <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} />
-                              <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
-                              <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} />
-                              <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
-                              <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
-                              <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
-                            </div>
-                            <div className="space-y-2">
-                              <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} />
-                              <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} />
-                              <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} />
-                              <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} />
-                              <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
-                              <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
-                              <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />
-                            </div>
-                          </div>
+                          <Card
+                            className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
+                            style={{ backgroundColor: '#0000004c', opacity: 1 }}
+                          >
+                            <CardHeader className="pb-0" />
+                            <CardContent>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <StatRow label="GP" value={player.GP.toFixed(0)} />
+                                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} />
+                                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
+                                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} />
+                                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
+                                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
+                                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
+                                </div>
+                                <div className="space-y-2">
+                                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} />
+                                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} />
+                                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} />
+                                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} />
+                                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
+                                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
+                                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
                         </div>
                       </div>
                     );
@@ -1499,7 +1652,26 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
           )}
           {modalTab === 'matchups' && (
             <>
-              <h3 className="text-xl font-semibold mb-4">Matchups</h3>
+              <div className="flex items-center justify-between mb-4 gap-4">
+
+                {latestCompletedMatchupId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={scrollToLatestMatchup}
+                    className="
+                      rounded-full px-2 py-2 text-[12px] font-semibold tracking-wide
+                      text-black bg-white
+                      hover:bg-white hover:text-black hover:scale-[1.05]
+                      transition-all duration-300
+                      focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
+                    "
+                  >
+                    Jump to latest game
+                  </Button>
+                )}
+              </div>
               {!scheduleData ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">Schedule data unavailable.</div>
               ) : teamMatchupsWithRecord.length === 0 ? (
@@ -1507,6 +1679,7 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                   {teamMatchupsWithRecord.map((game) => {
+                    const cardId = `matchup-${game.game_id}`;
                     const homeAbbrResolved = (game as any).homeAbbr;
                     const awayAbbrResolved = (game as any).awayAbbr;
                     const homeLogo = homeAbbrResolved ? logoMap[homeAbbrResolved] : undefined;
@@ -1539,8 +1712,10 @@ const getTeamHighlight = (player: Player, key: keyof typeof teamAverages) => {
                     return (
                       <Card
                         key={`${game.game_id}-${matchupLabel}`}
-                        id={`matchup-${game.game_id}`}
-                        className="relative overflow-hidden transition-all duration-300 bg-card border p-2"
+                        id={cardId}
+                        className={`relative overflow-hidden transition-all duration-300 bg-card border p-2 ${
+                          highlightedMatchupId === cardId ? 'ring-2 ring-white shadow-[0_0_20px_rgba(255,255,255,0.45)]' : ''
+                        }`}
                       >
                         {/* TV badges */}
                         {providers.length > 0 && (
@@ -1655,11 +1830,15 @@ const TeamCard = ({
   onClick,
   leagueAverages,
   allTeams,
+  isFavorite = false,
+  onToggleFavorite,
 }: {
   team: NBATeam;
   onClick?: () => void;
   leagueAverages: any;
   allTeams?: NBATeam[];
+  isFavorite?: boolean;
+  onToggleFavorite?: (team: NBATeam) => void;
 }) => {
   const teamsForBest = allTeams ?? ALL_TEAMS_CACHE;
   const teamAbbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
@@ -1803,34 +1982,54 @@ return (
     <div className="relative z-10 p-4 text-white">
       {/* === Team header on top of gradient === */}
       <div className="flex items-center gap-2 mb-3">
-  {team.LOGO_URL && (
-    <img
-      src={team.LOGO_URL}
-      alt={`${team.TEAM_NAME} logo`}
-      className="w-8 h-8 rounded-sm"
-    />
-  )}
-  <h3 className="text-lg font-bold">{team.TEAM_NAME}</h3>
-<Badge
-  className="ml-auto border-0 text-white font-semibold"
-  style={{
-    backgroundImage:
-      team.W >= team.L
-        ? 'linear-gradient(90deg, #ffffffff, #ffffffff)' // 🟢 Green gradient for winning record
-        : 'linear-gradient(90deg, #000000ff, #000000ff)', // 🔴 Red gradient for losing record
-    color: team.W >= team.L ? '#2b2b2bff' : '#ffffffff',
-    padding: '0.25rem 0.6rem',
-    borderRadius: '0.4rem',
-    letterSpacing: '0.5px',
-    textShadow: '0 1px 2px rgba(0,0,0,0.4)', // subtle depth for visibility
-  }}
->
-  {team.W}-{team.L}
-</Badge>
-</div>
-
-
-
+        {team.LOGO_URL && (
+          <img
+            src={team.LOGO_URL}
+            alt={`${team.TEAM_NAME} logo`}
+            className="w-8 h-8 rounded-sm"
+          />
+        )}
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-lg font-bold truncate">{team.TEAM_NAME}</h3>
+          {onToggleFavorite && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onToggleFavorite(team);
+              }}
+              className={`p-1 rounded-full transition-colors ${
+                isFavorite ? 'text-yellow-300' : 'text-white/40 hover:text-white/70'
+              }`}
+              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-pressed={isFavorite}
+            >
+              <Star
+                className="w-4 h-4"
+                fill={isFavorite ? '#fbbf24' : 'transparent'}
+                strokeWidth={isFavorite ? 0 : 2}
+              />
+            </button>
+          )}
+        </div>
+        <Badge
+          className="ml-auto border-0 text-white font-semibold"
+          style={{
+            backgroundImage:
+              team.W >= team.L
+                ? 'linear-gradient(90deg, #ffffffff, #ffffffff)'
+                : 'linear-gradient(90deg, #000000ff, #000000ff)',
+            color: team.W >= team.L ? '#2b2b2bff' : '#ffffffff',
+            padding: '0.25rem 0.6rem',
+            borderRadius: '0.4rem',
+            letterSpacing: '0.5px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+          }}
+        >
+          {team.W}-{team.L}
+        </Badge>
+      </div>
 
       {/* === White stats card === */}
  
@@ -1952,14 +2151,38 @@ const NBA = () => {
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
+  const [favoriteTeamIds, setFavoriteTeamIds] = useState<number[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = window.localStorage.getItem(FAVORITE_TEAMS_STORAGE_KEY);
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((value): value is number => Number.isFinite(value));
+      }
+    } catch {}
+    return [];
+  });
   const [sortField, setSortField] = useState<'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT'>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
   const logosScrollRef = useRef<HTMLDivElement | null>(null);
   const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
-const [focusedAllTeamPlayer, setFocusedAllTeamPlayer] = useState<Player | null>(null);
+  const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
+  const [focusedAllTeamPlayer, setFocusedAllTeamPlayer] = useState<Player | null>(null);
+  const toggleFavoriteTeam = React.useCallback((team: NBATeam) => {
+    setFavoriteTeamIds((prev) => {
+      const exists = prev.includes(team.TEAM_ID);
+      return exists ? prev.filter((id) => id !== team.TEAM_ID) : [...prev, team.TEAM_ID];
+    });
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(FAVORITE_TEAMS_STORAGE_KEY, JSON.stringify(favoriteTeamIds));
+    } catch {}
+  }, [favoriteTeamIds]);
   // League-wide extrema for radar normalization (memoized for smooth animation)
   const radarMetricKeys = ['pts', 'reb', 'threes', 'ftm', 'blk', 'bpi', 'off', 'def', 'pbpi'] as const;
   type RadarMetricKey = (typeof radarMetricKeys)[number];
@@ -2236,8 +2459,11 @@ type PlayerAverages = {
   GP: number; MIN: number; TOV: number; FGA: number; FG3A: number; FTA: number;
 };
 
+const allPlayers = React.useMemo(() => {
+  return Object.values(nbaPlayerData).flat() as Player[];
+}, [nbaPlayerData]);
+
 const playerAverages = React.useMemo<PlayerAverages | null>(() => {
-  const allPlayers = Object.values(nbaPlayerData).flat() as Player[];
   if (allPlayers.length === 0) return null;
 
   const totals = allPlayers.reduce(
@@ -2273,7 +2499,40 @@ const playerAverages = React.useMemo<PlayerAverages | null>(() => {
     GP: totals.GP / n, MIN: totals.MIN / n,
     TOV: totals.TOV / n, FGA: totals.FGA / n, FG3A: totals.FG3A / n, FTA: totals.FTA / n,
   };
-}, [nbaPlayerData]);
+}, [allPlayers]);
+
+const leagueStatLeaders = React.useMemo<StatLeaderMap>(() => {
+  const leaderMap: StatLeaderMap = {};
+  const epsilon = 0.01;
+  PLAYER_STAT_KEYS.forEach((key) => {
+    let bestValue: number | null = null;
+    let leaderIds: number[] = [];
+    allPlayers.forEach((p) => {
+      const value = Number((p as any)[key]);
+      if (!Number.isFinite(value)) return;
+      if (bestValue === null) {
+        bestValue = value;
+        leaderIds = [p.PLAYER_ID];
+        return;
+      }
+      const better = PLAYER_LOWER_IS_BETTER.has(key)
+        ? value < bestValue - epsilon
+        : value > bestValue + epsilon;
+      if (better) {
+        bestValue = value;
+        leaderIds = [p.PLAYER_ID];
+        return;
+      }
+      if (Math.abs(value - bestValue) <= epsilon) {
+        leaderIds.push(p.PLAYER_ID);
+      }
+    });
+    if (bestValue !== null && leaderIds.length > 0) {
+      leaderMap[key] = { value: bestValue, playerIds: leaderIds };
+    }
+  });
+  return leaderMap;
+}, [allPlayers]);
 
 // Map team abbreviation to logo URL for quick lookup in player cards
 const abbrToLogo = React.useMemo(() => {
@@ -2295,10 +2554,23 @@ const abbrToRecord = React.useMemo(() => {
   return map;
 }, [nbaTeams]);
 
+const abbrToTeamMap = React.useMemo(() => {
+  const map: Record<string, NBATeam> = {};
+  nbaTeams.forEach((t) => {
+    const abbr = teamAbbreviations[t.TEAM_NAME];
+    if (abbr) map[abbr.toUpperCase()] = t;
+  });
+  return map;
+}, [nbaTeams]);
 
 
 
-const getPlayerHighlight = (player: Player, key: keyof NonNullable<typeof playerAverages>) => {
+
+const getPlayerHighlight = (player: Player, key: keyof Player) => {
+  const leaderEntry = leagueStatLeaders[key];
+  if (leaderEntry?.playerIds.includes(player.PLAYER_ID)) {
+    return 'best';
+  }
   if (!playerAverages) return 'neutral';
 
   const playerValue = Number((player as any)[key]);
@@ -2310,12 +2582,7 @@ const getPlayerHighlight = (player: Player, key: keyof NonNullable<typeof player
   if (Math.abs(diff) < 0.01) return 'neutral';
 
   // mark which stats should be “lower is better”
-  const lowerIsBetter = new Set<keyof NonNullable<typeof playerAverages>>([
-    'TOV', // turnovers
-    // Add others here if you decide: e.g. 'FGA','FG3A','FTA' (usually context-dependent)
-  ]);
-
-  if (lowerIsBetter.has(key)) {
+  if (PLAYER_LOWER_IS_BETTER.has(key)) {
     return diff < 0 ? 'high' : 'low';
   }
   return diff > 0 ? 'high' : 'low';
@@ -2540,6 +2807,7 @@ useEffect(() => {
                       key={t.TEAM_ID}
                       team={t}
                       highlight={dashboardHighlightTeamId === t.TEAM_ID}
+                      onClick={() => setSelectedTeam(t)}
                       ref={(el) => {
                         if (el) {
                           dashboardTeamRefs.current[t.TEAM_ID] = el;
@@ -2591,6 +2859,8 @@ useEffect(() => {
             logoMap={abbrToLogo}
             recordMap={abbrToRecord}
             onTeamFocus={handleDashboardTeamFocus}
+            favoriteTeamIds={favoriteTeamIds}
+            abbrToTeamMap={abbrToTeamMap}
           />
         </CardContent>
       </Card>
@@ -2880,10 +3150,12 @@ useEffect(() => {
               <div className="w-full flex gap-4 items-stretch">
                 <div className="w-full xl:w-3/6 xl:w-1/2 mr-auto">
                   <TeamCard
-                    team={{ ...currentTeam, rank: (teams.findIndex(tt => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
+                    team={{ ...currentTeam, rank: (teams.findIndex((tt) => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
                     leagueAverages={leagueAverages}
                     allTeams={nbaTeams}
                     onClick={() => setSelectedTeam(currentTeam)}
+                    isFavorite={favoriteTeamIds.includes(currentTeam.TEAM_ID)}
+                    onToggleFavorite={toggleFavoriteTeam}
                   />
                 </div>
                 {/* Use the right gap exclusively for the pie chart (xl+) */}
