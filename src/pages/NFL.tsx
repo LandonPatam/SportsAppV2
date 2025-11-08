@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -674,7 +674,7 @@ const TeamCard = ({
 
                 {
                   label: 'FPI Rank',
-                  value: Number.isFinite(fpiRank) ? `${fpiRank}` : 'â€”',
+                  value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
                   highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
                 },
                 { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
@@ -1497,7 +1497,7 @@ const NFLTeamMiniCard = ({
 }) => {
   const abbr = (teamAbbreviations as any)[team.name] || 'UNK';
   const colors = teamColors[team.name] || { primary: '#222', secondary: '#555' };
-  const record = `${team.wins}-${team.losses}${team.ties ? `-${team.ties}` : ''}`;
+  const record = `${team.wins} - ${team.losses}${team.ties ? ` - ${team.ties}` : ''}`;
   const primaryBadgeText = badgeText ?? record;
   return (
     <div className="relative rounded-xl overflow-hidden border border-[1px]">
@@ -1648,7 +1648,7 @@ const DashboardTodayScheduleNFL = ({
     return value.replace(/-/g, ' - ');
   }, []);
 
-  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loadingâ€¦</div>;
+  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
   if (games.length === 0) return <div className="text-sm text-muted-foreground">No upcoming games</div>;
 
   const gap = layout.gap;
@@ -2030,6 +2030,8 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
     </div>
   );
 };
+
+
 
 
 
