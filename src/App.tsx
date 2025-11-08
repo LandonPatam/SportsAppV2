@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // ðŸ
 import NotFound from "./pages/NotFound";
 import NFL from "./pages/NFL";
 import NBA from "./pages/NBA";
-import Playground from "./pages/Playground";
 
 const queryClient = new QueryClient();
 
@@ -23,7 +22,6 @@ const App = () => (
           {/* Main app routes */}
           <Route path="/nfl" element={<NFL />} />
           <Route path="/nba" element={<NBA />} />
-          <Route path="/playground" element={<Playground />} />
 
           {/* Catch-all for 404s */}
           <Route path="*" element={<NotFound />} />
