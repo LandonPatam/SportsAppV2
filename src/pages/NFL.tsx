@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -122,6 +122,33 @@ interface NFLScheduleGame {
 }
 
 type NFLScheduleData = NFLScheduleGame[];
+
+type SortField =
+  | 'WIN_PCT'
+  | 'PF'
+  | 'PA'
+  | 'PD'
+  | 'PPG'
+  | 'EPA_OFF'
+  | 'EPA_DEF'
+  | 'EPA_ST'
+  | 'FPI'
+  | 'FPI_RANK'
+  | 'STREAK';
+
+const TEAM_SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: 'WIN_PCT', label: 'Win %' },
+  { value: 'PF', label: 'Points For' },
+  { value: 'PA', label: 'Points Against' },
+  { value: 'PD', label: 'Point Diff' },
+  { value: 'PPG', label: 'Points Per Game' },
+  { value: 'EPA_OFF', label: 'EPA Offense' },
+  { value: 'EPA_DEF', label: 'EPA Defense' },
+  { value: 'EPA_ST', label: 'EPA Special Teams' },
+  { value: 'FPI', label: 'FPI' },
+  { value: 'FPI_RANK', label: 'FPI Rank' },
+  { value: 'STREAK', label: 'Win Streak' },
+];
 
 /* ============================================================================
  * TEAM COLORS CONFIGURATION
@@ -289,22 +316,65 @@ const DarkModeToggle = () => {
 // Small helper for labeled stats with hover tooltips
 const statDescriptions: Record<string, string> = {
   // Core
-  'Win %': 'Team win percentage (wins + 0.5 Ã— ties) / total games',
-  PF: 'Points For â€” total points the team has scored',
-  PA: 'Points Against â€” total points the team has allowed',
-  PD: 'Point Differential â€” PF minus PA',
-  PPG: 'Points Per Game â€” PF divided by games played',
+  'Win %': 'Team win percentage',
+  PF: 'Points For',
+  PA: 'Points Against',
+  PD: 'Point Differential',
+  PPG: 'Points Per Game',
 
   // Records
-  D: 'Record within divisional games (W-L or W-L-T)',
-  C: 'Record within conference games (W-L or W-L-T)',
-  Streak: 'Current win/loss streak (e.g., 3W or 2L)',
+  D: 'Record within divisional games',
+  C: 'Record within conference games',
+  Streak: 'Current win/loss streak ',
 
   // Analytics
-  FPI: 'ESPN Football Power Index â€” team rating (higher is better)',
-  'OFF': 'Expected Points Added by offense â€” per-play team efficiency (higher is better)',
-  'DEF': 'Expected Points Added allowed by defense â€” defensive efficiency (lower is better)',
-  'ST': 'Expected Points Added by special teams â€” ST efficiency (higher is better)',
+  FPI: 'ESPN Football Power Index',
+  'OFF': 'Offensive Contribution',
+  'DEF': 'Defensive Contribution',
+  'ST': 'Special Teams Contribution',
+};
+
+type BestMetricKey =
+  | 'WIN_PCT'
+  | 'PPG'
+  | 'PF'
+  | 'PA'
+  | 'EPA_OFF'
+  | 'EPA_DEF'
+  | 'EPA_ST'
+  | 'FPI'
+  | 'FPI_RANK'
+  | 'STREAK';
+
+const BEST_METRIC_KEYS: ReadonlyArray<BestMetricKey> = [
+  'WIN_PCT',
+  'PPG',
+  'PF',
+  'PA',
+  'EPA_OFF',
+  'EPA_DEF',
+  'EPA_ST',
+  'FPI',
+  'FPI_RANK',
+  'STREAK',
+] as const;
+
+const isBestMetricKey = (key: string): key is BestMetricKey =>
+  (BEST_METRIC_KEYS as readonly string[]).includes(key);
+
+const parseStreakValue = (streak?: string | null) => {
+  if (!streak) return null;
+  const cleaned = streak.replace(/\s+/g, '').toUpperCase();
+  const direct = cleaned.match(/^([WL])(\d+)$/);
+  const reversed = cleaned.match(/^(\d+)([WL])$/);
+  const match = direct || reversed;
+  if (!match) return null;
+  const letter = direct ? direct[1] : reversed ? reversed[2] : null;
+  const numStr = direct ? direct[2] : reversed ? reversed[1] : null;
+  if (!letter || !numStr) return null;
+  const num = parseInt(numStr, 10);
+  if (!Number.isFinite(num)) return null;
+  return letter.toUpperCase() === 'W' ? num : -num;
 };
 
 const StatRow = ({
@@ -314,10 +384,12 @@ const StatRow = ({
 }: {
   label: string;
   value: string | number;
-  highlight?: 'high' | 'low' | 'neutral';
+  highlight?: 'high' | 'low' | 'neutral' | 'best';
 }) => {
   const colorClass =
-    highlight === 'high'
+    highlight === 'best'
+      ? 'text-yellow-300 font-semibold'
+      : highlight === 'high'
       ? 'text-green-400 font-semibold'
       : highlight === 'low'
       ? 'text-red-400 font-semibold'
@@ -352,15 +424,70 @@ const TeamCard = ({
   onClick,
   leagueAverages,
   conferenceAverages,
+  allTeams,
 }: {
   team: NFLTeam;
   onClick?: () => void;
   leagueAverages: any;
   conferenceAverages: Record<string, { divPct: number; confPct: number; last5Pct: number }>;
+  allTeams?: NFLTeam[];
 }) => {
   const totalGames = team.wins + team.losses + team.ties;
   const teamColor = teamColors[team.name] || { primary: '#1e40af', secondary: '#dc2626' };
   const teamAbbr = teamAbbreviations[team.name] || '';
+
+  const bestMetricMap = React.useMemo<Record<BestMetricKey, { value: number; lowerBetter?: boolean }>>(() => {
+    const base: Record<BestMetricKey, { value: number; lowerBetter?: boolean }> = {
+      WIN_PCT: { value: -Infinity },
+      PPG: { value: -Infinity },
+      PF: { value: -Infinity },
+      PA: { value: Infinity, lowerBetter: true },
+      EPA_OFF: { value: -Infinity },
+      EPA_DEF: { value: -Infinity },
+      EPA_ST: { value: -Infinity },
+      FPI: { value: -Infinity },
+      FPI_RANK: { value: Infinity, lowerBetter: true },
+      STREAK: { value: -Infinity },
+    };
+    const source = allTeams && allTeams.length ? allTeams : null;
+    if (!source) return base;
+    const update = (key: BestMetricKey, val: number | null | undefined) => {
+      if (!Number.isFinite(val)) return;
+      const entry = base[key];
+      if (!entry) return;
+      if (entry.lowerBetter) {
+        if (val < entry.value) entry.value = val;
+      } else if (val > entry.value) {
+        entry.value = val;
+      }
+    };
+    for (const t of source) {
+      const gamesPlayed = (t.wins || 0) + (t.losses || 0) + (t.ties || 0);
+      update('WIN_PCT', Number(t.win_pct));
+      update('PPG', gamesPlayed > 0 ? Number(t.points_for || 0) / gamesPlayed : null);
+      update('PF', Number(t.points_for));
+      update('PA', Number(t.points_against));
+      update('EPA_OFF', Number((t as any).epa_offense));
+      update('EPA_DEF', Number((t as any).epa_defense));
+      update('EPA_ST', Number((t as any).epa_special));
+      update('FPI', Number((t as any).fpi));
+      update('FPI_RANK', Number((t as any).fpirank));
+      const streakVal = parseStreakValue((t as any).Strk);
+      if (streakVal && streakVal > 0) update('STREAK', streakVal);
+    }
+    return base;
+  }, [allTeams]);
+
+  const leagueBestHighlight = React.useCallback(
+    (key: BestMetricKey, value?: number | null) => {
+      if (!Number.isFinite(value)) return undefined;
+      const entry = bestMetricMap[key];
+      if (!entry || !Number.isFinite(entry.value)) return undefined;
+      const epsilon = entry.lowerBetter ? 0.5 : 0.01;
+      return Math.abs((value as number) - entry.value) < epsilon ? 'best' : undefined;
+    },
+    [bestMetricMap],
+  );
 
   // Compare stat vs league average to determine highlight
   const getHighlight = (
@@ -392,6 +519,9 @@ const TeamCard = ({
       case 'EPA_ST': teamValue = Number((team as any).epa_special); break;
     }
 
+    const bestHit = isBestMetricKey(key) ? leagueBestHighlight(key, teamValue) : undefined;
+    if (bestHit) return bestHit;
+
     const leagueValue = Number((leagueAverages as any)[key] ?? 0);
     const diff = teamValue - leagueValue;
     if (Math.abs(diff) < 0.01) return 'neutral';
@@ -414,7 +544,6 @@ const TeamCard = ({
     if (total === 0) return null;
     return (wins + 0.5 * ties) / total;
   };
-
   // Conference-based highlights for Division, Conference, Last5 (compare within same conference)
   const getConfHighlight = (key: 'DIV' | 'CONF' | 'LAST5') => {
     const conf = team.conference;
@@ -473,14 +602,13 @@ const TeamCard = ({
 
           <h3 className="text-lg font-bold">{team.name}</h3>
 
-          {/* Win/Loss Badge */}
           <Badge
             className="ml-auto border-0 text-white font-semibold shadow-sm"
             style={{
               backgroundImage:
                 team.win_pct >= 0.5
-                  ? 'linear-gradient(90deg, #ffffffff, #ffffffff)' // ðŸŸ¢ winning gradient
-                  : 'linear-gradient(90deg, #000000ff, #000000ff)', // ðŸ”´ losing gradient
+                  ? 'linear-gradient(90deg, #ffffffff, #ffffffff)'
+                  : 'linear-gradient(90deg, #000000ff, #000000ff)',
               color: team.win_pct >= 0.5 ? '#2b2b2bff' : '#ffffffff',
               padding: '0.25rem 0.6rem',
               borderRadius: '0.4rem',
@@ -515,24 +643,43 @@ const TeamCard = ({
               const epaDef = Number((team as any).epa_defense ?? NaN);
               const epaST = Number((team as any).epa_special ?? NaN);
               const ppg = totalGames > 0 ? (team.points_for / totalGames) : 0;
+              const streakVal = parseStreakValue(team.Strk);
 
               // Arrange 4 rows, 3 columns. Third column shows EPA Def, EPA ST, and Streak.
-              const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' }[] = [
+              const fpiRank = Number((team as any).fpirank);
+              const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' | 'best' }[] = [
+
                 // Row 1
                 { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
                 { label: 'PPG', value: ppg.toFixed(1), highlight: getHighlight('PPG') },
-                { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
-                // Row 2
-                { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
-                { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
-                { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
-                // Row 3 (Division + Conference on the same row)
-                { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
-                { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
-                { label: 'Streak', value: team.Strk || '-' },
-                // Row 4
                 { label: 'FPI', value: Number.isFinite(fpi) ? fpi.toFixed(1) : '-', highlight: getHighlight('FPI') },
+
+                // Row 2
+                {
+                  label: 'Streak',
+                  value: team.Strk || '-',
+                  highlight: streakVal && streakVal > 0 ? leagueBestHighlight('STREAK', streakVal) : undefined,
+                },
+                { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
+                { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
+
+                // Row 3 
+                { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
+                { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
+                { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
+
+
+                //Row 4
                 { label: 'C', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
+
+                {
+                  label: 'FPI Rank',
+                  value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
+                  highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
+                },
+                { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
+
+
                 // Leave last cell empty implicitly (grid will just not render a 12th item)
               ];
 
@@ -559,7 +706,7 @@ const TeamCard = ({
 const NFL = () => {
   const [teams, setTeams] = useState<NFLTeam[]>([]);
   const [scheduleData, setScheduleData] = useState<NFLScheduleData | null>(null);
-  const [sortField, setSortField] = useState<'WIN_PCT' | 'PF' | 'PA' | 'PD' | 'PPG'>('WIN_PCT');
+  const [sortField, setSortField] = useState<SortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTeamAll, setSelectedTeamAll] = useState<NFLTeam | null>(null);
   const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>({});
@@ -684,24 +831,66 @@ const NFL = () => {
   }, []);
 
   // Extract numeric stat for sorting
-  const getTeamStat = (t: NFLTeam, field: 'WIN_PCT' | 'PF' | 'PA' | 'PD' | 'PPG') => {
-    switch (field) {
-      case 'WIN_PCT': return t.win_pct;
-      case 'PF': return t.points_for;
-      case 'PA': return t.points_against;
-      case 'PD': return t.point_diff;
-      case 'PPG': {
-        const total = t.wins + t.losses + t.ties;
-        return total > 0 ? t.points_for / total : 0;
-      }
+const getTeamStat = (t: NFLTeam, field: SortField) => {
+  const total = t.wins + t.losses + t.ties;
+  switch (field) {
+    case 'WIN_PCT':
+      return t.win_pct;
+    case 'PF':
+      return t.points_for;
+    case 'PA':
+      return t.points_against;
+    case 'PD':
+      return t.point_diff;
+    case 'PPG':
+      return total > 0 ? t.points_for / total : 0;
+    case 'EPA_OFF':
+      return Number((t as any).epa_offense) || 0;
+    case 'EPA_DEF':
+      return Number((t as any).epa_defense) || 0;
+    case 'EPA_ST':
+      return Number((t as any).epa_special) || 0;
+    case 'FPI':
+      return Number((t as any).fpi) || 0;
+    case 'FPI_RANK': {
+      const rank = Number((t as any).fpirank);
+      return Number.isFinite(rank) ? -rank : Number.NEGATIVE_INFINITY;
     }
-  };
+    case 'STREAK': {
+      const val = parseStreakValue(t.Strk);
+      return typeof val === 'number' && Number.isFinite(val) ? val : 0;
+    }
+    default:
+      return 0;
+  }
+};
 
   // Dynamic sorter using selected field and order
   const sortTeamsDynamic = (list: NFLTeam[]) => {
     const sorted = [...list].sort((a, b) => getTeamStat(b, sortField) - getTeamStat(a, sortField));
     return sortOrder === 'asc' ? sorted.reverse() : sorted;
   };
+
+const orderedTeams = useMemo(() => sortTeamsDynamic(teams), [teams, sortField, sortOrder]);
+const selectionSignature = useMemo(
+  () => JSON.stringify({ sortField, sortOrder }),
+  [sortField, sortOrder],
+);
+const lastSelectionSignatureRef = useRef(selectionSignature);
+
+useEffect(() => {
+  const signatureChanged = selectionSignature !== lastSelectionSignatureRef.current;
+  if (!orderedTeams.length) {
+    if (selectedTeamAll) setSelectedTeamAll(null);
+  } else if (
+    signatureChanged ||
+    !selectedTeamAll ||
+    !orderedTeams.some((t) => t.name === selectedTeamAll.name)
+  ) {
+    setSelectedTeamAll(orderedTeams[0]);
+  }
+  lastSelectionSignatureRef.current = selectionSignature;
+}, [orderedTeams, selectionSignature, selectedTeamAll]);
 
   // League averages for highlighting
   const leagueAverages = React.useMemo(() => {
@@ -952,7 +1141,10 @@ const NFL = () => {
         </TabsContent>
 
         {/* All Teams Tab with Sort Controls + Sidebar layout (like NBA) */}
-        <TabsContent value="all">
+        <TabsContent
+          value="all"
+          className="max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar pr-2 pb-0"
+        >
           <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
             <div className="flex items-center gap-3">
               <label className="text-sm font-semibold text-white/80">Sort by:</label>
@@ -977,13 +1169,7 @@ const NFL = () => {
                   "
                 >
                   <div className="grid grid-cols-3 gap-1 max-h-[240px] overflow-y-auto pr-1">
-                    {[
-                      ['WIN_PCT', 'Win %'],
-                      ['PF', 'Points For'],
-                      ['PA', 'Points Against'],
-                      ['PD', 'Point Diff'],
-                      ['PPG', 'Points Per Game'],
-                    ].map(([value, label]) => (
+                    {TEAM_SORT_OPTIONS.map(({ value, label }) => (
                       <SelectItem
                         key={value}
                         value={value}
@@ -1005,23 +1191,23 @@ const NFL = () => {
   rounded-full px-4 py-2 text-sm font-semibold text-black
   bg-white
   shadow-md shadow-black/40
-  hover:scale-[1.05]
+  hover:bg-white hover:text-black hover:scale-[1.05]
+  focus-visible:ring-0 focus-visible:ring-offset-0
   transition-all duration-300
 `}
               >
-              {sortOrder === 'asc' ? 'â†‘ Ascending' : 'â†“ Descending'}
+              {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
             </Button>
           </div>
 
           {(() => {
-            const ordered = sortTeamsDynamic(teams);
-            const currentTeam = selectedTeamAll || ordered[0];
+            const currentTeam = selectedTeamAll || orderedTeams[0];
             return (
-              <div className="flex flex-col xl:flex-row gap-4 h-[100vh] overflow-hidden">
+              <div className="flex flex-col xl:flex-row gap-4 min-h-0">
                 {/* Left: team logos grid */}
                 <div className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar pr-1 pt-0 pb-6">
                   <div className="grid grid-cols-3 gap-3">
-                    {ordered.map((t) => {
+                    {orderedTeams.map((t) => {
                       const isActive = currentTeam && t.name === currentTeam.name;
                       return (
                         <button
@@ -1054,6 +1240,7 @@ const NFL = () => {
                             team={currentTeam}
                             leagueAverages={leagueAverages}
                             conferenceAverages={conferenceAverages}
+                            allTeams={teams}
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -1194,6 +1381,7 @@ const NFL = () => {
                         team={team}
                         leagueAverages={leagueAverages}
                         conferenceAverages={conferenceAverages}
+                        allTeams={teams}
                       />
                     ))}
                   </div>
@@ -1842,4 +2030,6 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
     </div>
   );
 };
+
+
 
