@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -289,22 +289,22 @@ const DarkModeToggle = () => {
 // Small helper for labeled stats with hover tooltips
 const statDescriptions: Record<string, string> = {
   // Core
-  'Win %': 'Team win percentage (wins + 0.5 × ties) / total games',
-  PF: 'Points For — total points the team has scored',
-  PA: 'Points Against — total points the team has allowed',
-  PD: 'Point Differential — PF minus PA',
-  PPG: 'Points Per Game — PF divided by games played',
+  'Win %': 'Team win percentage (wins + 0.5 Ã— ties) / total games',
+  PF: 'Points For â€” total points the team has scored',
+  PA: 'Points Against â€” total points the team has allowed',
+  PD: 'Point Differential â€” PF minus PA',
+  PPG: 'Points Per Game â€” PF divided by games played',
 
   // Records
-  Division: 'Record within divisional games (W-L or W-L-T)',
-  Conference: 'Record within conference games (W-L or W-L-T)',
+  D: 'Record within divisional games (W-L or W-L-T)',
+  C: 'Record within conference games (W-L or W-L-T)',
   Streak: 'Current win/loss streak (e.g., 3W or 2L)',
 
   // Analytics
-  FPI: 'ESPN Football Power Index — team rating (higher is better)',
-  'EPA Off': 'Expected Points Added by offense — per-play team efficiency (higher is better)',
-  'EPA Def': 'Expected Points Added allowed by defense — defensive efficiency (lower is better)',
-  'EPA ST': 'Expected Points Added by special teams — ST efficiency (higher is better)',
+  FPI: 'ESPN Football Power Index â€” team rating (higher is better)',
+  'OFF': 'Expected Points Added by offense â€” per-play team efficiency (higher is better)',
+  'DEF': 'Expected Points Added allowed by defense â€” defensive efficiency (lower is better)',
+  'ST': 'Expected Points Added by special teams â€” ST efficiency (higher is better)',
 };
 
 const StatRow = ({
@@ -479,8 +479,8 @@ const TeamCard = ({
             style={{
               backgroundImage:
                 team.win_pct >= 0.5
-                  ? 'linear-gradient(90deg, #ffffffff, #ffffffff)' // 🟢 winning gradient
-                  : 'linear-gradient(90deg, #000000ff, #000000ff)', // 🔴 losing gradient
+                  ? 'linear-gradient(90deg, #ffffffff, #ffffffff)' // ðŸŸ¢ winning gradient
+                  : 'linear-gradient(90deg, #000000ff, #000000ff)', // ðŸ”´ losing gradient
               color: team.win_pct >= 0.5 ? '#2b2b2bff' : '#ffffffff',
               padding: '0.25rem 0.6rem',
               borderRadius: '0.4rem',
@@ -521,18 +521,18 @@ const TeamCard = ({
                 // Row 1
                 { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
                 { label: 'PPG', value: ppg.toFixed(1), highlight: getHighlight('PPG') },
-                { label: 'EPA Def', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
+                { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
                 // Row 2
                 { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
                 { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
-                { label: 'EPA ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
+                { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
                 // Row 3 (Division + Conference on the same row)
-                { label: 'Division', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
-                { label: 'EPA Off', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
+                { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
+                { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
                 { label: 'Streak', value: team.Strk || '-' },
                 // Row 4
                 { label: 'FPI', value: Number.isFinite(fpi) ? fpi.toFixed(1) : '-', highlight: getHighlight('FPI') },
-                { label: 'Conference', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
+                { label: 'C', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
                 // Leave last cell empty implicitly (grid will just not render a 12th item)
               ];
 
@@ -883,7 +883,7 @@ const NFL = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full min-h-0">
-        <TabsList className="grid w-full grid-cols-5 mb-6 max-w-none">
+        <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="all">All Teams</TabsTrigger>
           <TabsTrigger value="AFC">AFC</TabsTrigger>
@@ -892,7 +892,7 @@ const NFL = () => {
         </TabsList>
 
         {/* Dashboard: Win% & FPI stacks + schedule */}
-        <TabsContent value="dashboard" className="space-y-6">
+        <TabsContent value="dashboard">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
             {/* Left column: ranked team stacks similar to NBA layout */}
             <div className="lg:col-span-7 flex flex-col gap-4 h-full overflow-hidden">
@@ -913,7 +913,7 @@ const NFL = () => {
               <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
                 <CardHeader className="px-4 py-3">
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden px-2 pb-4">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden px-4 pb-4">
                   <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       {fpiSortedTeams.map((team, idx) => {
@@ -937,7 +937,7 @@ const NFL = () => {
     <div className="lg:col-span-5 h-full overflow-hidden">
       <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
                 <CardHeader className="p-0" />
-                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-3 px-3">
+                <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
                   <DashboardTodayScheduleNFL
                     scheduleData={scheduleData}
                     logoMap={abbrToLogo}
@@ -957,22 +957,42 @@ const NFL = () => {
             <div className="flex items-center gap-3">
               <label className="text-sm font-semibold text-white/80">Sort by:</label>
               <Select onValueChange={(v) => setSortField(v as typeof sortField)} value={sortField}>
-                <SelectTrigger className={`
-  w-[150px]
-  rounded-full px-4 py-2 text-sm font-semibold text-black
-  bg-white
-  shadow-md shadow-black/40
-  hover:scale-[1.05]
-  transition-all duration-300
-`}>
+                <SelectTrigger
+                  className="
+                    w-[180px]
+                    rounded-full px-4 py-2 text-sm font-semibold text-black
+                    bg-white
+                    shadow-md shadow-black/40
+                    hover:scale-[1.05]
+                    transition-all duration-300
+                    focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
+                  "
+                >
                   <SelectValue placeholder="Select stat" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WIN_PCT">Win %</SelectItem>
-                  <SelectItem value="PF">Points For (PF)</SelectItem>
-                  <SelectItem value="PA">Points Against (PA)</SelectItem>
-                  <SelectItem value="PD">Point Diff (PD)</SelectItem>
-                  <SelectItem value="PPG">Points Per Game (PPG)</SelectItem>
+                <SelectContent
+                  className="
+                    rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
+                    text-white shadow-lg
+                  "
+                >
+                  <div className="grid grid-cols-3 gap-1 max-h-[240px] overflow-y-auto pr-1">
+                    {[
+                      ['WIN_PCT', 'Win %'],
+                      ['PF', 'Points For'],
+                      ['PA', 'Points Against'],
+                      ['PD', 'Point Diff'],
+                      ['PPG', 'Points Per Game'],
+                    ].map(([value, label]) => (
+                      <SelectItem
+                        key={value}
+                        value={value}
+                        className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
+                      >
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </div>
                 </SelectContent>
               </Select>
             </div>
@@ -989,7 +1009,7 @@ const NFL = () => {
   transition-all duration-300
 `}
               >
-              {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
+              {sortOrder === 'asc' ? 'â†‘ Ascending' : 'â†“ Descending'}
             </Button>
           </div>
 
@@ -1335,9 +1355,13 @@ const NFLTeamMiniCard = ({
 const DashboardTodayScheduleNFL = ({
   scheduleData,
   logoMap,
+  recordMap = {},
+  abbrToTeamMap = {},
 }: {
   scheduleData: NFLScheduleData | null;
   logoMap: Record<string, string>;
+  recordMap?: Record<string, string>;
+  abbrToTeamMap?: Record<string, NFLTeam>;
 }) => {
   const todayKey = React.useMemo(() => {
     const now = new Date();
@@ -1347,41 +1371,32 @@ const DashboardTodayScheduleNFL = ({
     return `${y}-${m}-${d}`;
   }, []);
 
-  const gamesByDate = React.useMemo(() => {
-    if (!scheduleData) return {} as Record<string, NFLScheduleGame[]>;
+  const { games, effectiveDateKey } = React.useMemo(() => {
+    if (!scheduleData) return { games: [] as NFLScheduleGame[], effectiveDateKey: null as string | null };
     const arr: NFLScheduleGame[] = Array.isArray(scheduleData) ? (scheduleData as NFLScheduleGame[]) : [];
-    const map: Record<string, NFLScheduleGame[]> = {};
-    for (const g of arr) {
+    const byDate: Record<string, NFLScheduleGame[]> = {};
+    arr.forEach((g) => {
       const key = String(g.date || '').slice(0, 10);
-      if (!key) continue;
-      if (!map[key]) map[key] = [];
-      map[key].push(g);
+      if (!key) return;
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(g);
+    });
+    const keys = Object.keys(byDate).sort();
+    const todayGames = byDate[todayKey];
+    if (todayGames?.length) {
+      return { games: todayGames, effectiveDateKey: todayKey };
     }
-    Object.values(map).forEach((list) =>
-      list.sort(
-        (a, b) =>
-          Number(a.ts_utc || 0) - Number(b.ts_utc || 0) ||
-          String(a.time || '').localeCompare(String(b.time || ''))
-      )
-    );
-    return map;
-  }, [scheduleData]);
-
-  const dateKeys = React.useMemo(() => Object.keys(gamesByDate).sort(), [gamesByDate]);
-
-  const activeDateKey = React.useMemo(() => {
-    if (!dateKeys.length) return null;
-    if (gamesByDate[todayKey]?.length) return todayKey;
-    const nextKey = dateKeys.find((key) => key > todayKey);
-    return nextKey ?? null;
-  }, [dateKeys, gamesByDate, todayKey]);
-
-  const games = activeDateKey ? gamesByDate[activeDateKey] || [] : [];
+    const futureKey = keys.find((key) => key > todayKey && byDate[key]?.length);
+    if (futureKey) {
+      return { games: byDate[futureKey], effectiveDateKey: futureKey };
+    }
+    return { games: [] as NFLScheduleGame[], effectiveDateKey: null as string | null };
+  }, [scheduleData, todayKey]);
 
   const shellRef = React.useRef<HTMLDivElement>(null);
   const [layout, setLayout] = React.useState(() => ({
-    gap: 8,
-    cardHeight: 72,
+    gap: 12,
+    cardHeight: 120,
     scale: 1,
     ready: false,
   }));
@@ -1391,22 +1406,25 @@ const DashboardTodayScheduleNFL = ({
     if (!shell) return;
     const rect = shell.getBoundingClientRect();
     const available = rect.height;
-    if (!Number.isFinite(available) || available <= 0) return;
+    if (!available || !Number.isFinite(available)) return;
     const totalGames = Math.max(1, games.length);
-    let gap = Math.max(2, Math.min(10, (available / (totalGames + 0.5)) * 0.25));
-    const spacingBudget = gap * (totalGames + 1);
-    const maxSpacing = available * 0.22;
-    if (spacingBudget > maxSpacing && maxSpacing > 0) {
-      gap = maxSpacing / (totalGames + 1);
+
+    let gap = Math.max(2, Math.min(8, (available / (totalGames + 0.25)) * 0.25));
+    const gapBudget = gap * (totalGames + 1);
+    const maxGapBudget = available * 0.2;
+    if (gapBudget > maxGapBudget && maxGapBudget > 0) {
+      gap = maxGapBudget / (totalGames + 1);
     }
+
     const usable = Math.max(0, available - gap * (totalGames + 1));
     const perCard = totalGames > 0 ? usable / totalGames : available;
-    const BASE_CARD = 76;
-    const scale = Math.max(0.65, Math.min(1.35, perCard / BASE_CARD));
+    const BASE_CARD = 105;
+    const scale = Math.max(0.6, Math.min(1.4, perCard / BASE_CARD));
+
     setLayout((prev) => {
       const next = { gap, cardHeight: perCard, scale, ready: true };
       if (
-        Math.abs(prev.gap - next.gap) < 0.2 &&
+        Math.abs(prev.gap - next.gap) < 0.25 &&
         Math.abs(prev.cardHeight - next.cardHeight) < 0.5 &&
         Math.abs(prev.scale - next.scale) < 0.01 &&
         prev.ready === next.ready
@@ -1419,33 +1437,43 @@ const DashboardTodayScheduleNFL = ({
 
   React.useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
-    const handle = () => recomputeLayout();
+    const handleResize = () => recomputeLayout();
     recomputeLayout();
-    window.addEventListener('resize', handle);
-    window.addEventListener('orientationchange', handle as any);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize as any);
+
     let observer: ResizeObserver | null = null;
     if ('ResizeObserver' in window && shellRef.current) {
       observer = new ResizeObserver(() => recomputeLayout());
       observer.observe(shellRef.current);
     }
+
     return () => {
-      window.removeEventListener('resize', handle);
-      window.removeEventListener('orientationchange', handle as any);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize as any);
       observer?.disconnect();
     };
   }, [recomputeLayout]);
 
+  const formatRecord = React.useCallback((value?: string) => {
+    if (!value) return undefined;
+    return value.replace(/-/g, ' - ');
+  }, []);
+
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
-  if (!activeDateKey || games.length === 0) return <div className="text-sm text-muted-foreground">No schedule data</div>;
+  if (games.length === 0) return <div className="text-sm text-muted-foreground">No upcoming games</div>;
+
+  const gap = layout.gap;
+  const scale = layout.scale;
 
   return (
     <div ref={shellRef} className="flex-1 min-h-0 w-full h-full overflow-hidden">
       <div
-        className="grid grid-cols-1 h-full"
+        className="grid grid-cols-1 h-full items-start content-start"
         style={{
-          rowGap: layout.gap,
-          paddingTop: layout.gap,
-          paddingBottom: layout.gap,
+          rowGap: gap,
+          paddingTop: gap,
+          paddingBottom: gap,
           height: '100%',
           opacity: layout.ready ? 1 : 0,
           transition: 'opacity 140ms ease-out',
@@ -1454,95 +1482,175 @@ const DashboardTodayScheduleNFL = ({
         {games.map((g) => {
           let awayAbbr = (g as any).away as string | undefined;
           let homeAbbr = (g as any).home as string | undefined;
+          let awayName: string | undefined;
+          let homeName: string | undefined;
           if ((!awayAbbr || !homeAbbr) && g.matchup) {
             const parts = g.matchup.split('@');
-            const awayName = parts[0]?.trim();
-            const homeName = parts[1]?.trim();
+            awayName = parts[0]?.trim();
+            homeName = parts[1]?.trim();
             const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
             const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
             if (a) awayAbbr = a;
             if (h) homeAbbr = h;
           }
-          const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
-          const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+
+          const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
+          const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
+          const normalizedAwayName =
+            awayName || (normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr]?.name || abbreviationToTeamName[normalizedAwayAbbr] : undefined);
+          const normalizedHomeName =
+            homeName || (normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr]?.name || abbreviationToTeamName[normalizedHomeAbbr] : undefined);
+
+          const awayLogo = normalizedAwayAbbr ? logoMap[normalizedAwayAbbr] : undefined;
+          const homeLogo = normalizedHomeAbbr ? logoMap[normalizedHomeAbbr] : undefined;
+          const awayRecord = normalizedAwayAbbr ? recordMap[normalizedAwayAbbr] : undefined;
+          const homeRecord = normalizedHomeAbbr ? recordMap[normalizedHomeAbbr] : undefined;
+
           const aScore = Number(g.away_score);
           const hScore = Number(g.home_score);
           const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
-          const awayWin = hasScores ? aScore >= hScore : false;
-          const homeWin = hasScores ? hScore >= aScore : false;
+          const statusText = String(g.status || '').toLowerCase();
+          const isFinal = statusText.includes('final') || statusText === 'f' || Boolean((g as any).winner);
+          const isLive = statusText.includes('live') || statusText.includes('in progress');
+          const showScore = (hasScores && (aScore !== 0 || hScore !== 0)) || isFinal || isLive;
+          const awayWin = showScore ? aScore >= hScore : false;
+          const homeWin = showScore ? hScore >= aScore : false;
 
-          const status = String(g.status || '').toLowerCase();
-          const isFinal = status === 'final' || status.includes('final');
-          const isLive = status.includes('live');
+          const providers: string[] = [];
 
-          const cardPadding = Math.max(6, Math.round(10 * layout.scale));
+
+          const cardPadding = Math.max(6, Math.round(10 * scale));
+          const logoSize = Math.max(30, Math.round(72 * scale));
+          const scoreFont = Math.max(20, Math.round(32 * scale));
+          const timeFont = Math.max(14, Math.round(22 * scale));
+          const contentPad = Math.max(4, Math.round(8 * scale));
+          const contentSkew = Math.max(2, Math.round(4 * scale));
+          const topPad = Math.max(0, contentPad - 2 * contentSkew);
+          const bottomPad = contentPad + 2 * contentSkew;
           const cardHeight = layout.cardHeight > 0 ? layout.cardHeight : undefined;
-          const logoSize = Math.max(30, Math.round(52 * layout.scale));
-          const scoreFont = Math.max(18, Math.round(24 * layout.scale));
-          const timeFont = Math.max(14, Math.round(18 * layout.scale));
+          const recordFont = Math.max(10, Math.round(17 * scale));
+          const recordOffset = Math.max(12, Math.round(45 * scale));
+          const compactRecordLayout = games.length <= 2;
 
           return (
             <Card
-              key={g.game_id}
-              className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border flex flex-col"
-              style={{ padding: cardPadding, height: cardHeight ? `${cardHeight}px` : undefined }}
+              key={g.game_id || `${g.matchup}-${g.date}`}
+              className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col"
+              style={{
+                padding: cardPadding,
+                height: cardHeight ? `${cardHeight}px` : undefined,
+                minHeight: 0,
+              }}
             >
-              <CardContent className="p-0 flex-1 flex flex-col justify-center">
-                <div className="grid grid-cols-3 items-center">
-                  {/* Away */}
-                  <div className="flex flex-col items-center justify-center gap-1">
+              <CardContent className="p-0 flex-1 flex flex-col" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
+                <div
+                  className="grid items-center h-full min-h-0"
+                  style={{
+                    gridTemplateColumns: `1fr minmax(${Math.max(140, Math.round(180 * scale))}px, auto) 1fr`,
+                    columnGap: Math.max(18, Math.round(26 * scale)),
+                  }}
+                >
+                  {/* Away side */}
+                  <div className="flex flex-col items-center justify-center">
                     {awayLogo && (
-                      <img
-                        src={awayLogo}
-                        alt={awayAbbr || 'Away'}
-                        className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                        style={{
-                          width: logoSize,
-                          height: logoSize,
-                          filter: isFinal && awayWin
-                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
-                            : undefined,
-                        }}
-                        loading="lazy"
-                        width={64}
-                        height={64}
-                      />
+                      <div
+                        className="rounded-sm relative overflow-visible"
+                        style={{ width: logoSize, height: logoSize }}
+                        title={normalizedAwayName || awayAbbr || 'Away team'}
+                      >
+                        <img
+                          src={awayLogo}
+                          alt={awayAbbr || 'Away'}
+                          className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'relative',
+                            zIndex: 1,
+                            filter: isFinal && awayWin
+                              ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
+                              : undefined,
+                          }}
+                          loading="lazy"
+                          width={64}
+                          height={64}
+                        />
+                        {awayRecord && (
+                          <span
+                            className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-semibold' : 'absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
+                            style={
+                              compactRecordLayout
+                                ? { fontSize: recordFont }
+                                : { fontSize: recordFont, marginLeft: recordOffset }
+                            }
+                          >
+                            ({formatRecord(awayRecord)})
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  {/* Center: status or score/time */}
+                  {/* Center time or score */}
                   <div className="text-center">
-                    {isFinal ? (
+                    {isLive ? (
+                      <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>
+                    ) : showScore ? (
                       <div className="font-extrabold tracking-wide" style={{ fontSize: scoreFont }}>
                         <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                         <span className="mx-2 text-muted-foreground">-</span>
                         <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
                       </div>
-                    ) : isLive ? (
-                      <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>
                     ) : (
-                      <div className="font-bold" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
+                      <div className="font-bold" style={{ fontSize: timeFont }}>
+                        {g.time || 'TBA'}
+                      </div>
+                    )}
+                    {g.tv && (
+                      <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>
+                        {String(g.tv)}
+                      </div>
                     )}
                   </div>
 
-                  {/* Home */}
-                  <div className="flex flex-col items-center justify-center gap-1">
+                  {/* Home side */}
+                  <div className="flex flex-col items-center justify-center">
                     {homeLogo && (
-                      <img
-                        src={homeLogo}
-                        alt={homeAbbr || 'Home'}
-                        className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                        style={{
-                          width: logoSize,
-                          height: logoSize,
-                          filter: isFinal && homeWin
-                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))'
-                            : undefined,
-                        }}
-                        loading="lazy"
-                        width={64}
-                        height={64}
-                      />
+                      <div
+                        className="rounded-sm relative overflow-visible"
+                        style={{ width: logoSize, height: logoSize }}
+                        title={normalizedHomeName || homeAbbr || 'Home team'}
+                      >
+                        <img
+                          src={homeLogo}
+                          alt={homeAbbr || 'Home'}
+                          className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'relative',
+                            zIndex: 1,
+                            filter: isFinal && homeWin
+                              ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
+                              : undefined,
+                          }}
+                          loading="lazy"
+                          width={64}
+                          height={64}
+                        />
+                        {homeRecord && (
+                          <span
+                            className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-semibold' : 'absolute right-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold text-right'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
+                            style={
+                              compactRecordLayout
+                                ? { fontSize: recordFont }
+                                : { fontSize: recordFont, marginRight: recordOffset }
+                            }
+                          >
+                            ({formatRecord(homeRecord)})
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1554,6 +1662,7 @@ const DashboardTodayScheduleNFL = ({
     </div>
   );
 };
+
 const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLScheduleData | null; logoMap: Record<string, string> }) => {
   const gamesByDate = useMemo(() => {
     const map: Record<string, NFLScheduleGame[]> = {};
@@ -1733,3 +1842,4 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
     </div>
   );
 };
+

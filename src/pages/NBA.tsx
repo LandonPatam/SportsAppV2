@@ -2961,7 +2961,7 @@ useEffect(() => {
           }
         }}
       >
-        <TabsList className="grid py-1 w-full grid-cols-4 max-w-none">
+        <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="all">All Teams</TabsTrigger>
           <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
@@ -3362,7 +3362,7 @@ useEffect(() => {
                 </div>
                 {/* Use the right gap exclusively for the pie chart (xl+) */}
                 <div className="hidden xl:block flex-1 min-w-0">
-                  <Card className="bg-transparent border-none w-[342px] h-[235px] overflow-hidden">
+                  <Card className="bg-transparent border-none w-[405px] h-[235px] overflow-hidden">
                     <CardHeader className="py-2 px-3">
                     </CardHeader>
                     <CardContent className="h-[220px] p-1">
@@ -3454,35 +3454,10 @@ useEffect(() => {
 </TabsContent>
 
 
-        {/* === Eastern Conference === */}
-        <TabsContent value="Eastern" className="space-y-6">
-          {['Atlantic', 'Central', 'Southeast'].map((division) => {
-            const divisionTeams = getDivisionTeams(division);
-            return (
-              divisionTeams.length > 0 && (
-                <div key={division}>
-                  <h3 className="text-lg font-semibold mb-3">Eastern {division}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    {divisionTeams.map((team) => (
-  <TeamCard
-    key={team.TEAM_ID}
-    team={team}
-    onClick={() => setSelectedTeam(team)}
-    leagueAverages={leagueAverages} // ✅ add this line
-  />
-))}
-
-                  </div>
-                </div>
-              )
-            );
-          })}
-        </TabsContent>
-
-        {/* === Schedule === */}
-        <TabsContent value="schedule">
-          <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
-        </TabsContent>
+{/* === Schedule === */}
+<TabsContent value="schedule">
+<ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
+</TabsContent>
 
       
 
