@@ -92,6 +92,7 @@ interface NBATeam {
   PFD_RANK: number;
   PTS_RANK: number;
   PLUS_MINUS_RANK: number;
+  rank: number;
 }
 
 interface Player {
