@@ -1438,6 +1438,8 @@ const PlayerModal = ({
   const teamLogo = team.LOGO_URL || logoMap[teamAbbr];
   const navPrimary = teamColors[teamAbbr]?.primary || '#1e40af';
   const navSecondary = teamColors[teamAbbr]?.secondary || '#b91c1c';
+  const recordLabel = `${team.W}-${team.L}`;
+  const bpiRankLabel = (team as any).bpirank ?? '—';
   const getGameTimestamp = (game: ScheduleGameAny) => {
     if (game.date) {
       const ts = Date.parse(game.date as string);
@@ -1633,7 +1635,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
         style={{ animation: 'scaleIn 0.25s ease-out' }}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-background border-b p-6 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-background border-b p-6 flex flex-wrap items-center gap-4 z-10">
           <div className="flex-1 min-h-0 flex items-center gap-3">
             {teamLogo && (
               <img
@@ -1645,9 +1647,19 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
             )}
             <h2 className="text-3xl font-bold">{team.TEAM_NAME}</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors">
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-6 ml-auto text-right text-white/90">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Record</p>
+              <p className="text-lg font-semibold text-white">{recordLabel}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">BPI Rank</p>
+              <p className="text-lg font-semibold text-white">{bpiRankLabel}</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Roster / Matchups */}

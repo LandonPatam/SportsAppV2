@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+ï»¿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -421,13 +421,11 @@ const StatRow = ({
 
 const TeamCard = ({
   team,
-  onClick,
   leagueAverages,
   conferenceAverages,
   allTeams,
 }: {
   team: NFLTeam;
-  onClick?: () => void;
   leagueAverages: any;
   conferenceAverages: Record<string, { divPct: number; confPct: number; last5Pct: number }>;
   allTeams?: NFLTeam[];
@@ -623,10 +621,7 @@ const TeamCard = ({
 
         {/* === White stats card === */}
         <Card
-          onClick={onClick}
-          className={`overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full ${
-            onClick ? 'cursor-pointer' : ''
-          }`}
+          className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full"
           style={{
           backgroundColor: '#0000004c',
           opacity: 1,
@@ -674,7 +669,7 @@ const TeamCard = ({
 
                 {
                   label: 'FPI Rank',
-                  value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
+                  value: Number.isFinite(fpiRank) ? `${fpiRank}` : 'â€”',
                   highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
                 },
                 { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
@@ -1091,9 +1086,12 @@ useEffect(() => {
                 <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden px-4 pb-4">
                   <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      {winRateSortedTeams.map((team) => {
-                        return <NFLTeamMiniCard key={`${team.name}-win`} team={team} />;
-                      })}
+                      {winRateSortedTeams.map((team) => (
+                          <NFLTeamMiniCard
+                            key={`${team.name}-win`}
+                            team={team}
+                          />
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -1143,7 +1141,7 @@ useEffect(() => {
         {/* All Teams Tab with Sort Controls + Sidebar layout (like NBA) */}
         <TabsContent
           value="all"
-          className="max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar pr-2 pb-0"
+          className="max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar pr-4 pb-6"
         >
           <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
             <div className="flex items-center gap-3">
@@ -1425,17 +1423,21 @@ const NFLRosterList = ({ teamName, rosterByTeam }: { teamName: string; rosterByT
     <div className="min-h-0 h-full overflow-y-auto no-scrollbar pr-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-1">
         {players.map((p, idx) => (
-          <PlayerCardNFL key={(p.profile_link || p.name || 'player') + idx} player={p} index={idx} />
+          <PlayerCardNFL
+            key={(p.profile_link || p.name || 'player') + idx}
+            player={p}
+            index={idx}
+            teamName={teamName}
+          />
         ))}
       </div>
     </div>
   );
 };
 
-const PlayerCardNFL = React.memo(({ player, index }: { player: any; index: number }) => {
+const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; index: number; teamName?: string }) => {
   const name = player?.name || player?.shortName || 'Player';
   const posRaw = (player?.position || '').toString();
-  const head = player?.headshot || '';
   const pos = posRaw.toUpperCase();
   const posColor: Record<string, { bg: string; color?: string }> = {
     'QB': { bg: '#2563eb' },     // blue
@@ -1456,9 +1458,7 @@ const PlayerCardNFL = React.memo(({ player, index }: { player: any; index: numbe
   };
 
   return (
-    <Card
-      className="overflow-hidden bg-card/50 backdrop-blur-0 md:backdrop-blur-sm"
-    >
+    <Card className="overflow-hidden bg-card/50 backdrop-blur md:backdrop-blur-sm">
       <CardHeader className="py-5 pb-0">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-0 min-w-0">
@@ -1467,14 +1467,19 @@ const PlayerCardNFL = React.memo(({ player, index }: { player: any; index: numbe
             </div>
           </div>
           {pos && (
-            <Badge className="text-[10px] font-semibold px-3 py-1" style={badgeSty}>{pos}</Badge>
+            <Badge className="text-[10px] font-semibold px-3 py-1" style={badgeSty}>
+              {pos}
+            </Badge>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-1 pb-0"><div className="text-[10px] text-muted-foreground">&nbsp;</div></CardContent>
+      <CardContent className="pt-1 pb-0">
+        <div className="text-[10px] text-muted-foreground">&nbsp;</div>
+      </CardContent>
     </Card>
   );
 });
+
 
 /* ============================================================================
  * NFL Schedule View V2 (arrow-controlled, single day)
@@ -1648,7 +1653,7 @@ const DashboardTodayScheduleNFL = ({
     return value.replace(/-/g, ' - ');
   }, []);
 
-  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
+  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loadingâ€¦</div>;
   if (games.length === 0) return <div className="text-sm text-muted-foreground">No upcoming games</div>;
 
   const gap = layout.gap;
@@ -2030,6 +2035,8 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
     </div>
   );
 };
+
+
 
 
 
