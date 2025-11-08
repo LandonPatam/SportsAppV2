@@ -3,7 +3,7 @@
 // Displays NBA team standings and top player stats
 // ============================
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import {
   Card, CardContent, CardHeader, CardTitle,
@@ -17,6 +17,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 // Chart.js for wins/losses pie
 import { Chart as ChartJS, ArcElement, Tooltip as ChartJSTooltip, Legend as ChartJSLegend, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
 import { Doughnut, Radar } from 'react-chartjs-2';
@@ -251,6 +252,77 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   UTA: { primary: '#002B5C', secondary: '#F9A01B' },
   WAS: { primary: '#002B5C', secondary: '#E31837' },
 };
+
+type TeamFilterKey =
+  | 'WIN_PCT'
+  | 'PTS'
+  | 'REB'
+  | 'FT_PCT'
+  | 'TOV'
+  | 'OREB'
+  | 'DREB'
+  | 'STL'
+  | 'BLK'
+  | 'FG_PCT'
+  | 'FG3_PCT'
+  | 'bpi'
+  | 'off'
+  | 'def'
+  | 'pbpi';
+
+type TeamFilterConfig = {
+  key: TeamFilterKey;
+  label: string;
+  type: 'number' | 'percent';
+  placeholder?: string;
+};
+
+const TEAM_FILTER_FIELDS: TeamFilterConfig[] = [
+    { key: 'WIN_PCT', label: 'Win % ≥', type: 'percent', placeholder: '55' },
+    { key: 'PTS', label: 'PPG ≥', type: 'number', placeholder: '115' },
+    { key: 'REB', label: 'RPG ≥', type: 'number', placeholder: '45' },
+    { key: 'FT_PCT', label: 'FT% ≥', type: 'percent', placeholder: '75' },
+    { key: 'TOV', label: 'TOV ≥', type: 'number', placeholder: '12' },
+    { key: 'OREB', label: 'OREB ≥', type: 'number', placeholder: '10' },
+    { key: 'DREB', label: 'DREB ≥', type: 'number', placeholder: '33' },
+    { key: 'STL', label: 'STL ≥', type: 'number', placeholder: '7' },
+    { key: 'BLK', label: 'BLK ≥', type: 'number', placeholder: '5' },
+    { key: 'FG_PCT', label: 'FG% ≥', type: 'percent', placeholder: '47' },
+    { key: 'FG3_PCT', label: '3P% ≥', type: 'percent', placeholder: '36' },
+    { key: 'bpi', label: 'BPI ≥', type: 'number', placeholder: '4' },
+    { key: 'off', label: 'OFF ≥', type: 'number', placeholder: '3' },
+    { key: 'def', label: 'DEF ≥', type: 'number', placeholder: '3' },
+    { key: 'pbpi', label: 'PBPI ≥', type: 'number', placeholder: '4' },
+  ];
+
+const getInitialTeamFilters = (): Record<TeamFilterKey, string> =>
+  TEAM_FILTER_FIELDS.reduce(
+    (acc, field) => {
+      acc[field.key] = '';
+      return acc;
+    },
+    {} as Record<TeamFilterKey, string>,
+  );
+
+type TeamSortField =
+  | 'WIN_PCT'
+  | 'PTS'
+  | 'REB'
+  | 'AST'
+  | 'FG_PCT'
+  | 'FG3_PCT'
+  | 'FT_PCT'
+  | 'TOV'
+  | 'OREB'
+  | 'DREB'
+  | 'STL'
+  | 'BLK'
+  | 'bpi'
+  | 'off'
+  | 'def'
+  | 'pbpi';
+
+
 
 // ============================
 // 🏷️ Team Name → Abbreviation Mapping
@@ -626,13 +698,6 @@ const DashboardTodaySchedule = ({
         const homeTeamObj = normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr] : undefined;
         const awayFavorite = !!(awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID));
         const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
-        const awayHighlightColor = awayFavorite
-          ? teamColors[normalizedAwayAbbr]?.primary || '#facc15'
-          : undefined;
-        const homeHighlightColor = homeFavorite
-          ? teamColors[normalizedHomeAbbr]?.primary || '#facc15'
-          : undefined;
-
         return (
           <Card
             key={g.game_id || `${g.matchup}-${g.date}`}
@@ -688,15 +753,8 @@ const DashboardTodaySchedule = ({
                       style={{ width: logoSize, height: logoSize }}
                       title={normalizedAwayName || awayAbbr || 'Away team'}
                     >
-                      {awayFavorite && awayHighlightColor && (
-                        <span
-                          className="absolute inset-0 rounded-md opacity-90"
-                          style={{
-                            background: `radial-gradient(circle, ${awayHighlightColor} 0%, ${awayHighlightColor}55 60%, transparent 100%)`,
-                            boxShadow: `0 0 18px ${awayHighlightColor}88`,
-                          }}
-                          aria-hidden
-                        />
+                      {awayFavorite && (
+                        <Star className="absolute -left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white fill-white" />
                       )}
                       <img
                         src={awayLogo}
@@ -767,15 +825,8 @@ const DashboardTodaySchedule = ({
                       style={{ width: logoSize, height: logoSize }}
                       title={normalizedHomeName || homeAbbr || 'Home team'}
                     >
-                      {homeFavorite && homeHighlightColor && (
-                        <span
-                          className="absolute inset-0 rounded-md opacity-90"
-                          style={{
-                            background: `radial-gradient(circle, ${homeHighlightColor} 0%, ${homeHighlightColor}55 60%, transparent 100%)`,
-                            boxShadow: `0 0 18px ${homeHighlightColor}88`,
-                          }}
-                          aria-hidden
-                        />
+                      {homeFavorite && (
+                        <Star className="absolute -right-6 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white fill-white" />
                       )}
                       <img
                         src={homeLogo}
@@ -1706,6 +1757,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                       if (!game.date) return 'Date TBA';
                       const dt = new Date(game.date);
                       if (Number.isNaN(dt.getTime())) return game.date;
+                      dt.setDate(dt.getDate() + 1);
                       return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
                     })();
                     const matchupLabel = `${awayAbbrResolved || 'Away'} @ ${homeAbbrResolved || 'Home'}`;
@@ -2163,7 +2215,8 @@ const NBA = () => {
     } catch {}
     return [];
   });
-  const [sortField, setSortField] = useState<'WIN_PCT' | 'PTS' | 'REB' | 'AST' | 'FG_PCT' | 'FG3_PCT'>('WIN_PCT');
+  const [teamFilters, setTeamFilters] = useState<Record<TeamFilterKey, string>>(() => getInitialTeamFilters());
+  const [sortField, setSortField] = useState<TeamSortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
   const logosScrollRef = useRef<HTMLDivElement | null>(null);
@@ -2177,6 +2230,28 @@ const NBA = () => {
       return exists ? prev.filter((id) => id !== team.TEAM_ID) : [...prev, team.TEAM_ID];
     });
   }, []);
+  const hasActiveTeamFilters = React.useMemo(
+    () => TEAM_FILTER_FIELDS.some(({ key }) => {
+      const raw = teamFilters[key];
+      return typeof raw === 'string' && raw.trim().length > 0;
+    }),
+    [teamFilters],
+  );
+  const applyTeamFilters = useCallback(
+    (team: NBATeam) => TEAM_FILTER_FIELDS.every(({ key, type }) => {
+      const raw = teamFilters[key];
+      if (!raw || raw.trim() === '') return true;
+      const threshold = Number(raw);
+      if (!Number.isFinite(threshold)) return true;
+      let teamValue = Number((team as any)[key]);
+      if (!Number.isFinite(teamValue)) return false;
+      if (type === 'percent') {
+        teamValue *= 100;
+      }
+      return teamValue >= threshold;
+    }),
+    [teamFilters],
+  );
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -2232,7 +2307,7 @@ const NBA = () => {
   }, []);
 
   // Memoized sorted teams to avoid sorting on every render
-  const sortedTeams = useMemo(() => {
+const sortedTeams = useMemo(() => {
     const list = [...nbaTeams];
     const dir = sortOrder === 'asc' ? 1 : -1;
     list.sort((a, b) => {
@@ -2242,7 +2317,25 @@ const NBA = () => {
     });
     return list;
   }, [nbaTeams, sortField, sortOrder]);
-
+  const filteredTeams = useMemo(() => sortedTeams.filter(applyTeamFilters), [sortedTeams, applyTeamFilters]);
+  const filterSignature = useMemo(
+    () => JSON.stringify({ filters: teamFilters, sortField, sortOrder }),
+    [teamFilters, sortField, sortOrder],
+  );
+  const lastFilterSignatureRef = useRef(filterSignature);
+  useEffect(() => {
+    const signatureChanged = filterSignature !== lastFilterSignatureRef.current;
+    if (!filteredTeams.length) {
+      if (selectedTeamAll) setSelectedTeamAll(null);
+    } else if (
+      signatureChanged ||
+      !selectedTeamAll ||
+      !filteredTeams.some((t) => selectedTeamAll && t.TEAM_ID === selectedTeamAll.TEAM_ID)
+    ) {
+      setSelectedTeamAll(filteredTeams[0]);
+    }
+    lastFilterSignatureRef.current = filterSignature;
+  }, [filteredTeams, filterSignature, selectedTeamAll]);
 
 const fetchData = async () => {
   try {
@@ -2615,14 +2708,39 @@ const getLeagueHighlight = (
 
 
 type PlayerSortField =
+  | 'VALUE_SCORE'
   | 'PTS'
   | 'REB'
   | 'AST'
   | 'STL'
+  | 'BLK'
+  | 'GP'
+  | 'MIN'
+  | 'TOV'
+  | 'FGA'
   | 'FG_PCT'
+  | 'FG3A'
   | 'FG3_PCT'
-  | 'FT_PCT'
-  | 'VALUE_SCORE';
+  | 'FTA'
+  | 'FT_PCT';
+
+const TOP_PLAYER_SORT_OPTIONS: Array<[PlayerSortField, string]> = [
+  ['VALUE_SCORE', 'Value Score'],
+  ['PTS', 'PTS'],
+  ['REB', 'REB'],
+  ['AST', 'AST'],
+  ['STL', 'STL'],
+  ['BLK', 'BLK'],
+  ['GP', 'GP'],
+  ['MIN', 'MIN'],
+  ['TOV', 'TOV'],
+  ['FGA', 'FGA'],
+  ['FG_PCT', 'FG%'],
+  ['FG3A', '3PA'],
+  ['FG3_PCT', '3P%'],
+  ['FTA', 'FTA'],
+  ['FT_PCT', 'FT%'],
+];
 
 const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('VALUE_SCORE');
 
@@ -2639,10 +2757,17 @@ const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('VALUE_S
 const getPlayerStat = (p: Player, field: PlayerSortField): number => {
   switch (field) {
     case 'VALUE_SCORE': return getPlayerValueScore(p);
+    case 'GP': return p.GP;
+    case 'MIN': return p.MIN;
     case 'PTS': return p.PTS;
     case 'REB': return p.REB;
     case 'AST': return p.AST;
     case 'STL': return p.STL;
+    case 'BLK': return p.BLK;
+    case 'TOV': return p.TOV;
+    case 'FGA': return p.FGA;
+    case 'FG3A': return p.FG3A;
+    case 'FTA': return p.FTA;
     case 'FG_PCT': return p.FG_PCT;
     case 'FG3_PCT': return p.FG3_PCT;
     case 'FT_PCT': return p.FT_PCT;
@@ -2778,7 +2903,7 @@ useEffect(() => {
           }
         }}
       >
-        <TabsList className="grid w-full grid-cols-4 mb-6 max-w-none">
+        <TabsList className="grid py-1 w-full grid-cols-4 max-w-none">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="all">All Teams</TabsTrigger>
           <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
@@ -2793,7 +2918,7 @@ useEffect(() => {
     <div className="flex flex-col gap-4 lg:col-span-7 h-full overflow-hidden">
       {/* Top Teams */}
       <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-1">
           <div className="mb-5 px-1 flex-shrink-0">
             {/* Header content here if needed */}
           </div>
@@ -2828,7 +2953,7 @@ useEffect(() => {
       
       {/* Top Players */}
       <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-0">
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-1">
           <div className="mb-5 px-1 flex-shrink-0">
             {/* Header content here if needed */}
           </div>
@@ -2899,24 +3024,34 @@ useEffect(() => {
           rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
           text-white"
       >
-        <SelectItem value="WIN_PCT" className="hover:bg-white/10 cursor-pointer">
-          Win %
-        </SelectItem>
-        <SelectItem value="PPG" className="hover:bg-white/10 cursor-pointer">
-          PPG
-        </SelectItem>
-        <SelectItem value="REB" className="hover:bg-white/10 cursor-pointer">
-          RPG
-        </SelectItem>
-        <SelectItem value="AST" className="hover:bg-white/10 cursor-pointer">
-          APG
-        </SelectItem>
-        <SelectItem value="FG_PCT" className="hover:bg-white/10 cursor-pointer">
-          FG%
-        </SelectItem>
-        <SelectItem value="FG3_PCT" className="hover:bg-white/10 cursor-pointer">
-          3P%
-        </SelectItem>
+        <div className="grid grid-cols-3 gap-1 max-h-[260px] overflow-y-auto pr-1">
+          {[
+            ['WIN_PCT', 'Win %'],
+            ['PPG', 'PPG'],
+            ['REB', 'RPG'],
+            ['AST', 'APG'],
+            ['FG_PCT', 'FG%'],
+            ['FG3_PCT', '3P%'],
+            ['FT_PCT', 'FT%'],
+            ['TOV', 'TOV'],
+            ['OREB', 'OREB'],
+            ['DREB', 'DREB'],
+            ['STL', 'STL'],
+            ['BLK', 'BLK'],
+            ['bpi', 'BPI'],
+            ['off', 'OFF'],
+            ['def', 'DEF'],
+            ['pbpi', 'PBPI'],
+          ].map(([value, label]) => (
+            <SelectItem
+              key={value}
+              value={value as TeamSortField}
+              className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
+            >
+              {label}
+            </SelectItem>
+          ))}
+        </div>
       </SelectContent>
     </Select>
   </div>
@@ -2943,8 +3078,17 @@ useEffect(() => {
 
   {/* === Teams Sidebar + Detail Pane === */}
   {(() => {
-    const teams = sortTeams(nbaTeams);
-    const currentTeam = selectedTeamAll || teams[0];
+    const teams = filteredTeams;
+    if (teams.length === 0) {
+      return (
+        <div className="text-sm text-muted-foreground px-2 py-10">
+          No teams match the current filters.
+        </div>
+      );
+    }
+    const currentTeam = selectedTeamAll && teams.some((t) => t.TEAM_ID === selectedTeamAll.TEAM_ID)
+      ? selectedTeamAll
+      : teams[0];
     const teamPlayers: Player[] = currentTeam ? (nbaPlayerData[currentTeam.TEAM_ID.toString()] || []) : [];
     const topTeamPlayers = [...teamPlayers]
       .sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
@@ -3313,7 +3457,7 @@ useEffect(() => {
 <TabsContent value="top-scorers" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-12 pr-2">
 
   {/* === Filter Controls === */}
-<div className="flex flex-wrap items-center justify-between mb-5 gap-4">
+<div className="flex flex-wrap items-center justify-between mb-5 gap-5">
   <div className="flex items-center gap-2">
     <label  className="text-sm font-semibold text-white/80">Rank by:</label>
 
@@ -3321,23 +3465,34 @@ useEffect(() => {
     <div className="flex items-center gap-2">
       {/* Dropdown */}
       <Select onValueChange={(v) => setPlayerSortField(v as PlayerSortField)} value={playerSortField}>
-        <SelectTrigger className={`
-  rounded-full px-4 py-2 text-sm font-semibold text-black
-  bg-white
-  hover:scale-[1.05]
-  transition-all duration-300
-`}>
+        <SelectTrigger
+          className="
+            rounded-full px-4 py-2 text-sm font-semibold text-black
+            bg-white
+            hover:scale-[1.05]
+            transition-all duration-300
+            focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
+          "
+        >
           <SelectValue placeholder="Select stat" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="VALUE_SCORE">Value Score</SelectItem>
-          <SelectItem value="PTS">Points (PTS)</SelectItem>
-          <SelectItem value="REB">Rebounds (REB)</SelectItem>
-          <SelectItem value="AST">Assists (AST)</SelectItem>
-          <SelectItem value="STL">Steals (STL)</SelectItem>
-          <SelectItem value="FG_PCT">Field Goal % (FG%)</SelectItem>
-          <SelectItem value="FG3_PCT">3-Point % (3P%)</SelectItem>
-          <SelectItem value="FT_PCT">Free Throw % (FT%)</SelectItem>
+        <SelectContent
+          className="
+            rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
+            text-white
+          "
+        >
+          <div className="grid grid-cols-3 gap-1 max-h-[260px] overflow-y-auto pr-1">
+            {TOP_PLAYER_SORT_OPTIONS.map(([value, label]) => (
+              <SelectItem
+                key={value}
+                value={value}
+                className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
+              >
+                {label}
+              </SelectItem>
+            ))}
+          </div>
         </SelectContent>
       </Select>
 

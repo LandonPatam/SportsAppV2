@@ -34,8 +34,7 @@ const TabsTrigger = React.forwardRef<
       text-muted-foreground transition-all duration-300
       hover:scale-[1.05] active:scale-[0.97]
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50
-
-      data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-purple-500
+      data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#F6EA41] data-[state=active]:to-[#F048C6]
       data-[state=active]:text-white data-[state=active]:shadow-md
       `,
       className

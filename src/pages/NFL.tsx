@@ -229,6 +229,10 @@ const teamAbbreviations: Record<string, string> = {
   'Seattle Seahawks': 'SEA',
 };
 
+const abbreviationToTeamName: Record<string, string> = Object.fromEntries(
+  Object.entries(teamAbbreviations).map(([name, abbr]) => [abbr, name])
+);
+
 // Build logo map once teams are loaded: ABBR -> logo URL
 const useAbbrToLogo = (teams: NFLTeam[]) => {
   return useMemo(() => {
@@ -854,6 +858,23 @@ const NFL = () => {
   }, [teams]);
 
   const abbrToLogo = useAbbrToLogo(teams);
+  const abbrToRecord = useMemo(() => {
+    const map: Record<string, string> = {};
+    teams.forEach((t) => {
+      const abbr = (teamAbbreviations as any)[t.name];
+      if (!abbr) return;
+      map[abbr] = `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ''}`;
+    });
+    return map;
+  }, [teams]);
+  const abbrToTeamMap = useMemo(() => {
+    const map: Record<string, NFLTeam> = {};
+    teams.forEach((t) => {
+      const abbr = (teamAbbreviations as any)[t.name];
+      if (abbr) map[abbr] = t;
+    });
+    return map;
+  }, [teams]);
 
   return (
     <PageLayout>
@@ -917,7 +938,12 @@ const NFL = () => {
       <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
                 <CardHeader className="p-0" />
                 <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-3 px-3">
-                  <DashboardTodayScheduleNFL scheduleData={scheduleData} logoMap={abbrToLogo} />
+                  <DashboardTodayScheduleNFL
+                    scheduleData={scheduleData}
+                    logoMap={abbrToLogo}
+                    recordMap={abbrToRecord}
+                    abbrToTeamMap={abbrToTeamMap}
+                  />
                 </CardContent>
               </Card>
               {teams.length > 0 }
