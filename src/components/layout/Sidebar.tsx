@@ -96,7 +96,6 @@ export function Sidebar({ className }: SidebarProps) {
 
   const navItems: NavItem[] = [
     { title: 'NFL', icon: FootballIcon, href: '/nfl' },
-    { title: 'F1', icon: F1Icon, href: '/f1' },
     { title: 'NBA', icon: NBAIcon, href: '/nba' },
   ];
 
