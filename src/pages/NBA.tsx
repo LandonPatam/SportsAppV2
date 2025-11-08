@@ -3423,34 +3423,10 @@ useEffect(() => {
 
         {/* === Schedule === */}
         <TabsContent value="schedule">
-          <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} />
+          <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
         </TabsContent>
 
-        {/* === Western Conference === */}
-        <TabsContent value="Western" className="space-y-6">
-          {['Northwest', 'Pacific', 'Southwest'].map((division) => {
-            const divisionTeams = getDivisionTeams(division);
-            return (
-              divisionTeams.length > 0 && (
-                <div key={division}>
-                  <h3 className="text-lg font-semibold mb-3">Western {division}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    {divisionTeams.map((team) => (
-  <TeamCard
-    key={team.TEAM_ID}
-    team={team}
-    onClick={() => setSelectedTeam(team)}
-    leagueAverages={leagueAverages} // ✅ add this line
-  />
-))}
-
-                  </div>
-                </div>
-              )
-            );
-          })}
-        </TabsContent>
-
+      
 
 
 {/* === Top Players === */}
