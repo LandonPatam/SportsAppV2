@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // 👈 added Navigate
-import NotFound from "./pages/NotFound";
 import NFL from "./pages/NFL";
 import NBA from "./pages/NBA";
 
@@ -22,9 +21,6 @@ const App = () => (
           {/* Main app routes */}
           <Route path="/nfl" element={<NFL />} />
           <Route path="/nba" element={<NBA />} />
-
-          {/* Catch-all for 404s */}
-          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

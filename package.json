@@ -6,7 +6,7 @@
   "main": "electron.cjs",
   "scripts": {
     "start": "electron .",
-    "dev": "python data/data_NBAV2.py && python data/data_NFLV2.py && python data/data_F1V2.py && python data/schedule_NBA.py && vite",
+    "dev": "python data/data_NBAV2.py && python data/data_NFLV2.py && python data/schedule_NBA.py && python data/ vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

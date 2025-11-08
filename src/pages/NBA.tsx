@@ -36,6 +36,8 @@ import {
 interface NBATeam {
   TEAM_ID: number;
   TEAM_NAME: string;
+  conference?: string;
+  division?: string;
   LOGO_URL?: string;
   GP: number;
   W: number;
@@ -119,6 +121,68 @@ interface Player {
   HYBRID_SCORE?: number;
   THING?: number;
 }
+
+type LeagueAverageMap = {
+  WIN_PCT: number;
+  PTS: number;
+  REB: number;
+  AST: number;
+  FG_PCT: number;
+  FG3_PCT: number;
+  FT_PCT: number;
+  W_PCT: number;
+  MIN: number;
+  FGM: number;
+  FGA: number;
+  FG3M: number;
+  FG3A: number;
+  FTM: number;
+  FTA: number;
+  OREB: number;
+  DREB: number;
+  TOV: number;
+  STL: number;
+  BLK: number;
+  BLKA: number;
+  PF: number;
+  PFD: number;
+  PLUS_MINUS: number;
+  bpi: number;
+  off: number;
+  def: number;
+  pbpi: number;
+};
+
+const createLeagueAverageSeed = (): LeagueAverageMap => ({
+  WIN_PCT: 0,
+  PTS: 0,
+  REB: 0,
+  AST: 0,
+  FG_PCT: 0,
+  FG3_PCT: 0,
+  FT_PCT: 0,
+  W_PCT: 0,
+  MIN: 0,
+  FGM: 0,
+  FGA: 0,
+  FG3M: 0,
+  FG3A: 0,
+  FTM: 0,
+  FTA: 0,
+  OREB: 0,
+  DREB: 0,
+  TOV: 0,
+  STL: 0,
+  BLK: 0,
+  BLKA: 0,
+  PF: 0,
+  PFD: 0,
+  PLUS_MINUS: 0,
+  bpi: 0,
+  off: 0,
+  def: 0,
+  pbpi: 0,
+});
 
 const PLAYER_STAT_KEYS: (keyof Player)[] = [
   'MIN',
@@ -2465,9 +2529,9 @@ useEffect(() => {
 
   // Compute league averages
 // Compute league averages
-const leagueAverages = React.useMemo(() => {
-  if (nbaTeams.length === 0) return null;
-  const totals = nbaTeams.reduce(
+const leagueAverages = React.useMemo<LeagueAverageMap>(() => {
+  if (nbaTeams.length === 0) return createLeagueAverageSeed();
+  const totals = nbaTeams.reduce<LeagueAverageMap>(
     (acc, t) => {
       acc.WIN_PCT += t.WIN_PCT;
       acc.PTS += t.PTS;
@@ -2500,14 +2564,7 @@ const leagueAverages = React.useMemo(() => {
       acc.pbpi += Number((t as any).pbpi ?? 0);
       return acc;
     },
-    { 
-      WIN_PCT: 0, PTS: 0, REB: 0, AST: 0, FG_PCT: 0, FG3_PCT: 0, FT_PCT: 0,
-      W_PCT: 0, MIN: 0, FGM: 0, FGA: 0, FG3M: 0, FG3A: 0, FTM: 0, FTA: 0,
-      OREB: 0, DREB: 0, TOV: 0, STL: 0, BLK: 0, BLKA: 0, PF: 0, PFD: 0,
-      PLUS_MINUS: 0,
-      // Advanced metrics
-      bpi: 0, off: 0, def: 0, pbpi: 0,
-    }
+    createLeagueAverageSeed()
   );
   const n = nbaTeams.length;
   return {
@@ -2684,7 +2741,7 @@ const getPlayerHighlight = (player: Player, key: keyof Player) => {
 const getLeagueHighlight = (
   player: Player,
   key: keyof Player,
-  leagueAverages: Record<string, number> | null
+  leagueAverages: LeagueAverageMap | null
 ) => {
   if (!leagueAverages || !(key in leagueAverages)) return 'neutral';
 
