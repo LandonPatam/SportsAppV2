@@ -1141,9 +1141,9 @@ useEffect(() => {
         {/* All Teams Tab with Sort Controls + Sidebar layout (like NBA) */}
         <TabsContent
           value="all"
-          className="max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar pr-4 pb-6"
+          className="flex flex-col gap-6 h-[calc(100vh-90px)] max-h-[calc(100vh-90px)] min-h-0 overflow-hidden pr-4 pb-6"
         >
-          <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
+          <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2 shrink-0">
             <div className="flex items-center gap-3">
               <label className="text-sm font-semibold text-white/80">Sort by:</label>
               <Select onValueChange={(v) => setSortField(v as typeof sortField)} value={sortField}>
@@ -1198,156 +1198,158 @@ useEffect(() => {
             </Button>
           </div>
 
-          {(() => {
-            const currentTeam = selectedTeamAll || orderedTeams[0];
-            return (
-              <div className="flex flex-col xl:flex-row gap-4 min-h-0">
-                {/* Left: team logos grid */}
-                <div className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar pr-1 pt-0 pb-6">
-                  <div className="grid grid-cols-3 gap-3">
-                    {orderedTeams.map((t) => {
-                      const isActive = currentTeam && t.name === currentTeam.name;
-                      return (
-                        <button
-                          key={t.name}
-                          onClick={() => setSelectedTeamAll(t)}
-                          className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border ${
-                            isActive ? 'ring-2 ring-inset ring-white/80 border-transparent' : 'border-white/10'
-                          }`}
-                          title={t.name}
-                        >
-                          {t.logo ? (
-                            <img src={t.logo} alt={`${t.name} logo`} className="w-3/5 h-3/5 object-contain" loading="lazy" />
-                          ) : (
-                            <span className="text-xs text-muted-foreground px-2 text-center">{t.name}</span>
-                          )}
-                        </button>
-                      );
-                    })}
+          <div className="flex-1 min-h-0 w-full">
+            {(() => {
+              const currentTeam = selectedTeamAll || orderedTeams[0];
+              return (
+                <div className="flex flex-col xl:flex-row gap-4 h-full min-h-0 overflow-hidden">
+                  {/* Left: team logos grid */}
+                  <div className="w-64 md:w-72 lg:w-80 shrink-0 h-full overflow-y-auto no-scrollbar pr-1 pt-0 pb-6">
+                    <div className="grid grid-cols-3 gap-3">
+                      {orderedTeams.map((t) => {
+                        const isActive = currentTeam && t.name === currentTeam.name;
+                        return (
+                          <button
+                            key={t.name}
+                            onClick={() => setSelectedTeamAll(t)}
+                            className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border ${
+                              isActive ? 'ring-2 ring-inset ring-white/80 border-transparent' : 'border-white/10'
+                            }`}
+                            title={t.name}
+                          >
+                            {t.logo ? (
+                              <img src={t.logo} alt={`${t.name} logo`} className="w-3/5 h-3/5 object-contain" loading="lazy" />
+                            ) : (
+                              <span className="text-xs text-muted-foreground px-2 text-center">{t.name}</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right: Big team card + roster (roster spans full right width under the card) */}
+                  <div className="flex-1 min-h-0 w-0 flex flex-col gap-4 overflow-hidden">
+                    {currentTeam && (
+                      <div className="w-full flex flex-col gap-4 min-w-0 min-h-0 h-full">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 shrink-0">
+                          <div>
+                            <TeamCard
+                              key={currentTeam.name}
+                              team={currentTeam}
+                              leagueAverages={leagueAverages}
+                              conferenceAverages={conferenceAverages}
+                              allTeams={teams}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Card className="bg-transparent backdrop-blur-sm border-none h-[50px]">
+                              <CardHeader className="py-2">
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <div style={{ height: 200 }}>
+                                  <Doughnut
+                                    data={(() => {
+                                      const wins = Number(currentTeam.wins || 0);
+                                      const losses = Number(currentTeam.losses || 0) + Number(currentTeam.ties || 0);
+                                      const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
+                                      return {
+                                        labels: ['Wins', 'Losses'],
+                                        datasets: [
+                                          {
+                                            data: [wins, losses],
+                                            backgroundColor: [colors.primary, '#4b5563'],
+                                            borderColor: [colors.primary, '#4b5563'],
+                                            borderWidth: 1,
+                                          },
+                                        ],
+                                        } as any;
+                                    })()}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      animation: { animateRotate: true, animateScale: true },
+                                      plugins: { legend: { display: false, position: 'bottom' } },
+                                    }}
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <Card className="bg-transparent backdrop-blur-sm border-none h-[100px]">
+                              <CardHeader className="py-0">
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <div style={{ height: 220 }}>
+                                  <Radar
+                                    data={(() => {
+                                      const games = (currentTeam.wins || 0) + (currentTeam.losses || 0) + (currentTeam.ties || 0);
+                                      const winPct = Number(currentTeam.win_pct || 0);
+                                      const pf = Number(currentTeam.points_for || 0);
+                                      const pa = Number(currentTeam.points_against || 0);
+                                      const ppg = games > 0 ? pf / games : 0;
+                                      const fpi = Number((currentTeam as any).fpi || 0);
+                                      const epaOff = Number((currentTeam as any).epa_offense || 0);
+                                      const epaDef = Number((currentTeam as any).epa_defense || 0);
+                                      const epaST = Number((currentTeam as any).epa_special || 0);
+                                      const labels = ['Win%', 'PF', 'PA', 'PPG', 'FPI', 'EPA Off', 'EPA Def', 'EPA ST'];
+                                      const ex = radarExtrema;
+                                      const raw = [winPct, pf, pa, ppg, fpi, epaOff, epaDef, epaST];
+                                      const mins = [ex.winPct.min, ex.pf.min, ex.pa.min, ex.ppg.min, ex.fpi.min, ex.epaOff.min, ex.epaDef.min, ex.epaST.min];
+                                      const maxs = [ex.winPct.max, ex.pf.max, ex.pa.max, ex.ppg.max, ex.fpi.max, ex.epaOff.max, ex.epaDef.max, ex.epaST.max];
+                                      const norm = (v: number, mn: number, mx: number) => (Number.isFinite(v) && Number.isFinite(mn) && Number.isFinite(mx) && mx > mn) ? (v - mn) / (mx - mn) : 0;
+                                      const vals = raw.map((v, i) => norm(v, mins[i], maxs[i]));
+                                      const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
+                                      const bg = toRGBA(colors.secondary, 0.25);
+                                      return {
+                                        labels,
+                                        datasets: [
+                                          {
+                                            id: 'teamRadar',
+                                            label: currentTeam.name,
+                                            data: vals,
+                                            backgroundColor: bg,
+                                            borderColor: colors.secondary,
+                                            pointBackgroundColor: colors.secondary,
+                                          },
+                                        ],
+                                        } as any;
+                                    })()}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      scales: {
+                                        r: {
+                                          beginAtZero: true,
+                                          suggestedMin: 0,
+                                          suggestedMax: 1,
+                                          ticks: { display: false, stepSize: 0.2 },
+                                          grid: { color: 'rgba(255,255,255,0.1)' },
+                                          angleLines: { color: 'rgba(255,255,255,0.1)' },
+                                          pointLabels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 } },
+                                        },
+                                      },
+                                      plugins: { legend: { display: false } },
+                                      animation: { duration: 600, easing: 'easeOutQuart' },
+                                    }}
+                                    datasetIdKey="id"
+                                    updateMode="active"
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-h-0 w-full overflow-hidden">
+                          <NFLRosterList teamName={currentTeam.name} rosterByTeam={rosterByTeam} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Right: Big team card + roster (roster spans full right width under the card) */}
-                <div className="flex-1 min-h-0 overflow-hidden flex flex-row gap-4 w-0 pr-0 items-stretch">
-                  {currentTeam && (
-                    <div className="w-full flex flex-col gap-4 min-w-0 min-h-0">
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <div>
-                          <TeamCard
-                            key={currentTeam.name}
-                            team={currentTeam}
-                            leagueAverages={leagueAverages}
-                            conferenceAverages={conferenceAverages}
-                            allTeams={teams}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <Card className="bg-transparent backdrop-blur-sm border-none h-[50px]">
-                            <CardHeader className="py-2">
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div style={{ height: 200 }}>
-                                <Doughnut
-                                  data={(() => {
-                                    const wins = Number(currentTeam.wins || 0);
-                                    const losses = Number(currentTeam.losses || 0) + Number(currentTeam.ties || 0);
-                                    const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
-                                    return {
-                                      labels: ['Wins', 'Losses'],
-                                      datasets: [
-                                        {
-                                          data: [wins, losses],
-                                          backgroundColor: [colors.primary, '#4b5563'],
-                                          borderColor: [colors.primary, '#4b5563'],
-                                          borderWidth: 1,
-                                        },
-                                      ],
-                                      } as any;
-                                  })()}
-                                  options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    animation: { animateRotate: true, animateScale: true },
-                                    plugins: { legend: { display: false, position: 'bottom' } },
-                                  }}
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          <Card className="bg-transparent backdrop-blur-sm border-none h-[100px]">
-                            <CardHeader className="py-0">
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div style={{ height: 220 }}>
-                                <Radar
-                                  data={(() => {
-                                    const games = (currentTeam.wins || 0) + (currentTeam.losses || 0) + (currentTeam.ties || 0);
-                                    const winPct = Number(currentTeam.win_pct || 0);
-                                    const pf = Number(currentTeam.points_for || 0);
-                                    const pa = Number(currentTeam.points_against || 0);
-                                    const ppg = games > 0 ? pf / games : 0;
-                                    const fpi = Number((currentTeam as any).fpi || 0);
-                                    const epaOff = Number((currentTeam as any).epa_offense || 0);
-                                    const epaDef = Number((currentTeam as any).epa_defense || 0);
-                                    const epaST = Number((currentTeam as any).epa_special || 0);
-                                    const labels = ['Win%', 'PF', 'PA', 'PPG', 'FPI', 'EPA Off', 'EPA Def', 'EPA ST'];
-                                    const ex = radarExtrema;
-                                    const raw = [winPct, pf, pa, ppg, fpi, epaOff, epaDef, epaST];
-                                    const mins = [ex.winPct.min, ex.pf.min, ex.pa.min, ex.ppg.min, ex.fpi.min, ex.epaOff.min, ex.epaDef.min, ex.epaST.min];
-                                    const maxs = [ex.winPct.max, ex.pf.max, ex.pa.max, ex.ppg.max, ex.fpi.max, ex.epaOff.max, ex.epaDef.max, ex.epaST.max];
-                                    const norm = (v: number, mn: number, mx: number) => (Number.isFinite(v) && Number.isFinite(mn) && Number.isFinite(mx) && mx > mn) ? (v - mn) / (mx - mn) : 0;
-                                    const vals = raw.map((v, i) => norm(v, mins[i], maxs[i]));
-                                    const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
-                                    const bg = toRGBA(colors.secondary, 0.25);
-                                    return {
-                                      labels,
-                                      datasets: [
-                                        {
-                                          id: 'teamRadar',
-                                          label: currentTeam.name,
-                                          data: vals,
-                                          backgroundColor: bg,
-                                          borderColor: colors.secondary,
-                                          pointBackgroundColor: colors.secondary,
-                                        },
-                                      ],
-                                      } as any;
-                                  })()}
-                                  options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                      r: {
-                                        beginAtZero: true,
-                                        suggestedMin: 0,
-                                        suggestedMax: 1,
-                                        ticks: { display: false, stepSize: 0.2 },
-                                        grid: { color: 'rgba(255,255,255,0.1)' },
-                                        angleLines: { color: 'rgba(255,255,255,0.1)' },
-                                        pointLabels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 } },
-                                      },
-                                    },
-                                    plugins: { legend: { display: false } },
-                                    animation: { duration: 600, easing: 'easeOutQuart' },
-                                  }}
-                                  datasetIdKey="id"
-                                  updateMode="active"
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </div>
-                      <div className="flex-1 min-h-0 w-full">
-                        <NFLRosterList teamName={currentTeam.name} rosterByTeam={rosterByTeam} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
+          </div>
         </TabsContent>
 
         {/* AFC and NFC Conference Tabs */}
