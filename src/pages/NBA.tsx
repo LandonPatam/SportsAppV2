@@ -747,7 +747,7 @@ const DashboardTodaySchedule = ({
 
         const cardPadding = Math.max(6, Math.round(10 * scale));
         const logoSize = Math.max(30, Math.round(72 * scale));
-        const scoreFont = Math.max(20, Math.round(32 * scale));
+        const scoreFont = Math.max(20, Math.round(28 * scale));
         const timeFont = Math.max(14, Math.round(22 * scale));
         const contentPad = Math.max(4, Math.round(8 * scale));
         const contentSkew = Math.max(2, Math.round(4 * scale));
