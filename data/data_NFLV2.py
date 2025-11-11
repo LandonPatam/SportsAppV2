@@ -270,8 +270,6 @@ with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
     json.dump(existing_data, f, indent=2)
     
     
-print("[OK] NFL team data")
-
 
 
 

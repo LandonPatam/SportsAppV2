@@ -192,7 +192,6 @@ if FIND_SCHEDULE:
 # ==========================================================
 # PART 2 – UPDATE GAME RESULTS + SCORES
 # ==========================================================
-print("\nUpdating past game results and scores...")
 with open(SAVE_PATH, "r", encoding="utf-8") as f:
     schedule = json.load(f)
 
@@ -296,11 +295,6 @@ for game in schedule:
             for field in ["period", "clock"]:
                 game.pop(field, None)
             updated_count += 1
-            # Print a clearer message for ties
-            if winner == "TIE":
-                print(f"Final (tie): {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score}")
-            else:
-                print(f"Final: {winner or 'N/A'} | {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score}")
 
         elif is_live and game_date == today:
             # Game currently live
@@ -313,7 +307,6 @@ for game in schedule:
             })
             game.pop("winner", None)
             live_count += 1
-            print(f"Live: {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score} | {game['clock']} Q{game.get('period','')}")
 
         else:
             # Scheduled / not started yet: ensure scores cleared and status set
@@ -324,7 +317,6 @@ for game in schedule:
             })
             for field in ["period", "clock"]:
                 game.pop(field, None)
-            print(f"Scheduled: {game['matchup']} ({game['date']}) at {game.get('time', 'TBA')}")
 
     time.sleep(SLEEP_BETWEEN_CALLS)
 
@@ -335,4 +327,3 @@ schedule.sort(key=lambda x: (str(x.get("date") or ""), int(x.get("ts_utc") or 0)
 with open(SAVE_PATH, "w", encoding="utf-8") as out:
     json.dump(schedule, out, indent=2, ensure_ascii=False)
 
-print(f"\nUpdated {updated_count} completed games, {live_count} live games ({total_checked} checked).")

@@ -168,7 +168,6 @@ if FIND_SCHEDULE:
 # ==========================================================
 # 🧾 PART 2 — UPDATE GAME RESULTS + SCORES
 # ==========================================================
-print("\npdating past game results and scores...")
 with open(SAVE_PATH, "r", encoding="utf-8") as f:
     schedule = json.load(f)
 
@@ -257,7 +256,7 @@ for game in schedule:
             for field in ["period", "clock"]:
                 game.pop(field, None)
             updated_count += 1
-            print(f"Final: {winner or 'N/A'} | {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score}")
+
 
         elif is_live and game_date == today:
             # Game currently live — no extra flag, just status
@@ -270,19 +269,17 @@ for game in schedule:
             })
             game.pop("winner", None)
             live_count += 1
-            print(f"Live: {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score} | {game['clock']} {game['period']}Q")
+  
 
         else:
             # Scheduled / not started yet
             game.update({"status": "scheduled"})
             for field in ["period", "clock"]:
                 game.pop(field, None)
-            print(f"Scheduled: {game['matchup']} ({game['date']}) at {game.get('time', 'TBA')}")
+
 
     time.sleep(SLEEP_BETWEEN_CALLS)
 
 # Save updated results
 with open(SAVE_PATH, "w", encoding="utf-8") as out:
     json.dump(schedule, out, indent=2, ensure_ascii=False)
-
-print(f"\nUpdated {updated_count} completed games, {live_count} live games ({total_checked} checked).")
