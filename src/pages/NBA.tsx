@@ -426,6 +426,39 @@ const teamAbbreviations: Record<string, string> = {
   'Washington Wizards': 'WAS',
 };
 
+const teamGradientColors: Record<string, { start: string; end: string }> = {
+  'ATL': { start: '#ff0004ff', end: '#fff831ff' },
+  'BOS': { start: '#007A33', end: '#ffffffff' },
+  'BKN': { start: '#000000', end: '#FFFFFF' },
+  'CHA': { start: '#1D1160', end: '#00788C' },
+  'CHI': { start: '#CE1141', end: '#000000' },
+  'CLE': { start: '#860038', end: '#FDBB30' },
+  'DAL': { start: '#00538C', end: '#002B5E' },
+  'DEN': { start: '#FEC524', end: '#0E2240' },
+  'DET': { start: '#C8102E', end: '#1D42BA' },
+  'GSW': { start: '#1D428A', end: '#FFC72C' },
+  'HOU': { start: '#CE1141', end: '#000000' },
+  'IND': { start: '#002D62', end: '#FDBB30' },
+  'LAC': { start: '#ffffffff', end: '#1D428A' },
+  'LAL': { start: '#552583', end: '#FDB927' },
+  'MEM': { start: '#5D76A9', end: '#12173F' },
+  'MIA': { start: '#98002E', end: '#F9A01B' },
+  'MIL': { start: '#00471B', end: '#EEE1C6' },
+  'MIN': { start: '#0C2340', end: '#236192' },
+  'NOP': { start: '#0C2340', end: '#C8102E' },
+  'NYK': { start: '#006BB6', end: '#F58426' },
+  'OKC': { start: '#007AC1', end: '#EF3B24' },
+  'ORL': { start: '#0077C0', end: '#C4CED4' },
+  'PHI': { start: '#006BB6', end: '#ED174C' },
+  'PHX': { start: '#1D1160', end: '#E56020' },
+  'POR': { start: '#ffffffff', end: '#E03A3E' },
+  'SAC': { start: '#5A2D81', end: '#63727A' },
+  'SAS': { start: '#C4CED4', end: '#000000' },
+  'TOR': { start: '#CE1141', end: '#000000' },
+  'UTA': { start: '#270063ff', end: '#ffffffff' },
+  'WAS': { start: '#002B5C', end: '#E31837' },
+};
+
 const abbreviationToTeamName: Record<string, string> = Object.fromEntries(
   Object.entries(teamAbbreviations).map(([name, abbr]) => [abbr, name])
 );
@@ -1029,10 +1062,12 @@ const StatRow = ({
   label,
   value,
   highlight,
+  dense = false,
 }: {
   label: string;
   value: string | number;
   highlight?: 'high' | 'low' | 'neutral' | 'best';
+  dense?: boolean;
 }) => {
   const colorClass =
     highlight === 'best'
@@ -1047,8 +1082,8 @@ const StatRow = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 text-sm cursor-help">
-            <span className="text-muted-foreground w-12">{label}</span>
+          <div className={`flex items-center text-sm cursor-help text-left ${dense ? 'gap-[4rem]' : 'gap-[0.5rem]'}`}>
+            <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left`}>{label}</span>
             <span className={`${colorClass}`}>{value}</span>
           </div>
         </TooltipTrigger>
@@ -1388,6 +1423,220 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
 
 // ============================
 // 🧑‍🤝‍🧑 PlayerModal Component
+type TeamModalStatGroup = {
+  title: string;
+  stats: Array<{ key: keyof NBATeam; label?: string }>;
+};
+
+const TEAM_MODAL_STAT_GROUPS: TeamModalStatGroup[] = [
+  {
+    title: 'Record & Efficiency',
+    stats: [
+      { key: 'GP' },
+      { key: 'WIN_PCT' },
+      { key: 'MIN' },
+      { key: 'PLUS_MINUS' },
+      { key: 'W_PCT_RANK' },
+    ],
+  },
+  {
+    title: 'Scoring & Shooting',
+    stats: [
+      { key: 'PTS'},
+      { key: 'FGM' },
+      { key: 'FGA' },
+      { key: 'FG_PCT' },
+      { key: 'FG3M' },
+      { key: 'FG3A' },
+      { key: 'FG3_PCT' },
+      { key: 'FTM' },
+      { key: 'FTA' },
+      { key: 'FT_PCT' },
+    ],
+  },
+  {
+    title: 'Rebounding & Playmaking',
+    stats: [
+      { key: 'REB' },
+      { key: 'OREB' },
+      { key: 'DREB' },
+      { key: 'AST' },
+      { key: 'TOV' },
+      { key: 'PF' },
+      { key: 'PFD' },
+    ],
+  },
+  {
+    title: 'Defense & Disruption',
+    stats: [
+      { key: 'STL' },
+      { key: 'BLK' },
+      { key: 'BLKA' },
+    ],
+  },
+  {
+    title: 'Advanced Ratings',
+    stats: [
+      { key: 'bpi', label: 'BPI'  },
+      { key: 'off', label: 'OFF'   },
+      { key: 'def', label: 'DEF'   },
+      { key: 'pbpi', label: 'PBPI'   },
+    ],
+  },
+  {
+    title: 'Rankings',
+    stats: [
+      { key: 'GP_RANK' },
+      { key: 'W_RANK' },
+      { key: 'L_RANK' },
+      { key: 'W_PCT_RANK' },
+      { key: 'MIN_RANK' },
+      { key: 'FGM_RANK' },
+      { key: 'FGA_RANK' },
+      { key: 'FG_PCT_RANK' },
+      { key: 'FG3M_RANK' },
+      { key: 'FG3A_RANK' },
+      { key: 'FG3_PCT_RANK' },
+      { key: 'FTM_RANK' },
+      { key: 'FTA_RANK' },
+      { key: 'FT_PCT_RANK' },
+      { key: 'OREB_RANK' },
+      { key: 'DREB_RANK' },
+      { key: 'REB_RANK' },
+      { key: 'AST_RANK' },
+      { key: 'TOV_RANK' },
+      { key: 'STL_RANK' },
+      { key: 'BLK_RANK' },
+      { key: 'BLKA_RANK' },
+      { key: 'PF_RANK' },
+      { key: 'PFD_RANK' },
+      { key: 'PTS_RANK' },
+      { key: 'PLUS_MINUS_RANK', label: '+/- Rank'  },
+    ],
+  },
+];
+
+const TEAM_MODAL_PERCENT_STATS = new Set<keyof NBATeam>([
+  'WIN_PCT',
+  'W_PCT',
+  'FG_PCT',
+  'FG3_PCT',
+  'FT_PCT',
+]);
+
+const TEAM_MODAL_RANK_STATS = new Set<keyof NBATeam>([
+  'GP_RANK',
+  'W_RANK',
+  'L_RANK',
+  'W_PCT_RANK',
+  'MIN_RANK',
+  'FGM_RANK',
+  'FGA_RANK',
+  'FG_PCT_RANK',
+  'FG3M_RANK',
+  'FG3A_RANK',
+  'FG3_PCT_RANK',
+  'FTM_RANK',
+  'FTA_RANK',
+  'FT_PCT_RANK',
+  'OREB_RANK',
+  'DREB_RANK',
+  'REB_RANK',
+  'AST_RANK',
+  'TOV_RANK',
+  'STL_RANK',
+  'BLK_RANK',
+  'BLKA_RANK',
+  'PF_RANK',
+  'PFD_RANK',
+  'PTS_RANK',
+  'PLUS_MINUS_RANK',
+]);
+
+const TEAM_MODAL_STATS = TEAM_MODAL_STAT_GROUPS.flatMap((group) => group.stats);
+const TEAM_MODAL_STAT_COLUMNS = (() => {
+  const columnCount = 4;
+  const perColumn = Math.ceil(TEAM_MODAL_STATS.length / columnCount);
+  return Array.from({ length: columnCount }, (_, index) =>
+    TEAM_MODAL_STATS.slice(index * perColumn, (index + 1) * perColumn),
+  );
+})();
+
+const LOWER_IS_BETTER_TEAM_STATS: Set<keyof NBATeam> = new Set<keyof NBATeam>([
+  'TOV',
+  'PF',
+  'BLKA',
+]);
+
+const NO_HIGHLIGHT_STATS: Set<keyof NBATeam> = new Set<keyof NBATeam>([
+  'GP',
+]);
+
+const isRankStatKey = (key: keyof NBATeam) =>
+  TEAM_MODAL_RANK_STATS.has(key) ||
+  key === 'rank';
+
+const determineTeamStatHighlight = (
+  team: NBATeam,
+  key: keyof NBATeam,
+  leagueAverages: LeagueAverageMap | null,
+  allTeams: NBATeam[],
+): 'high' | 'low' | 'neutral' | 'best' => {
+  const rawValue = (team as any)[key];
+  const numericValue = Number(rawValue);
+  if (!Number.isFinite(numericValue)) return 'neutral';
+  if (NO_HIGHLIGHT_STATS.has(key)) return 'neutral';
+
+  if (isRankStatKey(key)) {
+    const rankValue = Math.round(numericValue);
+    if (rankValue === 1) return 'best';
+    const totalTeams = allTeams.length || 30;
+    const midpoint = Math.ceil(totalTeams / 2);
+    return rankValue <= midpoint ? 'high' : 'low';
+  }
+
+  try {
+    const values = allTeams
+      .map((t) => Number((t as any)[key]))
+      .filter((v) => Number.isFinite(v));
+    if (values.length > 0) {
+      const best = LOWER_IS_BETTER_TEAM_STATS.has(key) ? Math.min(...values) : Math.max(...values);
+      if (Math.abs(numericValue - best) < 1e-6) return 'best';
+    }
+  } catch {}
+
+  if (!leagueAverages) return 'neutral';
+  const avgValue = Number((leagueAverages as any)?.[key]);
+  if (!Number.isFinite(avgValue)) return 'neutral';
+  const diff = numericValue - avgValue;
+  if (Math.abs(diff) < 0.01) return 'neutral';
+  if (LOWER_IS_BETTER_TEAM_STATS.has(key)) {
+    return diff < 0 ? 'high' : 'low';
+  }
+  return diff > 0 ? 'high' : 'low';
+};
+
+const formatTeamModalStatValue = (team: NBATeam, key: keyof NBATeam) => {
+  const rawValue = (team as any)[key];
+  if (rawValue === null || rawValue === undefined || rawValue === '') return '-';
+  const numeric = Number(rawValue);
+  if (!Number.isFinite(numeric)) return String(rawValue);
+  if (TEAM_MODAL_PERCENT_STATS.has(key)) {
+    return `${(numeric * 100).toFixed(1)}%`;
+  }
+  if (TEAM_MODAL_RANK_STATS.has(key) || key === 'rank') {
+    return `# ${Math.round(numeric)}`;
+  }
+  return Number.isInteger(numeric) ? numeric.toFixed(0) : numeric.toFixed(1);
+};
+
+type ModalTab = 'stats' | 'roster' | 'matchups';
+const MODAL_TAB_CONFIG: { key: ModalTab; label: string }[] = [
+  { key: 'stats', label: 'Full Stats' },
+  { key: 'roster', label: 'Roster' },
+  { key: 'matchups', label: 'Schedule' },
+];
+
 // Displays a team's full roster in a modal
 // ============================
 
@@ -1419,19 +1668,23 @@ const PlayerModal = ({
   nbaPlayerData,
   scheduleData,
   logoMap,
+  leagueAverages,
+  allTeams,
   onClose,
 }: {
   team: NBATeam;
   nbaPlayerData: Record<string, Player[]>;
   scheduleData: NBAScheduleData | null;
   logoMap: Record<string, string>;
+  leagueAverages: LeagueAverageMap | null;
+  allTeams?: NBATeam[];
   onClose: () => void;
 }) => {
   const players: Player[] = nbaPlayerData[team.TEAM_ID.toString()] || [];
   const sortedPlayers = React.useMemo(() => {
     return [...players].sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
   }, [players]);
-  const [modalTab, setModalTab] = useState<'roster' | 'matchups'>('roster');
+  const [modalTab, setModalTab] = useState<ModalTab>('stats');
   const [highlightedMatchupId, setHighlightedMatchupId] = useState<string | null>(null);
   const teamAbbrRaw = teamAbbreviations[team.TEAM_NAME] || (team as any).TEAM_ABBREVIATION || 'UNK';
   const teamAbbr = (teamAbbrRaw || 'UNK').toUpperCase();
@@ -1447,6 +1700,12 @@ const PlayerModal = ({
     }
     return 0;
   };
+
+  const modalTeams = allTeams && allTeams.length ? allTeams : ALL_TEAMS_CACHE;
+  const getModalStatHighlight = React.useCallback(
+    (key: keyof NBATeam) => determineTeamStatHighlight(team, key, leagueAverages, modalTeams),
+    [team, leagueAverages, modalTeams],
+  );
 
   const teamMatchups = React.useMemo(() => {
     if (!scheduleData) return [] as Array<
@@ -1663,31 +1922,31 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
         </div>
 
         {/* Roster / Matchups */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)] space-y-4">
+        <div className={`p-6 ${modalTab === 'stats' ? 'overflow-y-hidden' : 'overflow-y-auto'} max-h-[calc(85vh-120px)] space-y-4`}>
           <div className="w-full">
             <div className="inline-flex w-full items-center justify-center rounded-full bg-muted/40 p-1 shadow-inner backdrop-blur-sm">
-              {(['roster', 'matchups'] as const).map((tab) => (
+              {MODAL_TAB_CONFIG.map((tab) => (
                 <button
-                  key={tab}
+                  key={tab.key}
                   type="button"
                   className={`relative flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 ${
-                    modalTab === tab
+                    modalTab === tab.key
                       ? 'text-white shadow-md'
                       : 'text-muted-foreground hover:scale-[1.05] active:scale-95'
                   }`}
-                  onClick={() => setModalTab(tab)}
+                  onClick={() => setModalTab(tab.key)}
                   style={
-                    modalTab === tab
+                    modalTab === tab.key
                       ? {
                           backgroundImage: `linear-gradient(120deg, ${navSecondary}, ${navPrimary})`,
                         }
                       : undefined
                   }
                 >
-                  <span className="capitalize">{tab === 'matchups' ? 'Schedule' : tab}</span>
+                  <span>{tab.label}</span>
                   <span
                     className={`pointer-events-none absolute inset-0 rounded-full bg-white/10 transition-all duration-300 ${
-                      modalTab === tab ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                      modalTab === tab.key ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
                     }`}
                     aria-hidden
                   />
@@ -1695,6 +1954,50 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
               ))}
             </div>
           </div>
+          {modalTab === 'stats' && (
+            <div className="relative rounded-xl overflow-hidden">
+              <div
+                className="relative rounded-xl overflow-hidden"
+                style={{
+                  backgroundImage: `linear-gradient(300deg, ${
+                    teamGradientColors[teamAbbr]?.start || '#1e40af'
+                  }, ${teamGradientColors[teamAbbr]?.end || '#dc2626'})`,
+                  padding: '3px',
+                }}
+              >
+                <div
+                  className="absolute inset-1 rounded-xl"
+                  style={{ backgroundColor: '#1d1d1dff', opacity: 1 }}
+                  aria-hidden
+                />
+                <div className="relative z-10 p-4 text-white">
+                  <Card
+                    className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1"
+                    style={{ backgroundColor: '#0000004c', opacity: 1, minHeight: '57vh' }}
+                  >
+                    <CardContent className="pt-6 pb-6 max-h-[60vh] overflow-hidden">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-20">
+                        {TEAM_MODAL_STAT_COLUMNS.map((column, colIndex) => (
+                          <div key={`modal-col-${colIndex}`} className="space-y-3.5">
+                            {column.map((stat) => (
+                              <StatRow
+                                key={`modal-${stat.key}`}
+                                label={stat.label ?? stat.key}
+                                value={formatTeamModalStatValue(team, stat.key)}
+                                highlight={getModalStatHighlight(stat.key)}
+                                dense
+                              />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          )}
+
           {modalTab === 'roster' && (
             <>
               {sortedPlayers.length > 0 ? (
@@ -1995,7 +2298,7 @@ const getHighlight = (statKey: TeamStatKey) => {
   
   // Gold highlight if best in league (handles lower-is-better like TOV)
   try {
-    const epsilon = 0.01;
+    const epsilon = 1e-6;
     const values = teamsForBest
       .map((t) => Number((t as any)[statKey]))
       .filter((v) => Number.isFinite(v));
@@ -2037,7 +2340,7 @@ const getHighlight = (statKey: TeamStatKey) => {
     const diff = teamValue - avgValue;
     // Gold highlight if best team value in league for this metric
     try {
-      const epsilon = 0.01;
+      const epsilon = 1e-6;
       const values = teamsForBest
         .map((t) => Number((t as any)[key]))
         .filter((v) => Number.isFinite(v));
@@ -2052,39 +2355,6 @@ const getHighlight = (statKey: TeamStatKey) => {
     return diff > 0 ? 'high' : 'low';
   };
 
-
-const teamGradientColors = {
-  'ATL': { start: '#ff0004ff', end: '#fff831ff' },
-  'BOS': { start: '#007A33', end: '#ffffffff' },
-  'BKN': { start: '#000000', end: '#FFFFFF' },
-  'CHA': { start: '#1D1160', end: '#00788C' },
-  'CHI': { start: '#CE1141', end: '#000000' },
-  'CLE': { start: '#860038', end: '#FDBB30' },
-  'DAL': { start: '#00538C', end: '#002B5E' },
-  'DEN': { start: '#FEC524', end: '#0E2240' },
-  'DET': { start: '#C8102E', end: '#1D42BA' },
-  'GSW': { start: '#1D428A', end: '#FFC72C' },
-  'HOU': { start: '#CE1141', end: '#000000' },
-  'IND': { start: '#002D62', end: '#FDBB30' },
-  'LAC': { start: '#ffffffff', end: '#1D428A' },
-  'LAL': { start: '#552583', end: '#FDB927' },
-  'MEM': { start: '#5D76A9', end: '#12173F' },
-  'MIA': { start: '#98002E', end: '#F9A01B' },
-  'MIL': { start: '#00471B', end: '#EEE1C6' },
-  'MIN': { start: '#0C2340', end: '#236192' },
-  'NOP': { start: '#0C2340', end: '#C8102E' },
-  'NYK': { start: '#006BB6', end: '#F58426' },
-  'OKC': { start: '#007AC1', end: '#EF3B24' },
-  'ORL': { start: '#0077C0', end: '#C4CED4' },
-  'PHI': { start: '#006BB6', end: '#ED174C' },
-  'PHX': { start: '#1D1160', end: '#E56020' },
-  'POR': { start: '#ffffffff', end: '#E03A3E' },
-  'SAC': { start: '#5A2D81', end: '#63727A' },
-  'SAS': { start: '#C4CED4', end: '#000000' },
-  'TOR': { start: '#CE1141', end: '#000000' },
-  'UTA': { start: '#270063ff', end: '#ffffffff' },
-  'WAS': { start: '#002B5C', end: '#E31837' },
-};
 
 
 return (
@@ -3097,9 +3367,8 @@ useEffect(() => {
         <div className="grid grid-cols-3 gap-1 max-h-[260px] overflow-y-auto pr-1">
           {[
             ['WIN_PCT', 'Win %'],
-            ['PPG', 'PPG'],
+            ['PTS', 'PPG'],
             ['REB', 'RPG'],
-            ['AST', 'APG'],
             ['FG_PCT', 'FG%'],
             ['FG3_PCT', '3P%'],
             ['FT_PCT', 'FT%'],
@@ -3640,6 +3909,8 @@ useEffect(() => {
     nbaPlayerData={nbaPlayerData} // ✅ pass player data
     scheduleData={scheduleData}
     logoMap={abbrToLogo}
+    leagueAverages={leagueAverages}
+    allTeams={nbaTeams}
     onClose={() => setSelectedTeam(null)}
   />
 )}
