@@ -1,47 +1,58 @@
 const { app, BrowserWindow } = require('electron');
-const { spawn } = require('child_process');
 const path = require('path');
+const { spawn } = require('child_process');
 
-function runPythonScripts() {
-  const scripts = [
-    path.join(__dirname, 'src', 'f1data.py'),
-    path.join(__dirname, 'src', 'nbadata.py'),
-    path.join(__dirname, 'src', 'nfl_team_stats.py'),
-    path.join(__dirname, 'src', 'ufcdata.py')
-  ];
+let intervals = [];
 
-  for (const script of scripts) {
-    const process = spawn('python', [script]);
-    process.stdout.on('data', data => console.log(`[${path.basename(script)}]: ${data}`));
-    process.stderr.on('data', data => console.error(`[ERROR ${path.basename(script)}]: ${data}`));
-  }
+function runPythonScript(script, intervalMs) {
+  const run = () => {
+    const scriptPath = path.join(__dirname, 'data', script);
+    console.log(`Running: ${scriptPath}`);
+
+    const process = spawn('py', ['-u', scriptPath], { cwd: __dirname });
+
+    process.stdout.on('data', (data) =>
+      console.log(`[${script}] ${data.toString().trim()}`)
+    );
+    process.stderr.on('data', (data) =>
+      console.error(`[ERROR ${script}] ${data.toString().trim()}`)
+    );
+    process.on('error', (err) =>
+      console.error(`[SPAWN ERROR ${script}] ${err.message}`)
+    );
+    process.on('close', (code) =>
+      console.log(`[${script}] exited with code ${code}`)
+    );
+  };
+
+  run();
+  const id = setInterval(run, intervalMs);
+  intervals.push(id);
 }
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1300,
+    height: 900,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
-    }
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
 
-  win.loadFile(path.join(__dirname, 'dist', 'index.html'));
-
+  win.loadURL('http://localhost:8080');
 }
 
 app.whenReady().then(() => {
-  // Run Python scripts first
-  runPythonScripts();
+  createWindow();
 
-  // Start your React app
-  const reactProcess = spawn('npm', ['run', 'dev'], { shell: true });
-  reactProcess.stdout.on('data', data => console.log(`[React]: ${data}`));
-  reactProcess.stderr.on('data', data => console.error(`[React ERROR]: ${data}`));
+  runPythonScript('data_NBAV2.py', 120_000);
+  runPythonScript('data_NFLV2.py', 120_000);
+  runPythonScript('NBA_BPI.py', 120_000);
+  runPythonScript('schedule_NBA.py', 60_000);
+  runPythonScript('schedule_NFL.py', 60_000);
+});
 
-  // Give the server a few seconds to start before opening the window
-  setTimeout(() => {
-    createWindow();
-  }, 5000);
+app.on('window-all-closed', () => {
+  intervals.forEach(clearInterval);
+  app.quit();
 });

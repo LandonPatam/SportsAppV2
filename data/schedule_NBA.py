@@ -63,7 +63,7 @@ if FIND_SCHEDULE:
         try:
             data = response.json()
         except Exception:
-            print("⚠️ Invalid or empty JSON — skipping.")
+            print(" Invalid or empty JSON — skipping.")
             current_date += timedelta(days=1)
             continue
 
@@ -77,7 +77,7 @@ if FIND_SCHEDULE:
 
         if not events:
             empty_days += 1
-            print(f"❌ No games found — {empty_days} empty day(s).")
+            print(f" No games found — {empty_days} empty day(s).")
             current_date += timedelta(days=1)
             time.sleep(SLEEP_BETWEEN_CALLS)
             continue
@@ -150,10 +150,10 @@ if FIND_SCHEDULE:
 
                 seen_ids.add(game_id)
 
-                print(f"✅ Added {away_name} @ {home_name} — {date_clean} {time_clean}")
+                print(f"Added {away_name} @ {home_name} — {date_clean} {time_clean}")
 
             except Exception as e:
-                print(f"⚠️ Error parsing event: {e}")
+                print(f"Error parsing event: {e}")
 
         os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
         with open(SAVE_PATH, "w", encoding="utf-8") as out:
@@ -162,13 +162,13 @@ if FIND_SCHEDULE:
         current_date += timedelta(days=1)
         time.sleep(SLEEP_BETWEEN_CALLS)
 
-    print(f"\n🏁 Schedule fetch complete — {len(schedule)} total games saved.")
+    print(f"\n Schedule fetch complete — {len(schedule)} total games saved.")
 
 
 # ==========================================================
 # 🧾 PART 2 — UPDATE GAME RESULTS + SCORES
 # ==========================================================
-print("\n🔁 Updating past game results and scores...")
+print("\npdating past game results and scores...")
 with open(SAVE_PATH, "r", encoding="utf-8") as f:
     schedule = json.load(f)
 
@@ -257,7 +257,7 @@ for game in schedule:
             for field in ["period", "clock"]:
                 game.pop(field, None)
             updated_count += 1
-            print(f"🏆 Final: {winner or 'N/A'} | {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score}")
+            print(f"Final: {winner or 'N/A'} | {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score}")
 
         elif is_live and game_date == today:
             # Game currently live — no extra flag, just status
@@ -270,14 +270,14 @@ for game in schedule:
             })
             game.pop("winner", None)
             live_count += 1
-            print(f"🔴 Live: {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score} | {game['clock']} {game['period']}Q")
+            print(f"Live: {away_team.get('displayName')} {away_score} - {home_team.get('displayName')} {home_score} | {game['clock']} {game['period']}Q")
 
         else:
             # Scheduled / not started yet
             game.update({"status": "scheduled"})
             for field in ["period", "clock"]:
                 game.pop(field, None)
-            print(f"⏰ Scheduled: {game['matchup']} ({game['date']}) at {game.get('time', 'TBA')}")
+            print(f"Scheduled: {game['matchup']} ({game['date']}) at {game.get('time', 'TBA')}")
 
     time.sleep(SLEEP_BETWEEN_CALLS)
 
@@ -285,4 +285,4 @@ for game in schedule:
 with open(SAVE_PATH, "w", encoding="utf-8") as out:
     json.dump(schedule, out, indent=2, ensure_ascii=False)
 
-print(f"\n✅ Updated {updated_count} completed games, {live_count} live games ({total_checked} checked).")
+print(f"\nUpdated {updated_count} completed games, {live_count} live games ({total_checked} checked).")
