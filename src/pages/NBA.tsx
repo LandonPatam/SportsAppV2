@@ -608,6 +608,22 @@ const DashboardPlayerMiniCard = ({
   );
 };
 
+const formatPeriodLabel = (period?: number | string | null) => {
+  const parsed =
+    typeof period === 'number' ? period : Number.parseInt(String(period || ''), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  if (parsed === 5) return 'OT';
+  if (parsed > 5) return `OT${parsed - 4}`;
+  return `Q${parsed}`;
+};
+
+const buildLiveScoreDetail = (isLive: boolean, periodLabel: string | null, clock?: string | null) => {
+  if (!isLive || !periodLabel) return null;
+  const rawClock = (clock || '').trim();
+  if (rawClock) return `${periodLabel} · ${rawClock}`;
+  return periodLabel;
+};
+
 const DashboardTodaySchedule = ({
   scheduleData,
   logoMap,
@@ -777,10 +793,17 @@ const DashboardTodaySchedule = ({
 
         const statusText = String((g as any).status || '').toLowerCase();
         const isFinal = statusText.includes('final') || Boolean((g as any).winner);
+        const isLive = statusText.includes('live') || statusText.includes('in progress') || (hasScores && !isFinal);
+        const periodLabel = formatPeriodLabel((g as any).period);
+        const liveScoreDetail = buildLiveScoreDetail(isLive, periodLabel, (g as any).clock);
+        const awayScoreClass = isFinal ? (awayWin ? 'text-white' : 'text-white/50') : 'text-white';
+        const homeScoreClass = isFinal ? (homeWin ? 'text-white' : 'text-white/50') : 'text-white';
 
         const cardPadding = Math.max(6, Math.round(10 * scale));
         const logoSize = Math.max(30, Math.round(72 * scale));
         const scoreFont = Math.max(20, Math.round(28 * scale));
+        const bothTripleScore = hasScores && aScore >= 100 && hScore >= 100;
+        const adjustedScoreFont = bothTripleScore ? Math.max(18, Math.round(scoreFont * 0.83)) : scoreFont;
         const timeFont = Math.max(14, Math.round(22 * scale));
         const contentPad = Math.max(4, Math.round(8 * scale));
         const contentSkew = Math.max(2, Math.round(4 * scale));
@@ -788,7 +811,8 @@ const DashboardTodaySchedule = ({
         const bottomPad = contentPad + 2 * contentSkew;
         const cardHeight = layout.cardHeight > 0 ? layout.cardHeight : undefined;
         const recordFont = Math.max(10, Math.round(17 * scale));
-        const recordOffset = Math.max(12, Math.round(45 * scale));
+        const recordOffset = Math.max(12, Math.round(35 * scale));
+        const scoreColumnWidth = Math.max(140, Math.round(180 * scale)); // keep the central score column at a fixed width to avoid overlap
 
         const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
         const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
@@ -806,7 +830,11 @@ const DashboardTodaySchedule = ({
               minHeight: 0,
             }}
           >
-            
+            {isLive && (
+              <div className="absolute top-2 left-2 z-10">
+                <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[10px] tracking-wide">LIVE</Badge>
+              </div>
+            )}
 
             {/* TV Badges top-right */}
             {providers.length > 0 && (
@@ -837,7 +865,7 @@ const DashboardTodaySchedule = ({
               <div
                 className="grid items-center h-full min-h-0"
                 style={{
-                  gridTemplateColumns: `1fr minmax(${Math.max(140, Math.round(180 * scale))}px, auto) 1fr`,
+                  gridTemplateColumns: `1fr minmax(${scoreColumnWidth}px, ${scoreColumnWidth}px) 1fr`,
                   columnGap: Math.max(18, Math.round(26 * scale)),
                 }}
               >
@@ -884,28 +912,18 @@ const DashboardTodaySchedule = ({
                 </div>
 
                 {/* Center time or score */}
-                <div className="text-center">
-                  {(() => {
-                    const statusTextCenter = String((g as any).status || '').toLowerCase();
-                    const isFinalCenter = statusTextCenter.includes('final') || Boolean((g as any).winner);
-                    const isLiveCenter = (statusTextCenter.includes('live') || statusTextCenter.includes('in progress')) || (hasScores && !isFinalCenter);
-                    if (isLiveCenter) {
-                      return <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>;
-                    }
-                    return hasScores ? (
-                    <div className="font-extrabold tracking-wide" style={{ fontSize: scoreFont }}>
-                      <span className={(awayWin) ? 'text-white' : 'text-white/50'}>
-                        {aScore}
-                      </span>
+                <div className="text-center" style={{ width: scoreColumnWidth }}>
+                  {hasScores ? (
+                  <div className="font-extrabold tracking-wide" style={{ fontSize: adjustedScoreFont }}>
+                      <span className={awayScoreClass}>{aScore}</span>
                       <span className="mx-2 text-muted-foreground">-</span>
-                      <span className={(homeWin) ? 'text-white' : 'text-white/50'}>
-                        {hScore}
-                      </span>
+                      <span className={homeScoreClass}>{hScore}</span>
                     </div>
                   ) : (
-                    <div className="font-bold" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
-                  );
-                  })()}
+                    <div className="text-lg md:text-xl font-bold" style={{ fontSize: timeFont }}>
+                      {g.time || 'TBA'}
+                    </div>
+                  )}
                   {(g as any).tv && providers.length === 0 && (
                     <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>
                       {String((g as any).tv)}
@@ -956,6 +974,11 @@ const DashboardTodaySchedule = ({
 
                 </div>
               </div>
+              {liveScoreDetail && (
+                <div className="mt-2 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                  {liveScoreDetail}
+                </div>
+              )}
             </CardContent>
           </Card>
         );
@@ -1302,6 +1325,13 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
             const homeWin = hasScores ? hScore >= aScore : false;
             const statusText = String((g as any).status || '').toLowerCase();
             const isFinal = statusText.includes('final') || Boolean((g as any).winner);
+            const isLiveGame = statusText.includes('live') || statusText.includes('in progress') || (hasScores && !isFinal);
+            const periodLabel = formatPeriodLabel((g as any).period);
+            const liveScoreDetail = buildLiveScoreDetail(isLiveGame, periodLabel, (g as any).clock);
+            const awayScoreClass = isFinal ? (aScore >= hScore ? 'text-white' : 'text-white/50') : 'text-white';
+            const homeScoreClass = isFinal ? (hScore >= aScore ? 'text-white' : 'text-white/50') : 'text-white';
+            const scoreFont = 24;
+            const timeFont = 18;
 
             // Normalize TV providers to an array of names
             const providers: string[] = Array.isArray((g as any).tv_providers)
@@ -1318,6 +1348,11 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
 
             return (
               <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-2">
+                {isLiveGame && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[10px] tracking-wide">LIVE</Badge>
+                  </div>
+                )}
                 {/* TV Badges top-right */}
                 {providers.length > 0 && (
                   <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px]">
@@ -1362,27 +1397,17 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
 
                     {/* Center time or score */}
                     <div className="text-center">
-                      {(() => {
-                        const statusText2 = String((g as any).status || '').toLowerCase();
-                        const hasScores2 = Boolean((g as any).home_score && (g as any).away_score);
-                        const isFinal2 = statusText2.includes('final') || Boolean((g as any).winner);
-                        const isLive2 = (statusText2.includes('live') || statusText2.includes('in progress')) || (hasScores2 && !isFinal2);
-                        if (isLive2) {
-                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
-                        }
-                        if (hasScores2) {
-                          const a = parseInt((g as any).away_score as string, 10);
-                          const h = parseInt((g as any).home_score as string, 10);
-                          return (
-                            <div className="text-xl md:text-2xl font-extrabold tracking-wide">
-                              <span className={(a >= h) ? 'text-white' : 'text-white/50'}>{(g as any).away_score}</span>
-                              <span className="mx-2 text-muted-foreground">-</span>
-                              <span className={(h >= a) ? 'text-white' : 'text-white/50'}>{(g as any).home_score}</span>
-                            </div>
-                          );
-                        }
-                        return <div className="text-lg md:text-xl font-bold">{g.time || 'TBA'}</div>;
-                      })()}
+                      {hasScores ? (
+                        <div className="text-xl md:text-2xl font-extrabold tracking-wide">
+                          <span className={awayScoreClass}>{aScore}</span>
+                          <span className="mx-2 text-muted-foreground">-</span>
+                          <span className={homeScoreClass}>{hScore}</span>
+                        </div>
+                      ) : (
+                        <div className="text-lg md:text-xl font-bold" style={{ fontSize: timeFont }}>
+                          {g.time || 'TBA'}
+                        </div>
+                      )}
                     </div>
 
                     {/* Home side */}
@@ -1402,13 +1427,19 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         {homeName || homeAbbr || 'Home'}
                       </div>
                     </div>
-                  </div>
+                </div>
 
-                  {/* Footer: arena centered */}
-                  <div className="mt-2 text-xs text-muted-foreground text-center">
-                    {(g as any).location || ''}
+                {liveScoreDetail && (
+                  <div className="mt-2 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+                    {liveScoreDetail}
                   </div>
-                </CardContent>
+                )}
+
+                {/* Footer: arena centered */}
+                <div className="mt-2 text-xs text-muted-foreground text-center">
+                  {(g as any).location || ''}
+                </div>
+              </CardContent>
               </Card>
             );
           })}
