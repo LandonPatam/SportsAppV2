@@ -608,22 +608,6 @@ const DashboardPlayerMiniCard = ({
   );
 };
 
-const formatPeriodLabel = (period?: number | string | null) => {
-  const parsed =
-    typeof period === 'number' ? period : Number.parseInt(String(period || ''), 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return null;
-  if (parsed === 5) return 'OT';
-  if (parsed > 5) return `OT${parsed - 4}`;
-  return `Q${parsed}`;
-};
-
-const buildLiveScoreDetail = (isLive: boolean, periodLabel: string | null, clock?: string | null) => {
-  if (!isLive || !periodLabel) return null;
-  const rawClock = (clock || '').trim();
-  if (rawClock) return `${periodLabel} · ${rawClock}`;
-  return periodLabel;
-};
-
 const DashboardTodaySchedule = ({
   scheduleData,
   logoMap,
@@ -1319,11 +1303,8 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
             const statusText = String((g as any).status || '').toLowerCase();
             const isFinal = statusText.includes('final') || Boolean((g as any).winner);
             const isLiveGame = statusText.includes('live') || statusText.includes('in progress') || (hasScores && !isFinal);
-            const periodLabel = formatPeriodLabel((g as any).period);
-            const liveScoreDetail = buildLiveScoreDetail(isLiveGame, periodLabel, (g as any).clock);
             const awayScoreClass = isFinal ? (aScore >= hScore ? 'text-white' : 'text-white/50') : 'text-white';
             const homeScoreClass = isFinal ? (hScore >= aScore ? 'text-white' : 'text-white/50') : 'text-white';
-            const scoreFont = 24;
             const timeFont = 18;
 
             // Normalize TV providers to an array of names
@@ -1421,12 +1402,6 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                       </div>
                     </div>
                 </div>
-
-                {liveScoreDetail && (
-                  <div className="mt-2 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-                    {liveScoreDetail}
-                  </div>
-                )}
 
                 {/* Footer: arena centered */}
                 <div className="mt-2 text-xs text-muted-foreground text-center">
@@ -2571,25 +2546,6 @@ const NBA = () => {
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
   const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [scheduleOnly, setScheduleOnly] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 900;
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      setScheduleOnly(window.innerWidth < 900);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (scheduleOnly) {
-      setActiveTab('schedule');
-    }
-  }, [scheduleOnly]);
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
@@ -3287,16 +3243,13 @@ useEffect(() => {
           }
         }}
       >
-        {!scheduleOnly && (
-          <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="all">All Teams</TabsTrigger>
-            <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          </TabsList>
-        )}
+        <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="all">All Teams</TabsTrigger>
+          <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+        </TabsList>
 
-{!scheduleOnly && (
 <TabsContent value="dashboard">
   {/* === Outer Grid === */}
   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
@@ -3379,12 +3332,10 @@ useEffect(() => {
     </div>
   </div>
 </TabsContent>
-)}
 
 
 
         {/* === Sort Controls === */}
-{!scheduleOnly && (
 <TabsContent value="all">
 
  {/* === Sort Controls (All Teams view) === */}
@@ -3782,22 +3733,17 @@ useEffect(() => {
     );
   })()}
 </TabsContent>
-)}
 
 
 {/* === Schedule === */}
-<TabsContent
-  value="schedule"
-  className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto' : undefined}
->
-<ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
+<TabsContent value="schedule">
+  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
 </TabsContent>
 
       
 
 
 {/* === Top Players === */}
-{!scheduleOnly && (
 <TabsContent value="top-scorers" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-12 pr-2">
 
   {/* === Filter Controls === */}
@@ -3952,7 +3898,6 @@ useEffect(() => {
     ))}
 </div>
 </TabsContent>
-)}
 
 
       </Tabs>

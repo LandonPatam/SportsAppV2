@@ -209,23 +209,7 @@ export function Sidebar({ className, theme = 'default', onHoverChange }: Sidebar
         </div>
 
         {/* === FOOTER (Month/Year) === */}
-        <div className="p-2 mt-auto">
-          <div
-            className="
-              flex flex-col items-center justify-center
-              rounded-lg 
-              text-white/90
-              shadow-[0_0_0px_rgba(0,0,0,0.4)]
-              w-full aspect-square
-              text-center text-[11px] font-medium
-              select-none
-              
-            "
-          >
-            <p className="text-sm font-semibold">{month}</p>
-            <p className="text-[10px] leading-none opacity-90">{year}</p>
-          </div>
-        </div>
+       
       </nav>
     </aside>
   );
