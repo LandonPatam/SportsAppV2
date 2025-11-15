@@ -794,8 +794,6 @@ const DashboardTodaySchedule = ({
         const statusText = String((g as any).status || '').toLowerCase();
         const isFinal = statusText.includes('final') || Boolean((g as any).winner);
         const isLive = statusText.includes('live') || statusText.includes('in progress') || (hasScores && !isFinal);
-        const periodLabel = formatPeriodLabel((g as any).period);
-        const liveScoreDetail = buildLiveScoreDetail(isLive, periodLabel, (g as any).clock);
         const awayScoreClass = isFinal ? (awayWin ? 'text-white' : 'text-white/50') : 'text-white';
         const homeScoreClass = isFinal ? (homeWin ? 'text-white' : 'text-white/50') : 'text-white';
 
@@ -974,11 +972,6 @@ const DashboardTodaySchedule = ({
 
                 </div>
               </div>
-              {liveScoreDetail && (
-                <div className="mt-2 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-                  {liveScoreDetail}
-                </div>
-              )}
             </CardContent>
           </Card>
         );
@@ -3260,7 +3253,7 @@ useEffect(() => {
   // 🧭 Render
   // ============================
   return (
-<PageLayout>
+    <PageLayout theme="nba">
       <div className="flex justify-end">
       </div>
       {/* Tabs for Dashboard / All / East / West / Scorers / Schedule */}
