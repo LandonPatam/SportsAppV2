@@ -1060,22 +1060,51 @@ useEffect(() => {
     return map;
   }, [teams]);
 
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [scheduleOnly, setScheduleOnly] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 900;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScheduleOnly(window.innerWidth < 900);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (scheduleOnly) {
+      setActiveTab('schedule');
+    }
+  }, [scheduleOnly]);
+
   return (
-    <PageLayout>
+    <PageLayout theme="nfl">
       {/* Dark mode toggle */}
       <div className="flex justify-end">
       </div>
 
-      <Tabs defaultValue="dashboard" className="w-full min-h-0">
-        <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="all">All Teams</TabsTrigger>
-          <TabsTrigger value="AFC">AFC</TabsTrigger>
-          <TabsTrigger value="NFC">NFC</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-        </TabsList>
+      <Tabs
+        theme="nfl"
+        value={activeTab}
+        className="w-full min-h-0"
+        onValueChange={(v) => setActiveTab(v)}
+      >
+        {!scheduleOnly && (
+          <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="all">All Teams</TabsTrigger>
+            <TabsTrigger value="AFC">AFC</TabsTrigger>
+            <TabsTrigger value="NFC">NFC</TabsTrigger>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          </TabsList>
+        )}
 
         {/* Dashboard: Win% & FPI stacks + schedule */}
+        {!scheduleOnly && (
         <TabsContent value="dashboard">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
             {/* Left column: ranked team stacks similar to NBA layout */}
@@ -1137,8 +1166,10 @@ useEffect(() => {
             </div>
           </div>
         </TabsContent>
+        )}
 
         {/* All Teams Tab with Sort Controls + Sidebar layout (like NBA) */}
+        {!scheduleOnly && (
         <TabsContent
           value="all"
           className=" overflow-hidden pr-4 pb-6"
@@ -1351,9 +1382,10 @@ useEffect(() => {
             })()}
           </div>
         </TabsContent>
+        )}
 
         {/* AFC and NFC Conference Tabs */}
-        {['AFC', 'NFC'].map((conference) => (
+        {!scheduleOnly && ['AFC', 'NFC'].map((conference) => (
           <TabsContent
             key={conference}
             value={conference}
@@ -1392,7 +1424,10 @@ useEffect(() => {
         ))}
 
         {/* Schedule Tab */}
-        <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-4">
+        <TabsContent
+          value="schedule"
+          className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto pr-2 pb-4' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-4'}
+        >
           <ScheduleNFLViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
         </TabsContent>
       </Tabs>

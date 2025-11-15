@@ -2571,6 +2571,25 @@ const NBA = () => {
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
   const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [scheduleOnly, setScheduleOnly] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 900;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScheduleOnly(window.innerWidth < 900);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (scheduleOnly) {
+      setActiveTab('schedule');
+    }
+  }, [scheduleOnly]);
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
@@ -3258,7 +3277,8 @@ useEffect(() => {
       </div>
       {/* Tabs for Dashboard / All / East / West / Scorers / Schedule */}
       <Tabs
-        defaultValue="dashboard"
+        theme="nba"
+        value={activeTab}
         className="w-full"
         onValueChange={(v) => {
           setActiveTab(v);
@@ -3267,13 +3287,16 @@ useEffect(() => {
           }
         }}
       >
-        <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="all">All Teams</TabsTrigger>
-          <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-        </TabsList>
+        {!scheduleOnly && (
+          <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="all">All Teams</TabsTrigger>
+            <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          </TabsList>
+        )}
 
+{!scheduleOnly && (
 <TabsContent value="dashboard">
   {/* === Outer Grid === */}
   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
@@ -3356,10 +3379,12 @@ useEffect(() => {
     </div>
   </div>
 </TabsContent>
+)}
 
 
 
         {/* === Sort Controls === */}
+{!scheduleOnly && (
 <TabsContent value="all">
 
  {/* === Sort Controls (All Teams view) === */}
@@ -3757,10 +3782,14 @@ useEffect(() => {
     );
   })()}
 </TabsContent>
+)}
 
 
 {/* === Schedule === */}
-<TabsContent value="schedule">
+<TabsContent
+  value="schedule"
+  className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto' : undefined}
+>
 <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
 </TabsContent>
 
@@ -3768,6 +3797,7 @@ useEffect(() => {
 
 
 {/* === Top Players === */}
+{!scheduleOnly && (
 <TabsContent value="top-scorers" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-12 pr-2">
 
   {/* === Filter Controls === */}
@@ -3922,6 +3952,7 @@ useEffect(() => {
     ))}
 </div>
 </TabsContent>
+)}
 
 
       </Tabs>

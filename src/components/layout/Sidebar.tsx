@@ -11,7 +11,7 @@ const neonGlowStyles = {
     filter: 'drop-shadow(0 0 15px rgba(0, 4, 253, 1)) drop-shadow(0 0 1px rgba(4, 0, 255, 0.5))',
   },
   red: {
-    filter: 'drop-shadow(0 0 3px #cc00ffff) drop-shadow(0 0 1px rgba(86, 0, 0, 0.5))',
+    filter: 'drop-shadow(0 0 3px #ff6161ff) drop-shadow(0 0 1px rgba(86, 0, 0, 0.5))',
   },
   white: {
     filter: 'drop-shadow(0 0 1px rgba(255,255,255, 1)) drop-shadow(0 0 1px rgba(255,255,255,0.15))',
@@ -21,6 +21,14 @@ const neonGlowStyles = {
 type IconProps = {
   className?: string;
   active?: boolean;
+};
+
+type SidebarTheme = 'default' | 'nfl' | 'nba';
+
+const gradientMap: Record<SidebarTheme, { from: string; to: string }> = {
+  default: { from: "#5e70fbff", to: "#ffc342ff" },
+  nfl: { from: "#5e70fbff", to: "#ffc342ff" },
+  nba: { from: "#00ffeeff", to: "#cc00ffff" },
 };
 
 /* ============================================================================
@@ -39,12 +47,12 @@ const FootballIcon = ({ className, active = false }: IconProps) => (
     strokeLinejoin="round"
   >
     {/* Outer Border */}
-    <g stroke={active ? '#4bb1ffff' : '#3a3a3aff'} style={active ? neonGlowStyles.blue : undefined}>
+    <g stroke={active ? '#5e70fbff' : '#3a3a3aff'} style={active ? neonGlowStyles.blue : undefined}>
       <path d="M95.973 8.504c8.07 18.65 41.426 33.356 69.582 13.629v122.485c0 19.189-15.961 22.059-24.391 22.059-29.41 0-40.35 12.193-45.371 17.574-5.021-5.381-15.603-17.574-45.013-17.574-8.429 0-24.39-2.869-24.39-22.059V22.134c28.156 19.726 61.512 5.021 69.583-13.63z"/>
     </g>
 
     {/* Letters */}
-    <g stroke={active ? '#ffb92dff' : '#3a3a3aff'} style={active ? neonGlowStyles.red : undefined}>
+    <g stroke={active ? '#E8F5C8' : '#3a3a3aff'} style={active ? neonGlowStyles.red : undefined}>
       <path d="M85.392 148.924c0 1.164 0 3.945-1.793 4.842s-2.152 2.062-1.973 2.779.986 1.525 2.421 1.973c1.435.449 4.125 1.346 12.105 7.174 1.434.896 2.87.357 3.317-.18.449-.537.629-2.062-.537-3.408-1.271-1.465-2.6-3.766-2.6-7.172v-33.447h8.159c1.973 0 3.945.539 4.574 3.945.537 2.242 3.676 2.602 3.676.18v-18.023c0-1.973-3.498-1.793-3.945.18-.449 1.973-.539 5.471-3.229 5.471h-9.235V95.123h10.042c1.525 0 3.049.538 3.945 1.793.898 1.256 3.678 4.574 5.561 3.766.896-.357 1.344-1.256.896-2.959l-4.215-11.387H83.599c-1.793 0-2.69.628-2.87 1.435-.179.807.359 2.332 1.614 2.959 1.255.628 3.049 1.883 3.049 4.753v53.441z"/>
       <path d="M121.438 141.301c0 1.256 0 4.305-1.793 5.74-1.793 1.434-6.188 5.559-4.305 8.068.719.986 2.691.719 5.201-.178 2.512-.896 9.863-1.166 12.553-1.076 2.691.09 15.424 2.42 20.445-12.645 3.318-10.4-1.346-22.686-10.67-22.865-5.291-.09-7.891 2.602-8.34 6.457s2.689 9.594 9.416 8.518c1.883-.357 2.33.27 2.33 1.795 0 1.523-.537 10.76-9.324 10.76-1.436 0-3.588.09-4.574.09V96.736c0-2.331 2.779-5.559 4.664-6.814 1.434-.896 1.344-3.587-.359-3.587h-19.189c-1.256 0-2.51 1.435-.717 3.318 1.793 1.883 4.662 3.317 4.662 7.442v44.206z"/>
       <path d="M39.034 86.335c-1.345 0-2.69.628-2.959 1.793-.226.978 0 2.511 1.435 3.139 1.435.628 3.587 1.883 3.587 5.201v39.991c0 1.525-.18 3.676-2.242 3.408-2.062-.27-2.601.717-2.69 1.344-.09.629.269 4.844 6.187 8.699 1.973 1.254 7.532 4.932 9.774 3.137 1.076-.807-.09-4.662-1.166-5.916-1.076-1.256-1.793-2.781-1.793-4.934v-31.383l15.423 40.262c1.076 2.689 4.483 5.289 6.994 4.482 2.511-.807 2.87-2.779 2.87-4.395V95.482c0-1.614.089-3.049 3.228-4.753 1.614-.717 2.242-4.394-.627-4.394h-16.05c-1.883 0-3.139 2.331-1.345 3.766 1.793 1.435 5.47 3.228 5.47 6.188v25.914L53.111 90.909c-.986-2.421-2.69-4.573-4.573-4.573h-9.504v-.001z"/>
@@ -94,6 +102,12 @@ interface SidebarProps {
   className?: string;
 }
 
+interface SidebarProps {
+  className?: string;
+  theme?: SidebarTheme;
+  onHoverChange?: (state: boolean) => void;
+}
+
 interface NavItem {
   title: string;
   icon: React.ComponentType<IconProps>;
@@ -102,9 +116,15 @@ interface NavItem {
   offsetX?: number;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, theme = 'default', onHoverChange }: SidebarProps) {
   const location = useLocation();
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+  const [isHovered, setIsHovered] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.sessionStorage.getItem('sidebarExpanded') === 'true';
+  });
+
+  const gradient = gradientMap[theme] || gradientMap.default;
 
   const navItems: NavItem[] = [
     { title: '', icon: FootballIcon, href: '/nfl', offsetY: 140, offsetX: 0 },
@@ -117,16 +137,38 @@ export function Sidebar({ className }: SidebarProps) {
   const collapsedBasis =
     totalItems > 1 ? `calc((100% - ${expandedPercent}%) / ${totalItems - 1})` : '100%';
 
+  React.useEffect(() => {
+    onHoverChange?.(isHovered);
+  }, [isHovered, onHoverChange]);
+
   return (
     <aside
       className={cn(
-        'fixed top-0 left-3 h-screen w-[100px] z-40 flex flex-col justify-between',
-      'bg-transparent border-none shadow-[inset_0_0_30px_rgba(255,255,255,0.0)]',
-          className
+        'fixed top-6 bottom-6 left-0 z-40 transition-all duration-300 ease-in-out rounded-r-3xl overflow-hidden',
+        isHovered ? 'w-[120px] bg-transparent' : 'w-[14px]',
+        className
       )}
+      style={{
+        backgroundImage: !isHovered ? `linear-gradient(180deg, ${gradient.from}, ${gradient.to})` : undefined,
+      }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        onHoverChange?.(true);
+        if (typeof window !== 'undefined') window.sessionStorage.setItem('sidebarExpanded', 'true');
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setHoveredIndex(null);
+        onHoverChange?.(false);
+        if (typeof window !== 'undefined') window.sessionStorage.setItem('sidebarExpanded', 'false');
+      }}
     >
-      {/* === NAVIGATION === */}
-      <nav className="flex flex-col flex-1 justify-between py-0">
+      <nav
+        className={cn(
+          'flex flex-col flex-1 justify-between py-0 h-full transition-opacity duration-200',
+          isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        )}
+      >
         <div className="flex flex-col flex-1 gap-6 px-3 py-10">
           {navItems.map((item, index) => {
             const isActive = location.pathname.startsWith(item.href);
