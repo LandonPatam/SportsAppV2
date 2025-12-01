@@ -127,8 +127,8 @@ export function Sidebar({ className, theme = 'default', onHoverChange }: Sidebar
   const gradient = gradientMap[theme] || gradientMap.default;
 
   const navItems: NavItem[] = [
-    { title: '', icon: FootballIcon, href: '/nfl', offsetY: 140, offsetX: 0 },
-    { title: '', icon: NBAIcon, href: '/nba', offsetY: 140, offsetX: -6 },
+    { title: '', icon: FootballIcon, href: '/nfl', offsetY: 100, offsetX: 20 },
+    { title: '', icon: NBAIcon, href: '/nba', offsetY: 160, offsetX: 7 },
   ];
 
   const totalItems = navItems.length;
