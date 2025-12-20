@@ -13,7 +13,7 @@ SAVE_PATH = "public/data/nba_schedule.json"
 VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN"}
 SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
-SEASON_START_DATE = datetime(2025, 10, 21).date()
+SEASON_START_DATE = datetime(2025, 12, 1).date()
 # ==========================================================
 
 HEADERS = {

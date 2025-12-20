@@ -630,7 +630,7 @@ const DashboardTodaySchedule = ({
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
+    const d = String(now.getDate() + 0).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }, []);
 
@@ -642,74 +642,73 @@ const DashboardTodaySchedule = ({
     return arr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
   }, [scheduleData, todayKey]);
 
-  // Keep cards auto-sized so the full slate fits without scrolling.
   const shellRef = React.useRef<HTMLDivElement>(null);
+  
+  // State for dynamic layout calculations
   const [layout, setLayout] = React.useState(() => ({
-    gap: 12,
-    cardHeight: 120,
-    scale: 1,
+    gap: 8,
+    cardHeight: 100,
+    scale: 1,      
+    isStacked: false, 
+    logoOffset: 0,
+    recordOffset: 0,
     ready: false,
   }));
 
   const recomputeLayout = React.useCallback(() => {
     const shell = shellRef.current;
     if (!shell) return;
+    
     const rect = shell.getBoundingClientRect();
-    const available = rect.height;
-    if (!available || !Number.isFinite(available)) return;
-    const totalGames = Math.max(1, games.length);
+    const totalHeight = rect.height;
+    if (!totalHeight || !Number.isFinite(totalHeight)) return;
+    
+    const count = Math.max(1, games.length);
 
-    // Push gaps down so cards can stretch taller within the column.
-    let gap = Math.max(2, Math.min(8, (available / (totalGames + 0.25)) * 0.25));
-    const gapBudget = gap * (totalGames + 1);
-    const maxGapBudget = available * 0.2;
-    if (gapBudget > maxGapBudget && maxGapBudget > 0) {
-      gap = maxGapBudget / (totalGames + 1);
-    }
+    // 1. Calculate dynamic Gap
+    const gap = Math.max(4, Math.min(12, totalHeight * 0.012));
 
-    const usable = Math.max(0, available - gap * (totalGames + 1));
-    const perCard = totalGames > 0 ? usable / totalGames : available;
-    const BASE_CARD = 105;
-    const scale = Math.max(0.6, Math.min(1.4, perCard / BASE_CARD));
+    // 2. Calculate Exact Height Per Card
+    const availableHeight = totalHeight - (gap * (count + 1));
+    const rawCardHeight = availableHeight / count;
+    
+    // 3. Determine Scale Factor
+    let scale = rawCardHeight / 110; 
+    scale = Math.max(0.85, Math.min(2.5, scale));
 
-    setLayout((prev) => {
-      const next = {
-        gap,
-        cardHeight: perCard,
-        scale,
-        ready: true,
-      };
-      // Prevent extra renders if nothing changed meaningfully.
-      if (
-        Math.abs(prev.gap - next.gap) < 0.25 &&
-        Math.abs(prev.cardHeight - next.cardHeight) < 0.5 &&
-        Math.abs(prev.scale - next.scale) < 0.01 &&
-        prev.ready === next.ready
-      ) {
-        return prev;
-      }
-      try { onGapChange && onGapChange(Math.round(next.gap)); } catch {}
-      return next;
+    // 4. Determine Layout Mode
+    const isStacked = rawCardHeight > 140;
+
+    // 5. Calculate Independent Offsets
+    const baseline = Math.max(0, count - 5);
+    const logoOffset = isStacked ? 0 : Math.min(60, baseline * 25);   
+    const recordOffset = isStacked ? 0 : Math.min(20, baseline * 2);
+
+    setLayout({
+      gap,
+      cardHeight: rawCardHeight,
+      scale,
+      isStacked,
+      logoOffset,
+      recordOffset,
+      ready: true,
     });
+    
+    try { onGapChange && onGapChange(Math.round(gap)); } catch {}
   }, [games.length, onGapChange]);
 
   React.useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
     const handleResize = () => recomputeLayout();
     recomputeLayout();
+    
     window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize as any);
-
-    let observer: ResizeObserver | null = null;
-    if ('ResizeObserver' in window && shellRef.current) {
-      observer = new ResizeObserver(() => recomputeLayout());
-      observer.observe(shellRef.current);
-    }
+    const observer = new ResizeObserver(() => recomputeLayout());
+    if (shellRef.current) observer.observe(shellRef.current);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize as any);
-      observer?.disconnect();
+      observer.disconnect();
     };
   }, [recomputeLayout]);
 
@@ -721,250 +720,226 @@ const DashboardTodaySchedule = ({
     [onTeamFocus]
   );
 
+  const formatRecord = (rec: string) => rec.replace('-', ' - ');
+
+  const getProviderStyle = (provider: string) => {
+    const p = provider.toLowerCase();
+    const base = "shadow-sm border-0"; 
+    if (p.includes('prime')) return `${base} bg-[#00A8E1] text-white`;
+    if (p.includes('peacock')) return `${base} bg-white text-black`;
+    if (p.includes('espn')) return `${base} bg-[#CC0000] text-white`;
+    if (p.includes('abc')) return `${base} bg-black text-white border border-white/20`;
+    if (p.includes('tnt')) return `${base} bg-black text-white border border-white/20`;
+    if (p.includes('nba')) return `${base} bg-black text-white border border-white/20`;
+    return 'bg-muted text-muted-foreground';
+  };
+
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
   if (games.length === 0) return <div className="text-sm text-muted-foreground">No games today</div>;
 
-  const gap = layout.gap;
-  const scale = layout.scale;
+  const { gap, cardHeight, scale, isStacked, logoOffset, recordOffset, ready } = layout;
+
+  const logoSize = Math.round(64 * scale);
+  const scoreSize = Math.round(32 * scale);
+  const timeSize = Math.round(20 * scale);
+  const recordSize = Math.max(12, Math.round(12 * scale));
+  const padding = Math.max(8, Math.round(15 * scale));
+  const scoreColWidth = Math.max(140, Math.round(200 * scale));
+
   return (
     <div ref={shellRef} className="flex-1 min-h-0 w-full h-full overflow-hidden">
       <div
-        className="grid grid-cols-1 h-full items-start content-start"
+        className="flex flex-col h-full w-full"
         style={{
-          rowGap: gap,
-          paddingTop: gap,
-          paddingBottom: gap,
-          height: '100%',
-          opacity: layout.ready ? 1 : 0,
-          transition: 'opacity 140ms ease-out',
+          gap: `${gap}px`,
+          paddingTop: `${gap}px`,
+          paddingBottom: `${gap}px`,
+          opacity: ready ? 1 : 0,
+          transition: 'opacity 0.2s ease-in-out',
         }}
       >
-      {games.map((g) => {
-        let awayAbbr = (g as any).away as string | undefined;
-        let homeAbbr = (g as any).home as string | undefined;
-        let awayName: string | undefined;
-        let homeName: string | undefined;
-        if ((!awayAbbr || !homeAbbr) && g.matchup) {
-          const parts = g.matchup.split('@');
-          awayName = parts[0]?.trim();
-          homeName = parts[1]?.trim();
-          const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
-          const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
-          if (a) awayAbbr = a;
-          if (h) homeAbbr = h;
-        }
-        const normalizedAwayName = awayName || (awayAbbr ? abbreviationToTeamName[awayAbbr] : undefined);
-        const normalizedHomeName = homeName || (homeAbbr ? abbreviationToTeamName[homeAbbr] : undefined);
-        const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
-        const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
-        const awayRecord = awayAbbr ? recordMap[awayAbbr] : undefined;
-        const homeRecord = homeAbbr ? recordMap[homeAbbr] : undefined;
-        const aScore = Number((g as any).away_score);
-        const hScore = Number((g as any).home_score);
-        const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
-        const awayWin = hasScores ? aScore >= hScore : false;
-        const homeWin = hasScores ? hScore >= aScore : false;
+        {games.map((g) => {
+          let awayAbbr = (g as any).away as string | undefined;
+          let homeAbbr = (g as any).home as string | undefined;
+          let awayName: string | undefined;
+          let homeName: string | undefined;
+          if ((!awayAbbr || !homeAbbr) && g.matchup) {
+            const parts = g.matchup.split('@');
+            awayName = parts[0]?.trim();
+            homeName = parts[1]?.trim();
+            const a = awayName ? (teamAbbreviations as any)[awayName] : undefined;
+            const h = homeName ? (teamAbbreviations as any)[homeName] : undefined;
+            if (a) awayAbbr = a;
+            if (h) homeAbbr = h;
+          }
+          const normalizedAwayName = awayName || (awayAbbr ? abbreviationToTeamName[awayAbbr] : undefined);
+          const normalizedHomeName = homeName || (homeAbbr ? abbreviationToTeamName[homeAbbr] : undefined);
+          const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
+          const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+          const awayRecord = awayAbbr ? recordMap[awayAbbr] : undefined;
+          const homeRecord = homeAbbr ? recordMap[homeAbbr] : undefined;
+          const aScore = Number((g as any).away_score);
+          const hScore = Number((g as any).home_score);
+          const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
+          const awayWin = hasScores ? aScore >= hScore : false;
+          const homeWin = hasScores ? hScore >= aScore : false;
+          const statusText = String((g as any).status || '').toLowerCase();
+          const isFinal = statusText.includes('final') || Boolean((g as any).winner);
+          const isLive = statusText.includes('live') || statusText.includes('in progress') || (hasScores && !isFinal);
+          const awayScoreClass = isFinal ? (awayWin ? 'text-white' : 'text-white/50') : 'text-white';
+          const homeScoreClass = isFinal ? (homeWin ? 'text-white' : 'text-white/50') : 'text-white';
+          const providers: string[] = Array.isArray((g as any).tv_providers) ? ((g as any).tv_providers as string[]).filter(Boolean) : [];
+          
+          const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
+          const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
+          const awayTeamObj = normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr] : undefined;
+          const homeTeamObj = normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr] : undefined;
+          const awayFavorite = !!(awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID));
+          const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
 
-        // Normalize TV providers similar to schedule tab
-        const providers: string[] = Array.isArray((g as any).tv_providers)
-          ? ((g as any).tv_providers as string[]).filter(Boolean)
-          : (g as any).tv
-            ? String((g as any).tv)
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [];
-
-        const statusText = String((g as any).status || '').toLowerCase();
-        const isFinal = statusText.includes('final') || Boolean((g as any).winner);
-        const isLive = statusText.includes('live') || statusText.includes('in progress') || (hasScores && !isFinal);
-        const awayScoreClass = isFinal ? (awayWin ? 'text-white' : 'text-white/50') : 'text-white';
-        const homeScoreClass = isFinal ? (homeWin ? 'text-white' : 'text-white/50') : 'text-white';
-
-        const cardPadding = Math.max(6, Math.round(10 * scale));
-        const logoSize = Math.max(30, Math.round(72 * scale));
-        const scoreFont = Math.max(20, Math.round(28 * scale));
-        const bothTripleScore = hasScores && aScore >= 100 && hScore >= 100;
-        const adjustedScoreFont = bothTripleScore ? Math.max(18, Math.round(scoreFont * 0.83)) : scoreFont;
-        const timeFont = Math.max(14, Math.round(22 * scale));
-        const contentPad = Math.max(4, Math.round(8 * scale));
-        const contentSkew = Math.max(2, Math.round(4 * scale));
-        const topPad = Math.max(0, contentPad - 2 * contentSkew);
-        const bottomPad = contentPad + 2 * contentSkew;
-        const cardHeight = layout.cardHeight > 0 ? layout.cardHeight : undefined;
-        const recordFont = Math.max(10, Math.round(17 * scale));
-        const recordOffset = Math.max(12, Math.round(35 * scale));
-        const scoreColumnWidth = Math.max(140, Math.round(180 * scale)); // keep the central score column at a fixed width to avoid overlap
-
-        const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
-        const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
-        const awayTeamObj = normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr] : undefined;
-        const homeTeamObj = normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr] : undefined;
-        const awayFavorite = !!(awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID));
-        const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
-        return (
-          <Card
-            key={g.game_id || `${g.matchup}-${g.date}`}
-              className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col"
-            style={{
-              padding: cardPadding,
-              height: cardHeight ? `${cardHeight}px` : undefined,
-              minHeight: 0,
-            }}
-          >
-            {isLive && (
-              <div className="absolute top-2 left-2 z-10">
-                <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[10px] tracking-wide">LIVE</Badge>
-              </div>
-            )}
-
-            {/* TV Badges top-right */}
-            {providers.length > 0 && (
-              <div className="absolute top-2 right-2 flex flex-wrap justify-end gap-1 max-w-[220px]">
-                {providers.map((p) => {
-                  const name = String(p).toLowerCase();
-                  let style: React.CSSProperties | undefined;
-                  if (name.includes('prime')) {
-                    style = { backgroundColor: '#00A8E1', color: '#ffffff' };
-                  } else if (name.includes('peacock')) {
-                    style = { backgroundColor: '#FFFFFF', color: '#000000' };
-                  } else if (name.includes('espn')) {
-                    style = { backgroundColor: '#C8102E', color: '#ffffff' };
-                  }
-                  return (
-                    <Badge key={p} className="text-[10px] font-semibold px-2 py-0.5" style={style}>
-                      {p}
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-
-            <CardContent
-              className="p-0 flex-1 flex flex-col"
-              style={{ paddingTop: topPad, paddingBottom: bottomPad }}
+          return (
+            <Card
+              key={g.game_id || `${g.matchup}-${g.date}`}
+              className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col shrink-0"
+              style={{
+                height: `${cardHeight}px`,
+                padding: `0 ${padding}px`,
+              }}
             >
-              <div
-                className="grid items-center h-full min-h-0"
-                style={{
-                  gridTemplateColumns: `1fr minmax(${scoreColumnWidth}px, ${scoreColumnWidth}px) 1fr`,
-                  columnGap: Math.max(18, Math.round(26 * scale)),
-                }}
-              >
-                {/* Away side */}
-               <div className="flex flex-col items-center justify-center">
+               <div className="absolute top-2 left-2 z-20 flex items-center gap-1">
+                  {isLive && (
+                     <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[9px] tracking-wide rounded-full shadow-sm border-0">LIVE</Badge>
+                  )}
+                  {providers.length > 0 && providers.slice(0, 2).map(p => (
+                     <span key={p} className={`text-[9px] px-2 py-0.5 rounded-full font-bold tracking-wider ${getProviderStyle(p)}`}>
+                       {p}
+                     </span>
+                  ))}
+               </div>
+
+              <div className="flex-1 flex items-center justify-between w-full h-full relative z-10">
+                
+                {/* --- Left Team (Away) --- */}
+                <div className="flex flex-col items-center justify-center flex-1 h-full">
                   {awayLogo && (
                     <button
                       type="button"
                       onClick={() => focusTeam(awayAbbr, normalizedAwayName)}
-                      className="rounded-sm focus:outline-none relative overflow-visible"
-                      style={{ width: logoSize, height: logoSize }}
-                      title={normalizedAwayName || awayAbbr || 'Away team'}
+                      className="relative focus:outline-none group flex flex-col items-center justify-center"
+                      title={normalizedAwayName || awayAbbr}
                     >
-                      {awayFavorite && (
-                        <Star className="absolute -left-8 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white fill-white" />
-                      )}
-                      <img
-                        src={awayLogo}
-                        alt={awayAbbr || 'Away'}
-                        className={`rounded-sm object-contain cursor-pointer ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          position: 'relative',
-                          zIndex: 1,
-                          filter: isFinal && awayWin
-                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
-                            : undefined,
-                        }}
-                        loading="lazy"
-                        width={64}
-                        height={64}
-                      />
+                      <div 
+                         style={{ width: logoSize, height: logoSize, transform: `translateX(-${logoOffset}px)` }} 
+                         className="relative transition-transform duration-300"
+                      >
+                          {awayFavorite && (
+                             <Star className="absolute -left-2 top-0 w-3.5 h-3.5 text-white fill-white z-20 drop-shadow-md" />
+                           )}
+                        <img
+                          src={awayLogo}
+                          alt={awayAbbr}
+                          className={`w-full h-full object-contain transition-opacity duration-300 ${isFinal && !awayWin ? 'opacity-50' : 'opacity-100'}`}
+                          style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.6))' } : undefined}
+                        />
+                      </div>
+                      
                       {awayRecord && (
                         <span
-                          className="absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
-                          style={{ fontSize: recordFont, marginLeft: recordOffset }}
+                          className={`
+                            whitespace-nowrap text-white/80 font-bold drop-shadow-md transition-all duration-300
+                            ${isStacked 
+                              ? "mt-1" 
+                              : "absolute left-full top-1/2 ml-4" // Removed -translate-y-1/2 from class, handling it in style
+                            }
+                          `}
+                          style={{ 
+                             fontSize: recordSize,
+                             // Combine X offset and Y centering here
+                             transform: isStacked ? 'none' : `translate(-${recordOffset}px, -50%)`
+                          }}
                         >
-                          ({awayRecord.replace('-', ' - ')})
+                          ({formatRecord(awayRecord)})
                         </span>
                       )}
                     </button>
                   )}
                 </div>
 
-                {/* Center time or score */}
-                <div className="text-center" style={{ width: scoreColumnWidth }}>
+                {/* --- Center Score / Time --- */}
+                <div className="flex flex-col items-center justify-center shrink-0 z-10" style={{ width: scoreColWidth }}>
                   {hasScores ? (
-                  <div className="font-extrabold tracking-wide" style={{ fontSize: adjustedScoreFont }}>
+                    <div className="font-extrabold tracking-wide flex items-center justify-center gap-3" style={{ fontSize: scoreSize }}>
                       <span className={awayScoreClass}>{aScore}</span>
-                      <span className="mx-2 text-muted-foreground">-</span>
+                      <span className="text-muted-foreground/50 text-[0.8em]">-</span>
                       <span className={homeScoreClass}>{hScore}</span>
                     </div>
                   ) : (
-                    <div className="text-lg md:text-xl font-bold" style={{ fontSize: timeFont }}>
+                    <div className="font-bold text-center leading-tight" style={{ fontSize: timeSize }}>
                       {g.time || 'TBA'}
                     </div>
                   )}
-                  {(g as any).tv && providers.length === 0 && (
-                    <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>
-                      {String((g as any).tv)}
-                    </div>
+                  
+                  {providers.length === 0 && (g as any).tv && (
+                     <div className="mt-1 max-w-[140px]">
+                        <span className="text-[10px] text-muted-foreground truncate max-w-full font-medium">{(g as any).tv}</span>
+                     </div>
                   )}
                 </div>
 
-                {/* Home side */}
-                <div className="flex flex-col items-center justify-center">
+                {/* --- Right Team (Home) --- */}
+                <div className="flex flex-col items-center justify-center flex-1 h-full">
                   {homeLogo && (
                     <button
                       type="button"
                       onClick={() => focusTeam(homeAbbr, normalizedHomeName)}
-                      className="rounded-sm focus:outline-none relative overflow-visible"
-                      style={{ width: logoSize, height: logoSize }}
-                      title={normalizedHomeName || homeAbbr || 'Home team'}
+                      className="relative focus:outline-none group flex flex-col items-center justify-center"
+                      title={normalizedHomeName || homeAbbr}
                     >
-                      {homeFavorite && (
-                        <Star className="absolute -right-6 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white fill-white" />
-                      )}
-                      <img
-                        src={homeLogo}
-                        alt={homeAbbr || 'Home'}
-                        className={`rounded-sm object-contain cursor-pointer ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          position: 'relative',
-                          zIndex: 1,
-                          filter: isFinal && homeWin
-                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
-                            : undefined,
-                        }}
-                        loading="lazy"
-                        width={64}
-                        height={64}
-                      />
-                      {homeRecord && (
+                      <div 
+                         style={{ width: logoSize, height: logoSize, transform: `translateX(${logoOffset}px)` }} 
+                         className="relative transition-transform duration-300"
+                      >
+                        {homeFavorite && (
+                            <Star className="absolute -right-2 top-0 w-3.5 h-3.5 text-white fill-white z-20 drop-shadow-md" />
+                          )}
+                        <img
+                          src={homeLogo}
+                          alt={homeAbbr}
+                          className={`w-full h-full object-contain transition-opacity duration-300 ${isFinal && !homeWin ? 'opacity-50' : 'opacity-100'}`}
+                          style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.6))' } : undefined}
+                        />
+                      </div>
+
+                       {homeRecord && (
                         <span
-                          className="absolute right-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] text-right"
-                          style={{ fontSize: recordFont, marginRight: recordOffset }}
+                          className={`
+                            whitespace-nowrap text-white/80 font-bold drop-shadow-md transition-all duration-300
+                            ${isStacked 
+                              ? "mt-1"
+                              : "absolute right-full top-1/2 mr-4" // Removed -translate-y-1/2 from class
+                            }
+                          `}
+                          style={{ 
+                             fontSize: recordSize,
+                             // Combine X offset and Y centering here
+                             transform: isStacked ? 'none' : `translate(${recordOffset}px, -50%)` 
+                          }}
                         >
-                          ({homeRecord.replace('-', ' - ')})
+                          ({formatRecord(homeRecord)})
                         </span>
                       )}
                     </button>
                   )}
-
                 </div>
+
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 };
-
 // ============================
 // 🧍 PlayerCard Component
 // Displays individual player stats
@@ -3243,12 +3218,12 @@ useEffect(() => {
           }
         }}
       >
-        <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="all">All Teams</TabsTrigger>
-          <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-        </TabsList>
+<TabsList className="grid py-1 w-full grid-cols-5 max-w-none mb-4">
+  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+  <TabsTrigger value="all">All Teams</TabsTrigger>
+  <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
+  <TabsTrigger value="schedule">Schedule</TabsTrigger>
+</TabsList>
 
 <TabsContent value="dashboard">
   {/* === Outer Grid === */}
@@ -3740,9 +3715,6 @@ useEffect(() => {
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
 </TabsContent>
 
-      
-
-
 {/* === Top Players === */}
 <TabsContent value="top-scorers" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-12 pr-2">
 
@@ -3914,6 +3886,10 @@ useEffect(() => {
     onClose={() => setSelectedTeam(null)}
   />
 )}
+
+
+
+
     </PageLayout>
   );
 };
