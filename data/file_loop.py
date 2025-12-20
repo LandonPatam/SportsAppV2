@@ -101,7 +101,7 @@ def get_sport_status(schedule_path: Path) -> dict:
                 start_time = status["first_game_time"] - timedelta(minutes=30)
                 
                 # Should run if: after start time AND (has live games OR not all games are final)
-                if now >= start_time and (status["has_live"] or not status["all_games_final"]):
+                if now >= start_time and status["has_live"]:
                     status["should_run"] = True
             else:
                 # If we can't determine time but have games today, be conservative
