@@ -28,7 +28,7 @@ type SidebarTheme = 'default' | 'nfl' | 'nba';
 const gradientMap: Record<SidebarTheme, { from: string; to: string }> = {
   default: { from: "#5e70fbff", to: "#ffc342ff" },
   nfl: { from: "#5e70fbff", to: "#ffc342ff" },
-  nba: { from: "#00ffeeff", to: "#cc00ffff" },
+  nba: { from: "rgb(255, 242, 0)", to: "#cc00ffff" },
 };
 
 /* ============================================================================
