@@ -13,7 +13,7 @@ SAVE_PATH = "public/data/nfl_schedule.json"
 VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
 SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
-SEASON_START_DATE = datetime(2025, 9, 4).date()
+SEASON_START_DATE = datetime(2026, 1, 1).date()
 # ==========================================================
 
 HEADERS = {

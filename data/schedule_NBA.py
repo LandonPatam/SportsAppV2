@@ -8,12 +8,17 @@ import time
 # ==========================================================
 # ⚙️ CONFIGURATION
 # ==========================================================
-FIND_SCHEDULE = False   # ✅ Toggle True to crawl schedule, False to skip
+FIND_SCHEDULE = False   # Toggle True to force a full crawl from SEASON_START_DATE
 SAVE_PATH = "public/data/nba_schedule.json"
 VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN"}
 SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
 SEASON_START_DATE = datetime(2025, 12, 1).date()
+
+# --- Postseason auto-crawl settings ---
+POSTSEASON_START = datetime(2026, 4, 12).date()  # day before first round typically starts
+POSTSEASON_SCAN_INTERVAL_HOURS = 6               # how often to re-scan during postseason
+_STATE_PATH = "public/data/.nba_schedule_last_scan.txt"
 # ==========================================================
 
 HEADERS = {
@@ -41,11 +46,44 @@ else:
 seen_ids = {g["game_id"] for g in schedule}
 
 # ==========================================================
+# AUTO-CRAWL: enable FIND_SCHEDULE during postseason if enough
+# time has passed since the last scan
+# ==========================================================
+_crawl_start_date = SEASON_START_DATE   # default: full crawl from season start
+
+if not FIND_SCHEDULE:
+    # Only consider auto-crawl when we're in the postseason window
+    if POSTSEASON_START <= today <= season_end:
+        # Read last-scan timestamp from state file
+        last_scan: datetime | None = None
+        if os.path.exists(_STATE_PATH):
+            try:
+                with open(_STATE_PATH, "r") as _sf:
+                    last_scan = datetime.fromisoformat(_sf.read().strip())
+            except Exception:
+                last_scan = None
+
+        hours_since = (
+            (datetime.now() - last_scan).total_seconds() / 3600
+            if last_scan else float("inf")
+        )
+
+        if hours_since >= POSTSEASON_SCAN_INTERVAL_HOURS:
+            FIND_SCHEDULE = True
+            _crawl_start_date = today  # only scan forward from today
+            print(f"[AUTO] Postseason detected — scanning from {today} (last scan: {last_scan or 'never'})")
+        else:
+            print(f"[AUTO] Postseason window active but last scan was {hours_since:.1f}h ago — skipping.")
+    # else: outside postseason, respect the manual False
+else:
+    print("[MANUAL] FIND_SCHEDULE forced True — full crawl from SEASON_START_DATE.")
+
+# ==========================================================
 # 🏀 PART 1 — FIND SCHEDULE (Optional)
 # ==========================================================
 if FIND_SCHEDULE:
-    print("🔍 Starting schedule fetch (Oct 21 → Apr 30)...")
-    current_date = SEASON_START_DATE
+    print("🔍 Starting schedule fetch...")
+    current_date = _crawl_start_date
     empty_days = 0
 
     while current_date <= season_end and empty_days < MAX_EMPTY_DAYS:
@@ -163,6 +201,11 @@ if FIND_SCHEDULE:
         time.sleep(SLEEP_BETWEEN_CALLS)
 
     print(f"\n Schedule fetch complete — {len(schedule)} total games saved.")
+
+    # Write last-scan timestamp so auto-crawl can throttle next run
+    os.makedirs(os.path.dirname(_STATE_PATH), exist_ok=True)
+    with open(_STATE_PATH, "w") as _sf:
+        _sf.write(datetime.now().isoformat())
 
 
 # ==========================================================

@@ -1094,7 +1094,7 @@ useEffect(() => {
         onValueChange={(v) => setActiveTab(v)}
       >
         {!scheduleOnly && (
-          <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none">
+          <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none pl-28">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="all">All Teams</TabsTrigger>
             <TabsTrigger value="AFC">AFC</TabsTrigger>
@@ -2072,8 +2072,3 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
     </div>
   );
 };
-
-
-
-
-

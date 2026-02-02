@@ -59,7 +59,7 @@ if table:
         # Extract team name and logo
         team_anchor = row.find("a", class_="d3-o-club-info")
         if team_anchor:
-            full_name = team_anchor.find("div", class_="d3-o-club-fullname").get_text(strip=True)
+            full_name = team_anchor.find("div", class_="d3-o-club-fullname").find(string=True, recursive=False).strip()
             logo_img = team_anchor.find("img")["src"] if team_anchor.find("img") else ""
             team_link = "https://www.nfl.com" + team_anchor["href"]
         else:
@@ -268,13 +268,3 @@ for team in existing_data:
 # ==========================================================
 with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
     json.dump(existing_data, f, indent=2)
-    
-    
-
-
-
-
-
-
-
-

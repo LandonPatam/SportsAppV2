@@ -674,7 +674,7 @@ const DashboardTodaySchedule = ({
     
     // 3. Determine Scale Factor
     let scale = rawCardHeight / 110; 
-    scale = Math.max(0.85, Math.min(2.5, scale));
+    scale = Math.max(0.5, Math.min(2.5, scale));
 
     // 4. Determine Layout Mode
     const isStacked = rawCardHeight > 140;
@@ -739,7 +739,7 @@ const DashboardTodaySchedule = ({
 
   const { gap, cardHeight, scale, isStacked, logoOffset, recordOffset, ready } = layout;
 
-  const logoSize = Math.round(64 * scale);
+  const logoSize = Math.round(80 * scale);
   const scoreSize = Math.round(32 * scale);
   const timeSize = Math.round(20 * scale);
   const recordSize = Math.max(12, Math.round(12 * scale));
@@ -824,12 +824,15 @@ const DashboardTodaySchedule = ({
                   {awayLogo && (
                     <button
                       type="button"
-                      onClick={() => focusTeam(awayAbbr, normalizedAwayName)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        focusTeam(awayAbbr, normalizedAwayName);
+                      }}
                       className="relative focus:outline-none group flex flex-col items-center justify-center"
                       title={normalizedAwayName || awayAbbr}
                     >
                       <div 
-                         style={{ width: logoSize, height: logoSize, transform: `translateX(-${logoOffset}px)` }} 
+                         style={{ width: logoSize, height: logoSize, maxWidth: '100%', maxHeight: '100%', transform: `translateX(-${logoOffset}px)` }} 
                          className="relative transition-transform duration-300"
                       >
                           {awayFavorite && (
@@ -891,12 +894,15 @@ const DashboardTodaySchedule = ({
                   {homeLogo && (
                     <button
                       type="button"
-                      onClick={() => focusTeam(homeAbbr, normalizedHomeName)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        focusTeam(homeAbbr, normalizedHomeName);
+                      }}
                       className="relative focus:outline-none group flex flex-col items-center justify-center"
                       title={normalizedHomeName || homeAbbr}
                     >
                       <div 
-                         style={{ width: logoSize, height: logoSize, transform: `translateX(${logoOffset}px)` }} 
+                         style={{ width: logoSize, height: logoSize, maxWidth: '100%', maxHeight: '100%', transform: `translateX(${logoOffset}px)` }} 
                          className="relative transition-transform duration-300"
                       >
                         {homeFavorite && (
@@ -1254,7 +1260,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full">
           {games.map((g) => {
             // Derive home/away abbreviations and logos
             let awayAbbr = (g as any).away as string | undefined;
@@ -1295,16 +1301,64 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
             const awayName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
             const homeName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
 
+            // Get team colors for vertical split with gradient
+            const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#1e40af';
+            const homeColor = homeAbbr && teamGradientColors[homeAbbr]?.start || '#dc2626';
+
+            // Determine if we should show team names based on card count
+            const showTeamNames = games.length <= 6;
+
             return (
-              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-2">
+              <Card 
+                key={g.game_id} 
+                className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20"
+                onClick={() => {
+                  if (g.game_id) {
+                    window.open(`https://www.espn.com/nba/game/_/gameId/${g.game_id}`, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+              >
+                {/* Pulsing red dot for live games */}
                 {isLiveGame && (
-                  <div className="absolute top-2 left-2 z-10">
-                    <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[10px] tracking-wide">LIVE</Badge>
-                  </div>
+                  <>
+                    <style>
+                      {`
+                        @keyframes pulse {
+                          0%, 100% {
+                            opacity: 1;
+                            transform: scale(1);
+                          }
+                          50% {
+                            opacity: 0.6;
+                            transform: scale(1.1);
+                          }
+                        }
+                      `}
+                    </style>
+                    <div 
+                      className="absolute top-2 left-2 z-10 sched-live-dot"
+                      style={{
+                        borderRadius: '50%',
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 0 6px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4)',
+                        animation: 'pulse 1.5s ease-in-out infinite'
+                      }}
+                    />
+                  </>
                 )}
+                {/* Vertical gradient from away team color to home team color - tighter blend in center */}
+                <div 
+                  className="absolute inset-0" 
+                  style={{
+                    background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)`
+                  }}
+                />
+                {/* Semi-transparent overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/40" />
+                
                 {/* TV Badges top-right */}
                 {providers.length > 0 && (
-                  <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px]">
+                  <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px] z-10">
                     {providers.map((p) => {
                       const name = String(p).toLowerCase();
                       let style: React.CSSProperties | undefined;
@@ -1316,7 +1370,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                         style = { backgroundColor: '#C8102E', color: '#ffffff' };
                       }
                       return (
-                        <Badge key={p} className="text-[9px] font-semibold px-1.5 py-0.5" style={style}>
+                        <Badge key={p} className="font-semibold" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
                           {p}
                         </Badge>
                       );
@@ -1324,64 +1378,60 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
                   </div>
                 )}
 
-                <CardContent className="pt-3">
-                  <div className="grid grid-cols-3 items-center">
-                    {/* Away side */}
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      {awayLogo && (
-                        <img
-                          src={awayLogo}
-                          alt={awayAbbr || 'Away'}
-                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
-                          loading="lazy"
-                          width={72}
-                          height={72}
-                        />
-                      )}
-                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
-                        {awayName || awayAbbr || 'Away'}
+                <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } }`}</style>
+                <CardContent className="relative z-10 py-0 flex flex-col h-full">
+                  {/* Main content - vertically centered */}
+                  <div className="flex-1 flex items-center py-1">
+                    <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
+                      {/* Away side */}
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        {awayLogo && (
+                          <img
+                            src={awayLogo}
+                            alt={awayAbbr || 'Away'}
+                            className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{
+                              objectFit: 'contain',
+                              ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
+                            }}
+                            loading="lazy"
+                          />
+                        )}
+                      </div>
+
+                      {/* Center time or score */}
+                      <div className="flex items-center justify-center">
+                        {hasScores ? (
+                          <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1rem, 3.5cqi, 1.5rem)" }}>
+                            <span className={awayScoreClass}>{aScore}</span>
+                            <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
+                            <span className={homeScoreClass}>{hScore}</span>
+                          </div>
+                        ) : (
+                          <div className="font-bold text-white" style={{ fontSize: "clamp(0.75rem, 2.8cqi, 1.1rem)" }}>
+                            {g.time || 'TBA'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Home side */}
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        {homeLogo && (
+                          <img
+                            src={homeLogo}
+                            alt={homeAbbr || 'Home'}
+                            className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{
+                              objectFit: 'contain',
+                              ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
+                            }}
+                            loading="lazy"
+                          />
+                        )}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Center time or score */}
-                    <div className="text-center">
-                      {hasScores ? (
-                        <div className="text-xl md:text-2xl font-extrabold tracking-wide">
-                          <span className={awayScoreClass}>{aScore}</span>
-                          <span className="mx-2 text-muted-foreground">-</span>
-                          <span className={homeScoreClass}>{hScore}</span>
-                        </div>
-                      ) : (
-                        <div className="text-lg md:text-xl font-bold" style={{ fontSize: timeFont }}>
-                          {g.time || 'TBA'}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Home side */}
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      {homeLogo && (
-                        <img
-                          src={homeLogo}
-                          alt={homeAbbr || 'Home'}
-                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
-                          loading="lazy"
-                          width={72}
-                          height={72}
-                        />
-                      )}
-                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
-                        {homeName || homeAbbr || 'Home'}
-                      </div>
-                    </div>
-                </div>
-
-                {/* Footer: arena centered */}
-                <div className="mt-2 text-xs text-muted-foreground text-center">
-                  {(g as any).location || ''}
-                </div>
               </CardContent>
               </Card>
             );
@@ -3218,7 +3268,7 @@ useEffect(() => {
           }
         }}
       >
-<TabsList className="grid py-1 w-full grid-cols-5 max-w-none mb-4">
+<TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4 pl-28">
   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
   <TabsTrigger value="all">All Teams</TabsTrigger>
   <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
@@ -3455,14 +3505,14 @@ useEffect(() => {
     };
 
     return (
-    <div className="flex flex-col xl:flex-row gap-4 h-[85vh] overflow-hidden">
+    <div className="flex flex-row gap-4 h-[85vh] overflow-hidden">
         {/* Left: logos as rounded-square buttons */}
         <div
           ref={logosScrollRef}
-          className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
+          className="w-20 md:w-40 xl:w-64 md:xl:w-72 lg:xl:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
           style={{ scrollPaddingTop: '24px', scrollPaddingBottom: '24px' }}
         >
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {teams.map((t) => {
               const isActive = currentTeam && t.TEAM_ID === currentTeam.TEAM_ID;
               return (
@@ -3480,7 +3530,7 @@ useEffect(() => {
                     <img
                       src={t.LOGO_URL}
                       alt={`${t.TEAM_NAME} logo`}
-                      className="w-3/5 h-3/5 object-contain"
+                      className="w-4/5 h-4/5 object-contain"
                       loading="lazy"
                     />
                   ) : (
@@ -3493,7 +3543,7 @@ useEffect(() => {
         </div>
 
         {/* Right: wide team card + players; parent does not scroll; inner players list scrolls */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-5 w-0 pr-0">
+        <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col gap-5 pr-0">
           {currentTeam && (() => {
             const teamAbbr = teamAbbreviations[currentTeam.TEAM_NAME] || 'UNK';
             const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
@@ -3605,8 +3655,9 @@ useEffect(() => {
               },
             };
             return (
-              <div className="w-full flex gap-4 items-stretch">
-                <div className="w-full xl:w-3/6 xl:w-1/2 mr-auto">
+              <div className="w-full flex flex-wrap gap-4 items-start">
+                {/* Team card - fixed width, no shrinking */}
+                <div className="w-full min-w-[450px] max-w-[550px] shrink-0">
                   <TeamCard
                     team={{ ...currentTeam, rank: (teams.findIndex((tt) => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
                     leagueAverages={leagueAverages}
@@ -3616,9 +3667,9 @@ useEffect(() => {
                     onToggleFavorite={toggleFavoriteTeam}
                   />
                 </div>
-                {/* Use the right gap exclusively for the pie chart (xl+) */}
-                <div className="hidden xl:block flex-1 min-w-0">
-                  <Card className="bg-transparent border-none w-[405px] h-[235px] overflow-hidden">
+                {/* Doughnut chart - flexible width, smaller min to stay with team card */}
+                <div className="flex-1 min-w-[280px] max-w-[405px]">
+                  <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
                     <CardHeader className="py-2 px-3">
                     </CardHeader>
                     <CardContent className="h-[220px] p-1">
@@ -3626,9 +3677,9 @@ useEffect(() => {
                     </CardContent>
                   </Card>
                 </div>
-                {/* Spider (Radar) chart on the right of pie (xl+) */}
-                <div className="hidden xl:block shrink-0">
-                  <Card className="bg-transparent border-none w-[342px] h-[235px] overflow-hidden">
+                {/* Radar chart - flexible width */}
+                <div className="flex-1 min-w-[280px] max-w-[342px]">
+                  <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
                     <CardContent className="h-[220px] p-1">
                       <Radar data={radarData} options={radarOptions} datasetIdKey="id" updateMode="active" />
                     </CardContent>
@@ -3645,7 +3696,7 @@ useEffect(() => {
                 className="flex-1 min-h-0 overflow-y-auto no-scrollbar snap-y snap-mandatory pt-0 pb-8"
                 style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
                   {topTeamPlayers.map((p) => {
                     const primary = teamColors[p.TEAM_ABBREVIATION]?.primary || '#1e40af';
                     const secondary = teamColors[p.TEAM_ABBREVIATION]?.secondary || '#dc2626';
@@ -3895,4 +3946,3 @@ useEffect(() => {
 };
 
 export default NBA;
-
