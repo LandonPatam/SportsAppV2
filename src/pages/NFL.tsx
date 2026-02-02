@@ -254,6 +254,8 @@ const teamAbbreviations: Record<string, string> = {
   'Los Angeles Rams': 'LAR',
   'San Francisco 49ers': 'SF',
   'Seattle Seahawks': 'SEA',
+  'NFC' : 'NFC',
+  'AFC' : 'AFC'
 };
 
 const abbreviationToTeamName: Record<string, string> = Object.fromEntries(

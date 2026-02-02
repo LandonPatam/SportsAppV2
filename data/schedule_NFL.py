@@ -8,12 +8,11 @@ import time
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-FIND_SCHEDULE = False   # Toggle True to crawl schedule, False to skip
+FIND_SCHEDULE = True   # Toggle True to crawl schedule, False to skip
 SAVE_PATH = "public/data/nfl_schedule.json"
 VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
 SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
-SEASON_START_DATE = datetime(2026, 1, 1).date()
 # ==========================================================
 
 HEADERS = {
@@ -25,18 +24,103 @@ HEADERS = {
 UTC = pytz.utc
 PACIFIC = pytz.timezone("America/Los_Angeles")
 
+# ==========================================================
+# DYNAMIC SEASON DATE CALCULATION
+# ==========================================================
+def get_labor_day(year: int):
+    """Labor Day = first Monday in September."""
+    # Sept 1 — figure out what day of the week it lands on, then advance to Monday
+    sept1 = datetime(year, 9, 1).date()
+    # weekday(): Monday=0 ... Sunday=6
+    days_until_monday = (7 - sept1.weekday()) % 7
+    if days_until_monday == 0 and sept1.weekday() != 0:
+        days_until_monday = 7
+    return sept1 + timedelta(days=days_until_monday)
+
+def get_season_dates(today: object) -> tuple:
+    """
+    Returns (season_year, season_start, season_end) for the NFL season
+    that is current or most recently started relative to today.
+
+    season_year  – the calendar year the season STARTS in (e.g. 2025 for the 2025 season)
+    season_start – Thursday after Labor Day (NFL Kickoff game)
+    season_end   – mid-February of the following year (Super Bowl buffer)
+    """
+    # The NFL season that "owns" a given date:
+    #   - Before the kickoff Thursday of year Y  → still the (Y-1) season
+    #   - On or after that Thursday              → the Y season
+    # We check the current year's kickoff first; if today is before it, fall back to last year.
+    candidate_year = today.year
+    labor_day = get_labor_day(candidate_year)
+    kickoff_thursday = labor_day + timedelta(days=3)  # Thursday after Labor Day
+
+    if today >= kickoff_thursday:
+        season_year = candidate_year
+    else:
+        season_year = candidate_year - 1
+
+    # Recalculate kickoff for the resolved season year
+    labor_day = get_labor_day(season_year)
+    season_start = labor_day + timedelta(days=3)          # Kickoff Thursday
+    season_end   = datetime(season_year + 1, 2, 16).date() # Day after latest possible Super Bowl
+
+    return season_year, season_start, season_end
+
 today = datetime.now().date()
-year = today.year if today.month >= 7 else today.year - 1
-season_end = datetime(year + 1, 2, 15).date()
+SEASON_YEAR, SEASON_START_DATE, SEASON_END_DATE = get_season_dates(today)
+print(f"Active season: {SEASON_YEAR} | Start: {SEASON_START_DATE} | End: {SEASON_END_DATE}")
 
 # ==========================================================
-# Load Existing Schedule
+# Load Existing Schedule (with new-season auto-reset)
 # ==========================================================
-if os.path.exists(SAVE_PATH):
+def load_schedule() -> tuple:
+    """
+    Loads the schedule JSON.  If the file contains games from a previous
+    season (detected by comparing the earliest game date against the current
+    SEASON_START_DATE), the file is wiped and an empty list is returned so
+    FIND_SCHEDULE can repopulate it cleanly.
+
+    Returns (schedule_list, was_reset: bool)
+    """
+    if not os.path.exists(SAVE_PATH):
+        return [], False
+
     with open(SAVE_PATH, "r", encoding="utf-8") as f:
-        schedule = json.load(f)
-else:
-    schedule = []
+        data = json.load(f)
+
+    if not data:
+        return [], False
+
+    # Find the earliest valid game date in the file
+    earliest = None
+    for g in data:
+        d = g.get("date")
+        if not d:
+            continue
+        try:
+            parsed = datetime.strptime(d, "%Y-%m-%d").date()
+            if earliest is None or parsed < earliest:
+                earliest = parsed
+        except (ValueError, TypeError):
+            continue
+
+    # If every game predates the current season's start, this is a stale file
+    if earliest is not None and earliest < SEASON_START_DATE:
+        print(f"[NEW SEASON DETECTED] Earliest game in JSON is {earliest}, "
+              f"but current season starts {SEASON_START_DATE}. Resetting schedule.")
+        # Wipe the file
+        os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
+        with open(SAVE_PATH, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return [], True
+
+    return data, False
+
+schedule, schedule_was_reset = load_schedule()
+if schedule_was_reset:
+    # Force a crawl on the next section even if the flag is off,
+    # because we just nuked the data.  Print a reminder either way.
+    print("Schedule was reset. Set FIND_SCHEDULE = True to repopulate.")
 
 # Ensure each game has a UTC timestamp for reliable sorting
 def ensure_ts_utc(g: dict) -> int:
@@ -83,7 +167,7 @@ if FIND_SCHEDULE:
     current_date = SEASON_START_DATE
     empty_days = 0
 
-    while current_date <= season_end and empty_days < MAX_EMPTY_DAYS:
+    while current_date <= SEASON_END_DATE and empty_days < MAX_EMPTY_DAYS:
         date_str_param = current_date.strftime("%Y%m%d")
 
         url = (
@@ -122,9 +206,10 @@ if FIND_SCHEDULE:
         for event in events:
             try:
                 game_id = event.get("id")
-                if game_id in seen_ids:
-                    continue
-
+                
+                # Check if this game already exists
+                existing_game = next((g for g in schedule if g.get("game_id") == game_id), None)
+                
                 date_str = event.get("date")
                 location = event.get("location", "")
                 link = event.get("link")
@@ -152,24 +237,36 @@ if FIND_SCHEDULE:
                     if b.get("name") in VALID_NETWORKS
                 ]
 
-                item = {
-                    "game_id": game_id,
-                    "matchup": f"{away_name} @ {home_name}",
-                    "date": date_clean,
-                    "time": time_clean,
-                    "location": location,
-                    "tv_providers": tv_providers,
-                    "game_link": link,
-                    "winner": None,
-                    "home_score": None,
-                    "away_score": None,
-                    "ts_utc": int(dt_utc.timestamp()),
-                }
-
-                schedule.append(item)
-
-                seen_ids.add(game_id)
-                print(f"Added {away_name} @ {home_name} – {date_clean} {time_clean}")
+                if existing_game:
+                    # Update existing playoff game with new details
+                    print(f"Updating playoff game: {away_name} @ {home_name} – {date_clean} {time_clean}")
+                    existing_game.update({
+                        "matchup": f"{away_name} @ {home_name}",
+                        "date": date_clean,
+                        "time": time_clean,
+                        "location": location,
+                        "tv_providers": tv_providers,
+                        "game_link": link,
+                        "ts_utc": int(dt_utc.timestamp()),
+                    })
+                else:
+                    # Add new game
+                    item = {
+                        "game_id": game_id,
+                        "matchup": f"{away_name} @ {home_name}",
+                        "date": date_clean,
+                        "time": time_clean,
+                        "location": location,
+                        "tv_providers": tv_providers,
+                        "game_link": link,
+                        "winner": None,
+                        "home_score": None,
+                        "away_score": None,
+                        "ts_utc": int(dt_utc.timestamp()),
+                    }
+                    schedule.append(item)
+                    seen_ids.add(game_id)
+                    print(f"Added {away_name} @ {home_name} – {date_clean} {time_clean}")
 
             except Exception as e:
                 print(f"Error parsing event: {e}")
@@ -192,138 +289,164 @@ if FIND_SCHEDULE:
 # ==========================================================
 # PART 2 – UPDATE GAME RESULTS + SCORES
 # ==========================================================
-with open(SAVE_PATH, "r", encoding="utf-8") as f:
-    schedule = json.load(f)
+# Re-read from disk (PART 1 may have just written fresh data)
+if os.path.exists(SAVE_PATH):
+    with open(SAVE_PATH, "r", encoding="utf-8") as f:
+        schedule = json.load(f)
+else:
+    schedule = []
 
-updated_count = 0
-total_checked = 0
-live_count = 0
+if not schedule:
+    print("No games in schedule to update. Run with FIND_SCHEDULE = True first.")
+else:
+    updated_count = 0
+    total_checked = 0
+    live_count = 0
 
-for game in schedule:
-    game_date = datetime.strptime(game["date"], "%Y-%m-%d").date()
-
-    # Skip future games
-    if game_date > today:
-        continue
-
-    # Skip fully complete games
-    if game.get("status") == "final" and game.get("winner") and game.get("home_score") and game.get("away_score"):
-        continue
-
-    total_checked += 1
-
-    # Fetch scoreboard data for that date
-    date_str_param = game_date.strftime("%Y%m%d")
-    url = (
-        f"https://site.web.api.espn.com/apis/personalized/v2/scoreboard/header"
-        f"?sport=football&league=nfl&region=us&lang=en&contentorigin=espn"
-        f"&configuration=STREAM_MENU&platform=web&features=sfb-all%2Ccutl"
-        f"&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={date_str_param}"
-    )
-
-    response = requests.get(url, headers=HEADERS)
-    try:
-        data = response.json()
-    except Exception:
-        continue
-
-    events = (
-        data.get("sports", [])[0]
-        .get("leagues", [])[0]
-        .get("events", [])
-        if data.get("sports")
-        else []
-    )
-
-    for event in events:
-        if event.get("id") != game["game_id"]:
+    for game in schedule:
+        # Skip games with null dates (playoff games not yet scheduled)
+        if not game.get("date"):
+            print(f"Skipping game with null date: {game.get('game_id', 'unknown')}")
+            continue
+        
+        try:
+            game_date = datetime.strptime(game["date"], "%Y-%m-%d").date()
+        except (ValueError, TypeError) as e:
+            print(f"Error parsing date for game {game.get('game_id')}: {e}")
             continue
 
-        # Get status info
-        status = event.get("status", "")
-        fullStatus = event.get("fullStatus", {})
-        status_type = fullStatus.get("type", {})
-        status_state = status_type.get("state", "")
-        status_name = status_type.get("name", "")
-        status_completed = status_type.get("completed", False)
+        # Skip future games
+        if game_date > today:
+            continue
 
-        competitors = event.get("competitors", [])
-        home_team = next((t for t in competitors if t.get("homeAway") == "home"), {})
-        away_team = next((t for t in competitors if t.get("homeAway") == "away"), {})
-        home_score = home_team.get("score")
-        away_score = away_team.get("score")
+        # Only skip if the game is truly complete with all data populated.
+        # This allows games with null values to be updated.
+        if (game.get("status") == "final" and 
+            game.get("winner") is not None and 
+            game.get("home_score") is not None and 
+            game.get("away_score") is not None and
+            game.get("winner") != ""):
+            continue
 
-        # Determine if game is final
-        is_final = (
-            status == "post"
-            or status_state == "post"
-            or status_name == "STATUS_FINAL"
-            or status_completed
+        total_checked += 1
+
+        # Fetch scoreboard data for that date
+        date_str_param = game_date.strftime("%Y%m%d")
+        url = (
+            f"https://site.web.api.espn.com/apis/personalized/v2/scoreboard/header"
+            f"?sport=football&league=nfl&region=us&lang=en&contentorigin=espn"
+            f"&configuration=STREAM_MENU&platform=web&features=sfb-all%2Ccutl"
+            f"&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={date_str_param}"
         )
 
-        # Determine if game is live
-        is_live = (
-            status == "in"
-            or status_state == "in"
-            or status_name in ["STATUS_HALFTIME", "STATUS_END_PERIOD"]
+        response = requests.get(url, headers=HEADERS)
+        try:
+            data = response.json()
+        except Exception:
+            continue
+
+        events = (
+            data.get("sports", [])[0]
+            .get("leagues", [])[0]
+            .get("events", [])
+            if data.get("sports")
+            else []
         )
 
-        if is_final:
-            # Final game update (compute winner fallback to avoid repeated updates)
-            winner = next((t.get("displayName") for t in competitors if t.get("winner")), None)
-            # Fallback winner calculation if API didn't set one (e.g., ties or missing flag)
-            try:
-                hs = int(home_score) if home_score is not None else None
-                as_ = int(away_score) if away_score is not None else None
-            except Exception:
-                hs = as_ = None
-            if not winner and hs is not None and as_ is not None:
-                if hs > as_:
-                    winner = home_team.get("displayName") or home_team.get("team", {}).get("displayName")
-                elif as_ > hs:
-                    winner = away_team.get("displayName") or away_team.get("team", {}).get("displayName")
-                else:
-                    # Tie game; mark explicitly so subsequent runs skip this entry
-                    winner = "TIE"
-                    game["tie"] = True
-            game.update({
-                "winner": winner,
-                "home_score": home_score,
-                "away_score": away_score,
-                "status": "final"
-            })
-            for field in ["period", "clock"]:
-                game.pop(field, None)
-            updated_count += 1
+        for event in events:
+            if event.get("id") != game["game_id"]:
+                continue
 
-        elif is_live and game_date == today:
-            # Game currently live
-            game.update({
-                "home_score": home_score,
-                "away_score": away_score,
-                "status": "live",
-                "period": fullStatus.get("period"),
-                "clock": fullStatus.get("displayClock", "")
-            })
-            game.pop("winner", None)
-            live_count += 1
+            # Get status info
+            status = event.get("status", "")
+            fullStatus = event.get("fullStatus", {})
+            status_type = fullStatus.get("type", {})
+            status_state = status_type.get("state", "")
+            status_name = status_type.get("name", "")
+            status_completed = status_type.get("completed", False)
 
-        else:
-            # Scheduled / not started yet: ensure scores cleared and status set
-            game.update({
-                "status": "scheduled",
-                "home_score": None,
-                "away_score": None,
-            })
-            for field in ["period", "clock"]:
-                game.pop(field, None)
+            competitors = event.get("competitors", [])
+            home_team = next((t for t in competitors if t.get("homeAway") == "home"), {})
+            away_team = next((t for t in competitors if t.get("homeAway") == "away"), {})
+            home_score = home_team.get("score")
+            away_score = away_team.get("score")
 
-    time.sleep(SLEEP_BETWEEN_CALLS)
+            # Determine if game is final
+            is_final = (
+                status == "post"
+                or status_state == "post"
+                or status_name == "STATUS_FINAL"
+                or status_completed
+            )
 
-# Final sort and save updated results
-for g in schedule:
-    ensure_ts_utc(g)
-schedule.sort(key=lambda x: (str(x.get("date") or ""), int(x.get("ts_utc") or 0)))
-with open(SAVE_PATH, "w", encoding="utf-8") as out:
-    json.dump(schedule, out, indent=2, ensure_ascii=False)
+            # Determine if game is live
+            is_live = (
+                status == "in"
+                or status_state == "in"
+                or status_name in ["STATUS_HALFTIME", "STATUS_END_PERIOD"]
+            )
 
+            if is_final:
+                winner = next((t.get("displayName") for t in competitors if t.get("winner")), None)
+                # Fallback winner calculation if API didn't set one (e.g. ties or missing flag)
+                try:
+                    hs = int(home_score) if home_score is not None else None
+                    as_ = int(away_score) if away_score is not None else None
+                except (ValueError, TypeError):
+                    hs = as_ = None
+                if not winner and hs is not None and as_ is not None:
+                    if hs > as_:
+                        winner = home_team.get("displayName") or home_team.get("team", {}).get("displayName")
+                    elif as_ > hs:
+                        winner = away_team.get("displayName") or away_team.get("team", {}).get("displayName")
+                    else:
+                        winner = "TIE"
+                        game["tie"] = True
+                game.update({
+                    "winner": winner,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "status": "final"
+                })
+                for field in ["period", "clock"]:
+                    game.pop(field, None)
+                updated_count += 1
+                print(f"Updated final: {game.get('matchup')} - {winner} wins {away_score}-{home_score}")
+
+            elif is_live and game_date == today:
+                game.update({
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "status": "live",
+                    "period": fullStatus.get("period"),
+                    "clock": fullStatus.get("displayClock", "")
+                })
+                game.pop("winner", None)
+                live_count += 1
+                print(f"Updated live: {game.get('matchup')} - {away_score}-{home_score}")
+
+            else:
+                # Scheduled / not started yet: ensure scores cleared and status set
+                game.update({
+                    "status": "scheduled",
+                    "home_score": None,
+                    "away_score": None,
+                })
+                for field in ["period", "clock", "winner"]:
+                    game.pop(field, None)
+
+            # Break after finding the matching game — no need to keep scanning
+            break
+
+        time.sleep(SLEEP_BETWEEN_CALLS)
+
+    print(f"\nUpdate complete: {updated_count} games finalized, {live_count} games live, {total_checked} total checked")
+
+    # Final sort and save updated results
+    for g in schedule:
+        ensure_ts_utc(g)
+    schedule.sort(key=lambda x: (str(x.get("date") or ""), int(x.get("ts_utc") or 0)))
+    with open(SAVE_PATH, "w", encoding="utf-8") as out:
+        json.dump(schedule, out, indent=2, ensure_ascii=False)
+
+    print(f"Schedule saved to {SAVE_PATH}")
