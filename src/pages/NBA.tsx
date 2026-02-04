@@ -1262,7 +1262,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full pb-16">
           {games.map((g) => {
             // Derive home/away abbreviations and logos
             let awayAbbr = (g as any).away as string | undefined;
@@ -3768,7 +3768,7 @@ useEffect(() => {
 
 
 {/* === Schedule === */}
-<TabsContent value="schedule">
+<TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
 </TabsContent>
 

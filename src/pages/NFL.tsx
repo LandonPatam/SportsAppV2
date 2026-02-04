@@ -1428,7 +1428,7 @@ useEffect(() => {
         {/* Schedule Tab */}
         <TabsContent
           value="schedule"
-          className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto pr-2 pb-4' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-4'}
+          className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
         >
           <ScheduleNFLViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
         </TabsContent>
@@ -1969,7 +1969,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-16">
           {games.map((g) => {
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
@@ -1996,75 +1996,155 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
               ? String(g.tv).split(',').map((s) => s.trim()).filter(Boolean)
               : [];
 
+            // Get team colors for gradient background
+            const awayTeamName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
+            const homeTeamName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
+            const awayColor = awayTeamName && teamColors[awayTeamName]?.primary || '#1e40af';
+            const homeColor = homeTeamName && teamColors[homeTeamName]?.primary || '#dc2626';
+
+            // Check if game is live
+            const isLiveGame = String(g.status || '').toLowerCase().includes('live');
+
             return (
-              <Card key={g.game_id} className="relative overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border p-2">
-                {/* TV Badges */}
-                {/* TV provider badges removed as requested */}
+              <Card 
+                key={g.game_id} 
+                className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20"
+                onClick={() => {
+                  if (g.game_link) {
+                    window.open(g.game_link, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+              >
+                {/* Pulsing white dot for live games */}
+                {isLiveGame && (
+                  <>
+                    <style>
+                      {`
+                        @keyframes pulse {
+                          0%, 100% {
+                            opacity: 1;
+                            transform: scale(1);
+                          }
+                          50% {
+                            opacity: 0.6;
+                            transform: scale(1.1);
+                          }
+                        }
+                      `}
+                    </style>
+                    <div 
+                      className="absolute top-2 left-2 z-10 sched-live-dot"
+                      style={{
+                        borderRadius: '50%',
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 0 6px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4)',
+                        animation: 'pulse 1.5s ease-in-out infinite'
+                      }}
+                    />
+                  </>
+                )}
+                
+                {/* Horizontal gradient from away team color to home team color */}
+                <div 
+                  className="absolute inset-0" 
+                  style={{
+                    background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)`
+                  }}
+                />
+                
+                {/* Semi-transparent overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/40" />
 
-                <CardContent className="pt-3">
-                  <div className="grid grid-cols-3 items-center">
-                    {/* Away */}
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      {awayLogo && (
-                        <img
-                          src={awayLogo}
-                          alt={awayAbbr || 'Away'}
-                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
-                          loading="lazy"
-                          width={72}
-                          height={72}
-                        />
-                      )}
-                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
-                        {g.matchup ? g.matchup.split('@')[0]?.trim() : (awayAbbr || 'Away')}
+                {/* TV Badges top-right */}
+                {providers.length > 0 && (
+                  <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px] z-10">
+                    {providers.map((p) => {
+                      const name = String(p).toLowerCase();
+                      let style: React.CSSProperties | undefined;
+                      if (name.includes('prime')) {
+                        style = { backgroundColor: '#00A8E1', color: '#ffffff' };
+                      } else if (name.includes('peacock')) {
+                        style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                      } else if (name.includes('espn')) {
+                        style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                      } else if (name.includes('nfl') || name.includes('network')) {
+                        style = { backgroundColor: '#013369', color: '#ffffff' };
+                      }
+                      return (
+                        <Badge key={p} className="font-semibold" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
+                          {p}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } }`}</style>
+                <CardContent className="relative z-10 py-0 flex flex-col h-full">
+                  {/* Main content - vertically centered */}
+                  <div className="flex-1 flex items-center py-1">
+                    <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
+                      {/* Away side */}
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        {awayLogo && (
+                          <img
+                            src={awayLogo}
+                            alt={awayAbbr || 'Away'}
+                            className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{
+                              objectFit: 'contain',
+                              ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
+                            }}
+                            loading="lazy"
+                          />
+                        )}
                       </div>
-                    </div>
 
-                    {/* Center status/score */}
-                    <div className="text-center">
-                      {(() => {
-                        const s = String(g.status || '').toLowerCase();
-                        if (s === 'final') {
-                          return (
-                            <div className="font-extrabold tracking-wide text-xl md:text-2xl">
-                              <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
-                              <span className="mx-2 text-muted-foreground">-</span>
-                              <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
-                            </div>
-                          );
-                        }
-                        if (s.includes('live')) {
-                          return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
-                        }
-                        return <div className="font-bold text-lg md:text-xl">{g.time || 'TBA'}</div>;
-                      })()}
-                      {g.tv && providers.length === 0 && (
-                        <div className="text-[10px] text-muted-foreground truncate mx-auto max-w-[140px]">{String(g.tv)}</div>
-                      )}
-                    </div>
+                      {/* Center status/score */}
+                      <div className="flex items-center justify-center">
+                        {(() => {
+                          const s = String(g.status || '').toLowerCase();
+                          if (s === 'final') {
+                            return (
+                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1rem, 3.5cqi, 1.5rem)" }}>
+                                <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
+                                <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
+                                <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
+                              </div>
+                            );
+                          }
+                          if (s.includes('live')) {
+                            return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
+                          }
+                          return <div className="font-bold text-white" style={{ fontSize: "clamp(0.75rem, 2.8cqi, 1.1rem)" }}>{g.time || 'TBA'}</div>;
+                        })()}
+                        {g.tv && providers.length === 0 && (
+                          <div className="text-white/70 truncate mx-auto max-w-[140px] mt-1" style={{ fontSize: "clamp(0.5rem, 1.5cqi, 0.625rem)" }}>{String(g.tv)}</div>
+                        )}
+                      </div>
 
-                    {/* Home */}
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      {homeLogo && (
-                        <img
-                          src={homeLogo}
-                          alt={homeAbbr || 'Home'}
-                          className={`h-12 w-12 md:h-14 md:w-14 rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : undefined}
-                          loading="lazy"
-                          width={72}
-                          height={72}
-                        />
-                      )}
-                      <div className="text-xs md:text-sm font-semibold text-center truncate max-w-[8rem]">
-                        {g.matchup ? g.matchup.split('@')[1]?.trim() : (homeAbbr || 'Home')}
+                      {/* Home side */}
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        {homeLogo && (
+                          <img
+                            src={homeLogo}
+                            alt={homeAbbr || 'Home'}
+                            className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{
+                              objectFit: 'contain',
+                              ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
+                            }}
+                            loading="lazy"
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
 
                   {/* Footer: location */}
-                  <div className="mt-2 text-xs text-muted-foreground text-center">{g.location || ''}</div>
+                  {g.location && (
+                    <div className="text-white/60 text-center" style={{ marginTop: "0.5cqi", fontSize: "clamp(0.5rem, 1.5cqi, 0.75rem)" }}>{g.location}</div>
+                  )}
                 </CardContent>
               </Card>
             );

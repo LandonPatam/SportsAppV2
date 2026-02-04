@@ -8,7 +8,7 @@ import time
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-FIND_SCHEDULE = True   # Toggle True to crawl schedule, False to skip
+FIND_SCHEDULE = False   # Toggle True to crawl schedule, False to skip
 SAVE_PATH = "public/data/nfl_schedule.json"
 VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
 SLEEP_BETWEEN_CALLS = 1.5

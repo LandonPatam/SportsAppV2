@@ -8,7 +8,7 @@ import time
 # ==========================================================
 # ⚙️ CONFIGURATION
 # ==========================================================
-FIND_SCHEDULE = True   # Toggle True to force a full crawl from SEASON_START_DATE
+FIND_SCHEDULE = False   # Toggle True to force a full crawl from SEASON_START_DATE
 SAVE_PATH = "public/data/nba_schedule.json"
 VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN"}
 SLEEP_BETWEEN_CALLS = 1.5
