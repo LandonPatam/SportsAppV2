@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 /* Uni Sans Heavy (local) */
@@ -175,5 +174,33 @@
   /* Loading states */
   .loading-pulse {
     @apply animate-pulse-gentle;
+  }
+
+  /* Remove blue focus outline from tabs and navigation */
+  button:focus,
+  button:focus-visible,
+  [role="tab"]:focus,
+  [role="tab"]:focus-visible,
+  a:focus,
+  a:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    ring: 0 !important;
+  }
+
+  /* Remove focus ring specifically */
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+  }
+
+  /* Target Tailwind ring utilities specifically */
+  .focus\:ring-2:focus,
+  .focus-visible\:ring-2:focus-visible {
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    box-shadow: none !important;
   }
 }

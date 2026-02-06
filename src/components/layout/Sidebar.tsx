@@ -180,6 +180,7 @@ export function Sidebar({ className, theme = 'default', onHoverChange }: Sidebar
                 className={cn(
                   'group inline-flex flex-col items-center justify-center gap-3 px-4 py-3 rounded-xl',
                   'transition-all duration-300 ease-in border border-transparent',
+                  'focus:outline-none focus-visible:outline-none',
                   isActive ? 'text-white' : 'text-white/30 hover:text-white'
                 )}
                 style={{ marginTop: item.offsetY ?? 0, marginLeft: item.offsetX ?? 0 }}
