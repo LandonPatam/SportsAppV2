@@ -17,8 +17,8 @@ const App = () => (
       <BrowserRouter>
         <AppShell>
           <Routes>
-            {/* Redirect root path to /nfl */}
-            <Route path="/" element={<Navigate to="/nfl" replace />} />
+            {/* Redirect root path to /nba */}
+            <Route path="/" element={<Navigate to="/nba" replace />} />
             
             {/* Main app routes */}
             <Route path="/nfl" element={<NFL />} />

@@ -187,7 +187,7 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Arizona Cardinals': { primary: '#97233F', secondary: '#000000' },
   'Los Angeles Rams': { primary: '#003594', secondary: '#FFA300' },
   'San Francisco 49ers': { primary: '#AA0000', secondary: '#B3995D' },
-  'Seattle Seahawks': { primary: '#002244', secondary: '#69BE28' },
+  'Seattle Seahawks': { primary: '#69BE28', secondary: '#002244' },
 };
 
 // Utility: convert hex color to rgba string with given alpha
@@ -1062,7 +1062,7 @@ useEffect(() => {
     return map;
   }, [teams]);
 
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'AFC', 'NFC', or 'schedule'
   const [scheduleOnly, setScheduleOnly] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth < 900;
@@ -1097,11 +1097,11 @@ useEffect(() => {
       >
         {!scheduleOnly && (
           <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none pl-28">
+            <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="all">All Teams</TabsTrigger>
             <TabsTrigger value="AFC">AFC</TabsTrigger>
             <TabsTrigger value="NFC">NFC</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
           </TabsList>
         )}
 
@@ -1235,23 +1235,33 @@ useEffect(() => {
             {(() => {
               const currentTeam = selectedTeamAll || orderedTeams[0];
               return (
-                <div className="flex flex-col xl:flex-row gap-4 min-h-0 h-full overflow-hidden">
-                {/* Left: team logos grid */}
-                <div className="w-64 md:w-72 lg:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-6">
-                  <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-row gap-4 h-[85vh] overflow-hidden">
+                {/* Left: team logos grid - MATCHING NBA EXACTLY */}
+                <div
+                  className="w-20 md:w-40 xl:w-64 md:xl:w-72 lg:xl:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
+                  style={{ scrollPaddingTop: '24px', scrollPaddingBottom: '24px' }}
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     {orderedTeams.map((t) => {
                       const isActive = currentTeam && t.name === currentTeam.name;
                       return (
                         <button
                           key={t.name}
                           onClick={() => setSelectedTeamAll(t)}
-                          className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border ${
-                            isActive ? 'ring-2 ring-inset ring-white/80 border-transparent' : 'border-white/10'
+                          className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border snap-start ${
+                            isActive
+                              ? 'ring-2 ring-inset ring-white/80 border-transparent'
+                              : 'border-white/10'
                           }`}
                           title={t.name}
                         >
                           {t.logo ? (
-                            <img src={t.logo} alt={`${t.name} logo`} className="w-3/5 h-3/5 object-contain" loading="lazy" />
+                            <img
+                              src={t.logo}
+                              alt={`${t.name} logo`}
+                              className="w-4/5 h-4/5 object-contain"
+                              loading="lazy"
+                            />
                           ) : (
                             <span className="text-xs text-muted-foreground px-2 text-center">{t.name}</span>
                           )}
@@ -1261,123 +1271,169 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Right: Big team card + roster (roster spans full right width under the card) */}
-                <div className="flex-1 min-h-0 overflow-hidden flex flex-row gap-4 w-0 pr-0 items-stretch">
+                {/* Right: wide team card + roster - MATCHING NBA STRUCTURE */}
+                <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col gap-5 pr-0">
                   {currentTeam && (
-                    <div className="w-full h-full flex flex-col gap-4 min-w-0 min-h-0">
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <div>
-                          <TeamCard
-                            key={currentTeam.name}
-                            team={currentTeam}
-                            leagueAverages={leagueAverages}
-                            conferenceAverages={conferenceAverages}
-                            allTeams={teams}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <Card className="bg-transparent backdrop-blur-sm border-none h-[50px]">
-                            <CardHeader className="py-2">
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div style={{ height: 200 }}>
-                                <Doughnut
-                                  data={(() => {
-                                    const wins = Number(currentTeam.wins || 0);
-                                    const losses = Number(currentTeam.losses || 0) + Number(currentTeam.ties || 0);
-                                    const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
-                                    return {
-                                      labels: ['Wins', 'Losses'],
-                                      datasets: [
-                                        {
-                                          data: [wins, losses],
-                                          backgroundColor: [colors.primary, '#4b5563'],
-                                          borderColor: [colors.primary, '#4b5563'],
-                                          borderWidth: 1,
-                                        },
-                                      ],
-                                      } as any;
-                                  })()}
-                                  options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    animation: { animateRotate: true, animateScale: true },
-                                    plugins: { legend: { display: false, position: 'bottom' } },
-                                  }}
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          <Card className="bg-transparent backdrop-blur-sm border-none h-[100px] overflow -y-auto">
-                            <CardHeader className="py-0">
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div style={{ height: 220 }}>
-                                <Radar
-                                  data={(() => {
-                                    const games = (currentTeam.wins || 0) + (currentTeam.losses || 0) + (currentTeam.ties || 0);
-                                    const winPct = Number(currentTeam.win_pct || 0);
-                                    const pf = Number(currentTeam.points_for || 0);
-                                    const pa = Number(currentTeam.points_against || 0);
-                                    const ppg = games > 0 ? pf / games : 0;
-                                    const fpi = Number((currentTeam as any).fpi || 0);
-                                    const epaOff = Number((currentTeam as any).epa_offense || 0);
-                                    const epaDef = Number((currentTeam as any).epa_defense || 0);
-                                    const epaST = Number((currentTeam as any).epa_special || 0);
-                                    const labels = ['Win%', 'PF', 'PA', 'PPG', 'FPI', 'EPA Off', 'EPA Def', 'EPA ST'];
-                                    const ex = radarExtrema;
-                                    const raw = [winPct, pf, pa, ppg, fpi, epaOff, epaDef, epaST];
-                                    const mins = [ex.winPct.min, ex.pf.min, ex.pa.min, ex.ppg.min, ex.fpi.min, ex.epaOff.min, ex.epaDef.min, ex.epaST.min];
-                                    const maxs = [ex.winPct.max, ex.pf.max, ex.pa.max, ex.ppg.max, ex.fpi.max, ex.epaOff.max, ex.epaDef.max, ex.epaST.max];
-                                    const norm = (v: number, mn: number, mx: number) => (Number.isFinite(v) && Number.isFinite(mn) && Number.isFinite(mx) && mx > mn) ? (v - mn) / (mx - mn) : 0;
-                                    const vals = raw.map((v, i) => norm(v, mins[i], maxs[i]));
-                                    const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
-                                    const bg = toRGBA(colors.secondary, 0.25);
-                                    return {
-                                      labels,
-                                      datasets: [
-                                        {
-                                          id: 'teamRadar',
-                                          label: currentTeam.name,
-                                          data: vals,
-                                          backgroundColor: bg,
-                                          borderColor: colors.secondary,
-                                          pointBackgroundColor: colors.secondary,
-                                        },
-                                      ],
-                                      } as any;
-                                  })()}
-                                  options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                      r: {
-                                        beginAtZero: true,
-                                        suggestedMin: 0,
-                                        suggestedMax: 1,
-                                        ticks: { display: false, stepSize: 0.2 },
-                                        grid: { color: 'rgba(255,255,255,0.1)' },
-                                        angleLines: { color: 'rgba(255,255,255,0.1)' },
-                                        pointLabels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 } },
-                                      },
-                                    },
-                                    plugins: { legend: { display: false } },
-                                    animation: { duration: 600, easing: 'easeOutQuart' },
-                                  }}
-                                  datasetIdKey="id"
-                                  updateMode="active"
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
+                    <div className="w-full flex flex-wrap gap-4 items-start">
+                      {/* Team card - fixed width, no shrinking - MATCHING NBA */}
+                      <div className="w-full min-w-[450px] max-w-[550px] shrink-0">
+                        <TeamCard
+                          key={currentTeam.name}
+                          team={currentTeam}
+                          leagueAverages={leagueAverages}
+                          conferenceAverages={conferenceAverages}
+                          allTeams={teams}
+                        />
                       </div>
-                      <div className="flex-1 min-h-0 w-full overflow-y-auto pr-2 pb-4">
-                        <NFLRosterList teamName={currentTeam.name} rosterByTeam={rosterByTeam} />
+                      {/* Doughnut chart - flexible width, smaller min - MATCHING NBA */}
+                      <div className="flex-1 min-w-[280px] max-w-[405px]">
+                        <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
+                          <CardHeader className="py-2 px-3">
+                          </CardHeader>
+                          <CardContent className="h-[220px] p-1">
+                            <Doughnut
+                              data={(() => {
+                                const wins = Number(currentTeam.wins || 0);
+                                const losses = Number(currentTeam.losses || 0) + Number(currentTeam.ties || 0);
+                                const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
+                                return {
+                                  labels: [],
+                                  datasets: [
+                                    {
+                                      data: [wins, losses],
+                                      backgroundColor: [colors.primary, '#4b5563'],
+                                      borderWidth: 0,
+                                    },
+                                  ],
+                                } as any;
+                              })()}
+                              options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '55%',
+                                responsiveAnimationDuration: 0,
+                                animation: {
+                                  animateRotate: true,
+                                  animateScale: false,
+                                  duration: 180,
+                                  easing: 'easeOutQuart',
+                                },
+                                transitions: {
+                                  show: {
+                                    animations: {
+                                      circumference: { duration: 180, easing: 'easeOutQuart' },
+                                      rotation: { duration: 180, easing: 'easeOutQuart' },
+                                    },
+                                  },
+                                  hide: {
+                                    animations: {
+                                      circumference: { duration: 120, easing: 'easeInCubic' },
+                                      rotation: { duration: 120, easing: 'easeInCubic' },
+                                    },
+                                  },
+                                },
+                                plugins: {
+                                  legend: {
+                                    position: 'bottom',
+                                    labels: { color: 'currentColor', boxWidth: 10 },
+                                  },
+                                  tooltip: { enabled: true },
+                                },
+                              }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </div>
+                      {/* Radar chart - flexible width - MATCHING NBA */}
+                      <div className="flex-1 min-w-[280px] max-w-[342px]">
+                        <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
+                          <CardContent className="h-[220px] p-1">
+                            <Radar
+                              data={(() => {
+                                const games = (currentTeam.wins || 0) + (currentTeam.losses || 0) + (currentTeam.ties || 0);
+                                const winPct = Number(currentTeam.win_pct || 0);
+                                const pf = Number(currentTeam.points_for || 0);
+                                const pa = Number(currentTeam.points_against || 0);
+                                const ppg = games > 0 ? pf / games : 0;
+                                const fpi = Number((currentTeam as any).fpi || 0);
+                                const epaOff = Number((currentTeam as any).epa_offense || 0);
+                                const epaDef = Number((currentTeam as any).epa_defense || 0);
+                                const epaST = Number((currentTeam as any).epa_special || 0);
+                                const labels = ['Win%', 'PF', 'PA', 'PPG', 'FPI', 'EPA Off', 'EPA Def', 'EPA ST'];
+                                const ex = radarExtrema;
+                                const raw = [winPct, pf, pa, ppg, fpi, epaOff, epaDef, epaST];
+                                const mins = [ex.winPct.min, ex.pf.min, ex.pa.min, ex.ppg.min, ex.fpi.min, ex.epaOff.min, ex.epaDef.min, ex.epaST.min];
+                                const maxs = [ex.winPct.max, ex.pf.max, ex.pa.max, ex.ppg.max, ex.fpi.max, ex.epaOff.max, ex.epaDef.max, ex.epaST.max];
+                                const norm = (v: number, mn: number, mx: number) => {
+                                  if (!Number.isFinite(v) || !Number.isFinite(mn) || !Number.isFinite(mx)) return 0;
+                                  if (Math.abs(mx - mn) < 1e-6) return 50;
+                                  return ((v - mn) / (mx - mn)) * 100;
+                                };
+                                const vals = raw.map((v, i) => norm(v, mins[i], maxs[i]));
+                                const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
+                                const bg = colors.secondary && colors.secondary.length === 7 ? `${colors.secondary}55` : colors.primary;
+                                return {
+                                  labels,
+                                  datasets: [
+                                    {
+                                      id: 'teamRadar',
+                                      label: currentTeam.name,
+                                      data: vals,
+                                      backgroundColor: bg,
+                                      borderColor: colors.secondary,
+                                      pointBackgroundColor: colors.secondary,
+                                      pointBorderColor: '#fff',
+                                      borderWidth: 2,
+                                      tension: 0,
+                                    },
+                                  ],
+                                } as any;
+                              })()}
+                              options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: { duration: 200, easing: 'easeOutQuart' },
+                                animations: {
+                                  numbers: { type: 'number', duration: 200, easing: 'easeOutQuart' },
+                                  x: { duration: 200, easing: 'easeOutQuart' },
+                                  y: { duration: 200, easing: 'easeOutQuart' },
+                                },
+                                transitions: { active: { animation: { duration: 200, easing: 'easeOutQuart' } } },
+                                plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                elements: { line: { tension: 0 } },
+                                scales: {
+                                  r: {
+                                    suggestedMin: 0,
+                                    suggestedMax: 100,
+                                    angleLines: { color: 'rgba(255,255,255,0.1)' },
+                                    grid: { color: 'rgba(255,255,255,0.1)' },
+                                    pointLabels: { color: 'currentColor', font: { size: 10 } },
+                                    ticks: { display: false },
+                                  },
+                                },
+                              }}
+                              datasetIdKey="id"
+                              updateMode="active"
+                            />
+                          </CardContent>
+                        </Card>
                       </div>
                     </div>
                   )}
+
+                  {/* Roster list - scrollable - MATCHING NBA STRUCTURE */}
+                  <div className="flex-1 min-h-0 flex flex-col">
+                    {currentTeam && (
+                      <div
+                        className="flex-1 min-h-0 overflow-y-auto no-scrollbar snap-y snap-mandatory pt-0 pb-8"
+                        style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
+                      >
+                        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+                          <NFLRosterList teamName={currentTeam.name} rosterByTeam={rosterByTeam} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               );
@@ -1459,18 +1515,16 @@ const NFLRosterList = ({ teamName, rosterByTeam }: { teamName: string; rosterByT
     return <div className="text-sm text-muted-foreground py-4">No roster data</div>;
   }
   return (
-    <div className="min-h-0 pr-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-        {players.map((p, idx) => (
-          <PlayerCardNFL
-            key={(p.profile_link || p.name || 'player') + idx}
-            player={p}
-            index={idx}
-            teamName={teamName}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      {players.map((p, idx) => (
+        <PlayerCardNFL
+          key={(p.profile_link || p.name || 'player') + idx}
+          player={p}
+          index={idx}
+          teamName={teamName}
+        />
+      ))}
+    </>
   );
 };
 
@@ -1478,18 +1532,21 @@ const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; in
   const name = player?.name || player?.shortName || 'Player';
   const posRaw = (player?.position || '').toString();
   const pos = posRaw.toUpperCase();
+  const teamColorPrimary = teamName ? (teamColors[teamName]?.primary || '#1e40af') : '#1e40af';
+  const teamColorSecondary = teamName ? (teamColors[teamName]?.secondary || '#dc2626') : '#dc2626';
+
   const posColor: Record<string, { bg: string; color?: string }> = {
-    'QB': { bg: '#2563eb' },     // blue
-    'RB': { bg: '#16a34a' },     // green
-    'WR': { bg: '#f59e0b' },     // amber
-    'TE': { bg: '#a855f7' },     // purple
-    'OL': { bg: '#6b7280' },     // gray
-    'DL': { bg: '#ef4444' },     // red
-    'LB': { bg: '#f97316' },     // orange
-    'CB': { bg: '#0ea5e9' },     // sky
-    'S':  { bg: '#14b8a6' },     // teal
-    'K':  { bg: '#84cc16' },     // lime
-    'P':  { bg: '#22c55e' },     // emerald
+    'QB': { bg: '#2563eb' },
+    'RB': { bg: '#16a34a' },
+    'WR': { bg: '#f59e0b' },
+    'TE': { bg: '#a855f7' },
+    'OL': { bg: '#6b7280' },
+    'DL': { bg: '#ef4444' },
+    'LB': { bg: '#f97316' },
+    'CB': { bg: '#0ea5e9' },
+    'S':  { bg: '#14b8a6' },
+    'K':  { bg: '#84cc16' },
+    'P':  { bg: '#22c55e' },
   };
   const badgeSty: React.CSSProperties = {
     backgroundColor: (posColor[pos]?.bg) || '#334155',
@@ -1497,25 +1554,33 @@ const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; in
   };
 
   return (
-    <Card className="overflow-hidden bg-card/50 backdrop-blur md:backdrop-blur-sm">
-      <CardHeader className="py-5 pb-0">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-0 min-w-0">
-            <div className="min-w-0">
-              <CardTitle className="text-[15px] font-semibold truncate">{name}</CardTitle>
-            </div>
+    <div
+      className="relative rounded-xl overflow-hidden snap-start"
+      style={{
+        backgroundImage: `linear-gradient(300deg, ${teamColorPrimary}, ${teamColorSecondary})`,
+        padding: '3px',
+        scrollMarginTop: '16px',
+        scrollMarginBottom: '16px',
+      }}
+    >
+      <div
+        className="absolute inset-1 rounded-xl"
+        style={{ backgroundColor: '#1f1f1f', opacity: 1 }}
+        aria-hidden
+      />
+      <div className="relative z-10 rounded-[16px] bg-[#111]/85 p-3 text-white">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold truncate">{name}</div>
           </div>
           {pos && (
-            <Badge className="text-[10px] font-semibold px-3 py-1" style={badgeSty}>
+            <Badge className="ml-auto text-[10px] font-semibold" style={badgeSty}>
               {pos}
             </Badge>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="pt-1 pb-0">
-        <div className="text-[10px] text-muted-foreground">&nbsp;</div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 });
 

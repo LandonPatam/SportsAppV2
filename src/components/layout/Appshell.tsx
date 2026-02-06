@@ -28,8 +28,8 @@ export function AppShell({ children }: AppShellProps) {
           className="relative inline-flex h-10 w-20 items-center rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background shadow-lg overflow-hidden"
           style={{
             background: isNBA 
-              ? 'linear-gradient(to right, #00ffeeff, #cc00ffff)' 
-              : 'linear-gradient(to right, #5e70fbff, #ffc342ff)',
+              ? 'linear-gradient(to right, #cc00ffff, #00ffeeff)' 
+              : 'linear-gradient(to right, #D9ECC7, #07A3B2',
             transition: 'background 0.5s ease-in-out'
           }}
         >

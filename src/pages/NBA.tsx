@@ -1205,18 +1205,9 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
     return map;
   }, [scheduleData]);
 
-  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
-  const logos: Record<string, string> = Array.isArray(scheduleData) ? {} : (scheduleData?.teams || {});
 
   // All available date keys sorted ascending
   const dateKeys = useMemo(() => Object.keys(gamesByDate).sort(), [gamesByDate]);
-
-  // Helper to format date labels from YYYY-MM-DD
-  const formatLabel = (key: string) => {
-    const [y, m, d] = key.split('-').map((s) => parseInt(s, 10));
-    const dt = new Date(y, (m || 1) - 1, d || 1);
-    return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  };
 
   // Pick initial index near today
   const todayKey = useMemo(() => {
@@ -1239,7 +1230,18 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
   const [index, setIndex] = React.useState<number>(initialIndex);
   useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
 
+  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
+  const logos: Record<string, string> = Array.isArray(scheduleData) ? {} : (scheduleData?.teams || {});
+
+  // Helper to format date labels from YYYY-MM-DD
+  const formatLabel = (key: string) => {
+    const [y, m, d] = key.split('-').map((s) => parseInt(s, 10));
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
   if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
+
 
   const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
   const currentKey = dateKeys[clamp(index)];
@@ -2576,7 +2578,7 @@ const NBA = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
   const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'top-scorers', or 'schedule'
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
@@ -3275,10 +3277,10 @@ useEffect(() => {
         }}
       >
 <TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4 pl-28">
+    <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
   <TabsTrigger value="all">All Teams</TabsTrigger>
   <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
-  <TabsTrigger value="schedule">Schedule</TabsTrigger>
 </TabsList>
 
 <TabsContent value="dashboard">

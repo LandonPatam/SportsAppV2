@@ -6,7 +6,7 @@ type TabsTheme = "default" | "nfl" | "nba"
 
 const gradientMap: Record<TabsTheme, { from: string; to: string }> = {
   default: { from: "#F6EA41", to: "#F048C6" },
-  nfl: { from: "#5e70fbff", to: "#ffc342ff" },
+  nfl: { from: "#07A3B2", to: "#D9ECC7" },
   nba: { from: "#00ffeeff", to: "#cc00ffff" },
 }
 

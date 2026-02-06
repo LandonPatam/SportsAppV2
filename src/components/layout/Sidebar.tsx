@@ -26,8 +26,8 @@ type IconProps = {
 type SidebarTheme = 'default' | 'nfl' | 'nba';
 
 const gradientMap: Record<SidebarTheme, { from: string; to: string }> = {
-  default: { from: "#5e70fbff", to: "#ffc342ff" },
-  nfl: { from: "#5e70fbff", to: "#ffc342ff" },
+  default: { from: "rgb(139, 251, 94)", to: "#ffc342ff" },
+  nfl: { from: "rgb(16, 237, 64)", to: "#ffc342ff" },
   nba: { from: "rgb(255, 242, 0)", to: "#cc00ffff" },
 };
 
@@ -47,7 +47,7 @@ const FootballIcon = ({ className, active = false }: IconProps) => (
     strokeLinejoin="round"
   >
     {/* Outer Border */}
-    <g stroke={active ? '#5e70fbff' : '#3a3a3aff'} style={active ? neonGlowStyles.blue : undefined}>
+    <g stroke={active ? 'rgb(248, 248, 248)' : '#3a3a3aff'} style={active ? neonGlowStyles.blue : undefined}>
       <path d="M95.973 8.504c8.07 18.65 41.426 33.356 69.582 13.629v122.485c0 19.189-15.961 22.059-24.391 22.059-29.41 0-40.35 12.193-45.371 17.574-5.021-5.381-15.603-17.574-45.013-17.574-8.429 0-24.39-2.869-24.39-22.059V22.134c28.156 19.726 61.512 5.021 69.583-13.63z"/>
     </g>
 
