@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sun, Moon, ChevronLeft, ChevronRight, X } from 'lucide-react';
 // Charts (match NBA page approach)
 import { Chart as ChartJS, ArcElement, Tooltip as ChartJSTooltip, Legend as ChartJSLegend, RadialLinearScale, PointElement, LineElement, Filler, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Chart as ChartComponent, Doughnut, Radar } from 'react-chartjs-2';
@@ -707,6 +707,7 @@ const NFL = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTeamAll, setSelectedTeamAll] = useState<NFLTeam | null>(null);
   const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>({});
+  const [espnGameId, setEspnGameId] = useState<string | null>(null);
 
   // League-wide extrema for radar normalization (Win%, PF, PA, PPG, FPI, EPA Off/Def/ST)
   const radarExtrema = useMemo(() => {
@@ -1099,7 +1100,7 @@ useEffect(() => {
           <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none pl-28">
             <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="all">All Teams</TabsTrigger>
+            <TabsTrigger value="all">Team Stats</TabsTrigger>
             <TabsTrigger value="AFC">AFC</TabsTrigger>
             <TabsTrigger value="NFC">NFC</TabsTrigger>
           </TabsList>
@@ -1161,6 +1162,7 @@ useEffect(() => {
                     logoMap={abbrToLogo}
                     recordMap={abbrToRecord}
                     abbrToTeamMap={abbrToTeamMap}
+                    onGameClick={(gameId) => setEspnGameId(gameId)}
                   />
                 </CardContent>
               </Card>
@@ -1248,11 +1250,17 @@ useEffect(() => {
                         <button
                           key={t.name}
                           onClick={() => setSelectedTeamAll(t)}
-                          className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border snap-start ${
+                          className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center transition-all duration-200 snap-start`}
+                          style={
                             isActive
-                              ? 'ring-2 ring-inset ring-white/80 border-transparent'
-                              : 'border-white/10'
-                          }`}
+                              ? {
+                                  border: '3px solid white',
+                                  boxShadow: '0 0 20px rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.3)',
+                                }
+                              : {
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                }
+                          }
                           title={t.name}
                         >
                           {t.logo ? (
@@ -1486,9 +1494,88 @@ useEffect(() => {
           value="schedule"
           className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
         >
-          <ScheduleNFLViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
+          <ScheduleNFLViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} onGameClick={(gameId) => setEspnGameId(gameId)} />
         </TabsContent>
       </Tabs>
+
+{/* ESPN Game Iframe Modal */}
+{espnGameId && (
+  <div 
+    className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onClick={() => {
+      console.log('Overlay clicked, closing modal');
+      setEspnGameId(null);
+    }}
+    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+  >
+    {console.log('ESPN Modal rendering with game ID:', espnGameId)}
+    <div 
+      className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header Bar */}
+      <div className="flex items-center justify-end p-3 border-b border-white/10 bg-transparent">
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          {/* Open in new tab button */}
+          <button
+            onClick={() => window.open(`https://www.espn.com/nfl/boxscore/_/gameId/${espnGameId}`, '_blank', 'noopener,noreferrer')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            title="Open in new tab"
+          >
+            Open in ESPN
+          </button>
+        
+          {/* Close button */}
+          <button
+            onClick={() => {
+              console.log('Close button clicked');
+              setEspnGameId(null);
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 transition-colors"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Iframe Container */}
+      <div className="flex-1 overflow-hidden bg-white rounded-b-2xl">
+        <iframe
+          ref={(iframe) => {
+            if (iframe) {
+              iframe.onload = () => {
+                try {
+                  // Wait a bit for content to load, then scroll
+                  setTimeout(() => {
+                    if (iframe.contentWindow) {
+                      // Scroll down 500 pixels (adjust this number as needed)
+                      iframe.contentWindow.scrollTo({
+                        top: 500,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }, 1000); // Wait 1 second after load
+                } catch (e) {
+                  console.log('Could not scroll iframe (cross-origin restriction):', e);
+                }
+              };
+            }
+          }}
+          src={`https://www.espn.com/nfl/boxscore/_/gameId/${espnGameId}`}
+          className="w-full h-full border-0"
+          title="ESPN Game Details"
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"
+          style={{
+            backgroundColor: 'white'
+          }}
+        />
+      </div>
+    </div>
+  </div>
+)}
+
     </PageLayout>
   );
 };
@@ -1654,11 +1741,13 @@ const DashboardTodayScheduleNFL = ({
   logoMap,
   recordMap = {},
   abbrToTeamMap = {},
+  onGameClick,
 }: {
   scheduleData: NFLScheduleData | null;
   logoMap: Record<string, string>;
   recordMap?: Record<string, string>;
   abbrToTeamMap?: Record<string, NFLTeam>;
+  onGameClick?: (gameId: string) => void;
 }) => {
   const todayKey = React.useMemo(() => {
     const now = new Date();
@@ -1832,11 +1921,16 @@ const DashboardTodayScheduleNFL = ({
           return (
             <Card
               key={g.game_id || `${g.matchup}-${g.date}`}
-              className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col"
+              className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col cursor-pointer hover:ring-2 hover:ring-white/20"
               style={{
                 padding: cardPadding,
                 height: cardHeight ? `${cardHeight}px` : undefined,
                 minHeight: 0,
+              }}
+              onClick={() => {
+                if (g.game_id && onGameClick) {
+                  onGameClick(g.game_id);
+                }
               }}
             >
               <CardContent className="p-0 flex-1 flex flex-col" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
@@ -1960,7 +2054,7 @@ const DashboardTodayScheduleNFL = ({
   );
 };
 
-const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLScheduleData | null; logoMap: Record<string, string> }) => {
+const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: NFLScheduleData | null; logoMap: Record<string, string>; onGameClick?: (gameId: string) => void }) => {
   const gamesByDate = useMemo(() => {
     const map: Record<string, NFLScheduleGame[]> = {};
     const arr: NFLScheduleGame[] = Array.isArray(scheduleData) ? (scheduleData as NFLScheduleGame[]) : [];
@@ -2075,7 +2169,9 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap }: { scheduleData: NFLSchedul
                 key={g.game_id} 
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20"
                 onClick={() => {
-                  if (g.game_link) {
+                  if (g.game_id && onGameClick) {
+                    onGameClick(g.game_id);
+                  } else if (g.game_link) {
                     window.open(g.game_link, '_blank', 'noopener,noreferrer');
                   }
                 }}

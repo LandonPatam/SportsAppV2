@@ -1187,7 +1187,7 @@ const ScheduleView = ({ scheduleData }: { scheduleData: NBAScheduleData | null }
 };
 
 // Compact, arrow-controlled view
-const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string> }) => {
+const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, onGameClick?: (gameId: string) => void }) => {
   // Build games grouped by date from the provided schedule
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
@@ -1318,9 +1318,12 @@ const ScheduleViewV2 = ({ scheduleData, logoMap }: { scheduleData: NBAScheduleDa
               <Card 
                 key={g.game_id} 
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20"
-                onClick={() => {
-                  if (g.game_id) {
-                    window.open(`https://www.espn.com/nba/game/_/gameId/${g.game_id}`, '_blank', 'noopener,noreferrer');
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Card clicked, game_id:', g.game_id);
+                  if (g.game_id && onGameClick) {
+                    console.log('Calling onGameClick with:', g.game_id);
+                    onGameClick(g.game_id);
                   }
                 }}
               >
@@ -2582,6 +2585,7 @@ const NBA = () => {
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
+  const [espnGameId, setEspnGameId] = useState<string | null>(null); // For ESPN iframe modal
   const [favoriteTeamIds, setFavoriteTeamIds] = useState<number[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -3276,10 +3280,11 @@ useEffect(() => {
           }
         }}
       >
-<TabsList className="grid py-1 w-full grid-cols-4 max-w-none mb-4 pl-28">
+<TabsList className="grid py-1 w-full grid-cols-5 max-w-none mb-4 pl-28">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
+  <TabsTrigger value="standings">Standings</TabsTrigger>
   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-  <TabsTrigger value="all">All Teams</TabsTrigger>
+  <TabsTrigger value="all">Team Stats</TabsTrigger>
   <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
 </TabsList>
 
@@ -3527,11 +3532,17 @@ useEffect(() => {
                 <button
                   key={t.TEAM_ID}
                   onClick={() => setSelectedTeamAll(t)}
-                  className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center border snap-start ${
+                  className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center transition-all duration-200 snap-start`}
+                  style={
                     isActive
-                      ? 'ring-2 ring-inset ring-white/80 border-transparent'
-                      : 'border-white/10'
-                  }`}
+                      ? {
+                          border: '3px solid white',
+                          boxShadow: '0 0 20px rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.3)',
+                        }
+                      : {
+                          border: '1px solid rgba(255,255,255,0.1)',
+                        }
+                  }
                   title={t.TEAM_NAME}
                 >
                   {t.LOGO_URL ? (
@@ -3771,7 +3782,100 @@ useEffect(() => {
 
 {/* === Schedule === */}
 <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
-  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} />
+  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} onGameClick={(gameId) => setEspnGameId(gameId)} />
+</TabsContent>
+
+{/* === Standings === */}
+<TabsContent value="standings" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-32 pr-2">
+  <div className="grid grid-cols-2 gap-4">
+    {/* Western Conference */}
+    <div>
+      <h2 className="text-xl font-bold mb-3 text-white text-center">West</h2>
+      <div className="grid grid-cols-1 gap-2">
+        {nbaTeams
+          .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
+          .sort((a, b) => b.W - a.W)
+          .map((team, index) => (
+            <div
+              key={team.TEAM_ID}
+              className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
+              onClick={() => setSelectedTeam(team)}
+              style={{
+                animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+              }}
+            >
+              <div
+                className="absolute inset-0.5 rounded-lg"
+                style={{ backgroundColor: '#16181d47' }}
+                aria-hidden
+              />
+              <div className="relative z-10 flex items-center gap-3 p-2 border">
+                <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+                  {index + 1}
+                </Badge>
+                <div className="flex-1 min-w-0 text-right">
+                  <h3 className="text-sm font-semibold truncate">({team.W}-{team.L}) {team.TEAM_NAME}</h3>
+                </div>
+                {team.LOGO_URL && (
+                  <img
+                    src={team.LOGO_URL}
+                    alt={`${team.TEAM_NAME} logo`}
+                    className="w-10 h-10 rounded-sm object-contain"
+                    loading="lazy"
+                    width={40}
+                    height={40}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+
+    {/* Eastern Conference */}
+    <div>
+      <h2 className="text-xl font-bold mb-3 text-white text-center">East</h2>
+      <div className="grid grid-cols-1 gap-2">
+        {nbaTeams
+          .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')
+          .sort((a, b) => b.W - a.W)
+          .map((team, index) => (
+            <div
+              key={team.TEAM_ID}
+              className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
+              onClick={() => setSelectedTeam(team)}
+              style={{
+                animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+              }}
+            >
+              <div
+                className="absolute inset-0.5 rounded-lg"
+                style={{ backgroundColor: '#16181d47' }}
+                aria-hidden
+              />
+              <div className="relative z-10 flex items-center gap-3 p-2 border">
+                {team.LOGO_URL && (
+                  <img
+                    src={team.LOGO_URL}
+                    alt={`${team.TEAM_NAME} logo`}
+                    className="w-10 h-10 rounded-sm object-contain"
+                    loading="lazy"
+                    width={40}
+                    height={40}
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold truncate">{team.TEAM_NAME} ({team.W}-{team.L})</h3>
+                </div>
+                <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
+                  {index + 1}
+                </Badge>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  </div>
 </TabsContent>
 
 {/* === Top Players === */}
@@ -3944,6 +4048,84 @@ useEffect(() => {
     allTeams={nbaTeams}
     onClose={() => setSelectedTeam(null)}
   />
+)}
+
+{/* ESPN Game Iframe Modal */}
+{espnGameId && (
+  <div 
+    className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+    onClick={() => {
+      console.log('Overlay clicked, closing modal');
+      setEspnGameId(null);
+    }}
+    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+  >
+    {console.log('ESPN Modal rendering with game ID:', espnGameId)}
+    <div 
+      className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header Bar */}
+      <div className="flex items-center justify-end p-3 border-b border-white/10 bg-transparent">
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          {/* Open in new tab button */}
+          <button
+            onClick={() => window.open(`https://www.espn.com/nba/boxscore/_/gameId/${espnGameId}#gamepackage-box-score`, '_blank', 'noopener,noreferrer')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            title="Open in new tab"
+          >
+            Open in ESPN
+          </button>
+        
+          {/* Close button */}
+          <button
+            onClick={() => {
+              console.log('Close button clicked');
+              setEspnGameId(null);
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 transition-colors"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Iframe Container */}
+      <div className="flex-1 overflow-hidden bg-white rounded-b-2xl">
+        <iframe
+          ref={(iframe) => {
+            if (iframe) {
+              iframe.onload = () => {
+                try {
+                  // Wait a bit for content to load, then scroll
+                  setTimeout(() => {
+                    if (iframe.contentWindow) {
+                      // Scroll down 500 pixels (adjust this number as needed)
+                      iframe.contentWindow.scrollTo({
+                        top: 500,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }, 1000); // Wait 1 second after load
+                } catch (e) {
+                  console.log('Could not scroll iframe (cross-origin restriction):', e);
+                }
+              };
+            }
+          }}
+          src={`https://www.espn.com/nba/boxscore/_/gameId/${espnGameId}#gamepackage-box-score`}
+          className="w-full h-full border-0"
+          title="ESPN Game Details"
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"
+          style={{
+            backgroundColor: 'white'
+          }}
+        />
+      </div>
+    </div>
+  </div>
 )}
 
 
