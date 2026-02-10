@@ -639,8 +639,36 @@ const DashboardTodaySchedule = ({
     const arr: ScheduleGameAny[] = Array.isArray(scheduleData)
       ? (scheduleData as ScheduleGameAny[])
       : (scheduleData.games || []);
-    return arr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
-  }, [scheduleData, todayKey]);
+    
+    const todayGames = arr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
+    
+    // If no favorites, show no games
+    if (favoriteTeamIds.length === 0) return [];
+    
+    // Filter to only show games with favorite teams
+    return todayGames.filter((g) => {
+      let awayAbbr = (g as any).away as string | undefined;
+      let homeAbbr = (g as any).home as string | undefined;
+      
+      // Try to get team abbr from matchup if not directly available
+      if ((!awayAbbr || !homeAbbr) && g.matchup) {
+        const parts = g.matchup.split('@');
+        const awayName = parts[0]?.trim();
+        const homeName = parts[1]?.trim();
+        awayAbbr = awayName ? (teamAbbreviations as any)[awayName] : undefined;
+        homeAbbr = homeName ? (teamAbbreviations as any)[homeName] : undefined;
+      }
+      
+      const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
+      const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
+      const awayTeamObj = normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr] : undefined;
+      const homeTeamObj = normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr] : undefined;
+      
+      // Show game if either team is a favorite
+      return (awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID)) ||
+             (homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
+    });
+  }, [scheduleData, todayKey, favoriteTeamIds, abbrToTeamMap]);
 
   const shellRef = React.useRef<HTMLDivElement>(null);
   
@@ -735,7 +763,12 @@ const DashboardTodaySchedule = ({
   };
 
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading…</div>;
-  if (games.length === 0) return <div className="text-sm text-muted-foreground">No games today</div>;
+  if (games.length === 0) {
+    if (favoriteTeamIds.length === 0) {
+      return <div className="text-sm text-muted-foreground">No favorite teams selected</div>;
+    }
+    return <div className="text-sm text-muted-foreground">No games today for favorited teams</div>;
+  }
 
   const { gap, cardHeight, scale, isStacked, logoOffset, recordOffset, ready } = layout;
 
@@ -837,9 +870,6 @@ const DashboardTodaySchedule = ({
                          style={{ width: logoSize, height: logoSize, maxWidth: '100%', maxHeight: '100%', transform: `translateX(-${logoOffset}px)` }} 
                          className="relative transition-transform duration-300"
                       >
-                          {awayFavorite && (
-                             <Star className="absolute -left-2 top-0 w-3.5 h-3.5 text-white fill-white z-20 drop-shadow-md" />
-                           )}
                         <img
                           src={awayLogo}
                           alt={awayAbbr}
@@ -907,9 +937,6 @@ const DashboardTodaySchedule = ({
                          style={{ width: logoSize, height: logoSize, maxWidth: '100%', maxHeight: '100%', transform: `translateX(${logoOffset}px)` }} 
                          className="relative transition-transform duration-300"
                       >
-                        {homeFavorite && (
-                            <Star className="absolute -right-2 top-0 w-3.5 h-3.5 text-white fill-white z-20 drop-shadow-md" />
-                          )}
                         <img
                           src={homeLogo}
                           alt={homeAbbr}
@@ -1470,11 +1497,6 @@ const TEAM_MODAL_STAT_GROUPS: TeamModalStatGroup[] = [
       { key: 'MIN' },
       { key: 'PLUS_MINUS' },
       { key: 'W_PCT_RANK' },
-    ],
-  },
-  {
-    title: 'Scoring & Shooting',
-    stats: [
       { key: 'PTS'},
       { key: 'FGM' },
       { key: 'FGA' },
@@ -1484,12 +1506,12 @@ const TEAM_MODAL_STAT_GROUPS: TeamModalStatGroup[] = [
       { key: 'FG3_PCT' },
       { key: 'FTM' },
       { key: 'FTA' },
-      { key: 'FT_PCT' },
     ],
   },
   {
-    title: 'Rebounding & Playmaking',
+    title: 'Shooting & Rebounding',
     stats: [
+      { key: 'FT_PCT' },
       { key: 'REB' },
       { key: 'OREB' },
       { key: 'DREB' },
@@ -1497,32 +1519,21 @@ const TEAM_MODAL_STAT_GROUPS: TeamModalStatGroup[] = [
       { key: 'TOV' },
       { key: 'PF' },
       { key: 'PFD' },
-    ],
-  },
-  {
-    title: 'Defense & Disruption',
-    stats: [
       { key: 'STL' },
       { key: 'BLK' },
       { key: 'BLKA' },
-    ],
-  },
-  {
-    title: 'Advanced Ratings',
-    stats: [
       { key: 'bpi', label: 'BPI'  },
       { key: 'off', label: 'OFF'   },
       { key: 'def', label: 'DEF'   },
-      { key: 'pbpi', label: 'PBPI'   },
     ],
   },
   {
-    title: 'Rankings',
+    title: 'Rankings (Part 1)',
     stats: [
+      { key: 'pbpi', label: 'PBPI'   },
       { key: 'GP_RANK' },
       { key: 'W_RANK' },
       { key: 'L_RANK' },
-      { key: 'W_PCT_RANK' },
       { key: 'MIN_RANK' },
       { key: 'FGM_RANK' },
       { key: 'FGA_RANK' },
@@ -1533,6 +1544,11 @@ const TEAM_MODAL_STAT_GROUPS: TeamModalStatGroup[] = [
       { key: 'FTM_RANK' },
       { key: 'FTA_RANK' },
       { key: 'FT_PCT_RANK' },
+    ],
+  },
+  {
+    title: 'Rankings (Part 2)',
+    stats: [
       { key: 'OREB_RANK' },
       { key: 'DREB_RANK' },
       { key: 'REB_RANK' },
