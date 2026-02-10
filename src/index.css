@@ -1,61 +1,4 @@
-/* Custom Fonts - Helvetica */
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/Helvetica.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/helvetica-light-587ebe5a59211.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/Helvetica-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/helvetica-rounded-bold-5871d05ead8de.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/Helvetica-Oblique.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/Helvetica-BoldOblique.ttf') format('truetype');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica';
-  src: url('/data/fonts/helvetica-compressed-5871d14b6903a.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Archivo+Expanded:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 /* Uni Sans Heavy (local) */
 
@@ -166,7 +109,8 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Helvetica', 'Inter', sans-serif;
+    font-family: 'Archivo Expanded', 'Inter', sans-serif;
+    font-weight: 300;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 

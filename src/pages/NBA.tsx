@@ -2484,7 +2484,7 @@ return (
             textShadow: '0 1px 2px rgba(0,0,0,0.4)',
           }}
         >
-          {team.W}-{team.L}
+          {team.W} - {team.L}
         </Badge>
       </div>
 
@@ -3303,7 +3303,7 @@ useEffect(() => {
           }
         }}
       >
-<TabsList className="grid py-1 w-full grid-cols-5 max-w-none mb-4 pl-28">
+<TabsList className="grid py-2 px-2 w-full grid-cols-5 max-w-none mb-4 pl-28 gap-2 -mt-1">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
   <TabsTrigger value="standings">Standings</TabsTrigger>
   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -3814,8 +3814,8 @@ useEffect(() => {
   <div className="grid grid-cols-2 gap-4">
     {/* Western Conference */}
     <div>
-      <h2 className="text-xl font-bold mb-3 text-white text-center">West</h2>
-      <div className="grid grid-cols-1 gap-2">
+      <h2 className="text-xl mb-3 text-white text-center">WESTERN CONFERENCE</h2>
+      <div className="grid grid-cols-1 gap-3">
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
           .sort((a, b) => b.W - a.W)
@@ -3830,18 +3830,18 @@ useEffect(() => {
                 className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
                 onClick={() => setSelectedTeam(team)}
                 style={{
-                  backgroundImage: `linear-gradient(90deg, ${primaryColor}66 0%, ${primaryColor}66 60%, ${secondaryColor}66 100%)`,
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
                   animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                 }}
               >
                 {/* Card content */}
-                <div className="relative z-10 flex items-center justify-between px-4 py-3 h-20">
+                <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
                   {/* Team Logo - Large on left */}
                   {team.LOGO_URL && (
                     <img
                       src={team.LOGO_URL}
                       alt={`${team.TEAM_NAME} logo`}
-                      className="h-32 w-32 object-contain"
+                      className="h-40 w-40 object-contain"
                       loading="lazy"
                     />
                   )}
@@ -3850,7 +3850,7 @@ useEffect(() => {
                   <div className="flex flex-col items-end justify-between h-16">
                     {/* Ranking number at top */}
                     <div 
-                      className="text-2xl font-black text-white"
+                      className="text-lg font-black text-white"
                       style={{ lineHeight: '1' }}
                     >
                       #{index + 1}
@@ -3858,10 +3858,10 @@ useEffect(() => {
                     
                     {/* Record at bottom */}
                     <div 
-                      className="text-xl font-bold text-white"
+                      className="text-4xl font-bold text-white"
                       style={{ lineHeight: '1' }}
                     >
-                      {team.W}-{team.L}
+                      {team.W} - {team.L}
                     </div>
                   </div>
                 </div>
@@ -3873,8 +3873,8 @@ useEffect(() => {
 
     {/* Eastern Conference */}
     <div>
-      <h2 className="text-xl font-bold mb-3 text-white text-center">East</h2>
-      <div className="grid grid-cols-1 gap-2">
+      <h2 className="text-xl mb-3 text-white text-center">EASTERN CONFERENCE</h2>
+      <div className="grid grid-cols-1 gap-3">
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')
           .sort((a, b) => b.W - a.W)
@@ -3889,18 +3889,18 @@ useEffect(() => {
                 className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
                 onClick={() => setSelectedTeam(team)}
                 style={{
-                  backgroundImage: `linear-gradient(90deg, ${primaryColor}66 0%, ${primaryColor}66 60%, ${secondaryColor}66 100%)`,
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
                   animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                 }}
               >
                 {/* Card content */}
-                <div className="relative z-10 flex items-center justify-between px-4 py-3 h-20">
+                <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
                   {/* Team Logo - Large on left */}
                   {team.LOGO_URL && (
                     <img
                       src={team.LOGO_URL}
                       alt={`${team.TEAM_NAME} logo`}
-                      className="h-32 w-32 object-contain"
+                      className="h-40 w-40 object-contain"
                       loading="lazy"
                     />
                   )}
@@ -3909,7 +3909,7 @@ useEffect(() => {
                   <div className="flex flex-col items-end justify-between h-16">
                     {/* Ranking number at top */}
                     <div 
-                      className="text-2xl font-black text-white"
+                      className="text-lg font-black text-white"
                       style={{ lineHeight: '1' }}
                     >
                       #{index + 1}
@@ -3917,10 +3917,10 @@ useEffect(() => {
                     
                     {/* Record at bottom */}
                     <div 
-                      className="text-xl font-bold text-white"
+                      className="text-4xl font-bold text-white"
                       style={{ lineHeight: '1' }}
                     >
-                      {team.W}-{team.L}
+                      {team.W} - {team.L}
                     </div>
                   </div>
                 </div>
