@@ -286,36 +286,36 @@ const teamConferences: Record<string, { conference: string; division: string }> 
 // ============================
 
 const teamColors: Record<string, { primary: string; secondary: string }> = {
-  ATL: { primary: '#E03A3E', secondary: '#C1D32F' },
-  BOS: { primary: '#007A33', secondary: '#BA9653' },
-  BKN: { primary: '#000000', secondary: '#FFFFFF' },
-  CHA: { primary: '#1D1160', secondary: '#00788C' },
-  CHI: { primary: '#CE1141', secondary: '#000000' },
-  CLE: { primary: '#6F263D', secondary: '#FFB81C' },
-  DAL: { primary: '#00538C', secondary: '#002B5E' },
-  DEN: { primary: '#0E2240', secondary: '#FEC524' },
-  DET: { primary: '#C8102E', secondary: '#006BB6' },
-  GSW: { primary: '#1D428A', secondary: '#FFC72C' },
-  HOU: { primary: '#CE1141', secondary: '#C4CED4' },
-  IND: { primary: '#002D62', secondary: '#FDBB30' },
-  LAC: { primary: '#C8102E', secondary: '#1D428A' },
-  LAL: { primary: '#552583', secondary: '#FDB927' },
-  MEM: { primary: '#5D76A9', secondary: '#12173F' },
-  MIA: { primary: '#98002E', secondary: '#F9A01B' },
-  MIL: { primary: '#00471B', secondary: '#EDC87F' },
-  MIN: { primary: '#0C2340', secondary: '#236192' },
-  NOP: { primary: '#0C2340', secondary: '#C8102E' },
-  NYK: { primary: '#006BB6', secondary: '#F58426' },
-  OKC: { primary: '#007AC1', secondary: '#EF3B24' },
-  ORL: { primary: '#0077C0', secondary: '#C4CED4' },
-  PHI: { primary: '#006BB6', secondary: '#ED174C' },
-  PHX: { primary: '#1D1160', secondary: '#E56020' },
-  POR: { primary: '#E03A3E', secondary: '#000000' },
-  SAC: { primary: '#5A2D81', secondary: '#63727A' },
-  SAS: { primary: '#C4CED4', secondary: '#000000' },
-  TOR: { primary: '#CE1141', secondary: '#000000' },
-  UTA: { primary: '#002B5C', secondary: '#F9A01B' },
-  WAS: { primary: '#002B5C', secondary: '#E31837' },
+  ATL: { primary: '#E03A3E', secondary: '#C1D32F' }, // Red, Volt Green
+  BOS: { primary: '#007A33', secondary: '#BA9653' }, // Green, Gold
+  BKN: { primary: '#000000', secondary: '#FFFFFF' }, // Black, White
+  CHA: { primary: '#1D1160', secondary: '#00788C' }, // Purple, Teal
+  CHI: { primary: '#CE1141', secondary: '#000000' }, // Red, Black
+  CLE: { primary: '#860038', secondary: '#FDBB30' }, // Wine, Gold
+  DAL: { primary: '#00538C', secondary: '#B8C4CA' }, // Blue, Silver
+  DEN: { primary: '#0E2240', secondary: '#FEC524' }, // Navy, Gold
+  DET: { primary: '#C8102E', secondary: '#006BB6' }, // Red, Blue
+  GSW: { primary: '#1D428A', secondary: '#FFC72C' }, // Royal Blue, Gold
+  HOU: { primary: '#CE1141', secondary: '#000000' }, // Red, Black
+  IND: { primary: '#002D62', secondary: '#FDBB30' }, // Navy, Gold
+  LAC: { primary: '#090941', secondary: '#ffffff' }, // Red, Blue
+  LAL: { primary: '#552583', secondary: '#FDB927' }, // Purple, Gold
+  MEM: { primary: '#5D76A9', secondary: '#12173F' }, // Beale Street Blue, Navy
+  MIA: { primary: '#98002E', secondary: '#F9A01B' }, // Red, Yellow
+  MIL: { primary: '#00471B', secondary: '#EEE1C6' }, // Green, Cream
+  MIN: { primary: '#0C2340', secondary: '#236192' }, // Midnight Navy, Lake Blue
+  NOP: { primary: '#0C2340', secondary: '#C8102E' }, // Navy, Red
+  NYK: { primary: '#006BB6', secondary: '#F58426' }, // Blue, Orange
+  OKC: { primary: '#007AC1', secondary: '#EF3B24' }, // Blue, Orange
+  ORL: { primary: '#0077C0', secondary: '#C4CED4' }, // Blue, Silver
+  PHI: { primary: '#006BB6', secondary: '#ED174C' }, // Blue, Red
+  PHX: { primary: '#1D1160', secondary: '#E56020' }, // Purple, Orange
+  POR: { primary: '#E03A3E', secondary: '#000000' }, // Red, Black
+  SAC: { primary: '#5A2D81', secondary: '#63727A' }, // Purple, Silver
+  SAS: { primary: '#C4CED4', secondary: '#000000' }, // Silver, Black
+  TOR: { primary: '#000000', secondary: '#CE1141' }, // Red, Black
+  UTA: { primary: '#ffffff', secondary: '#753BBD' }, // Navy, Gold
+  WAS: { primary: '#002B5C', secondary: '#E31837' }, // Navy, Red
 };
 
 type TeamFilterKey =
@@ -1792,9 +1792,16 @@ const PlayerModal = ({
   }, [teamMatchups]);
 
   const latestCompletedMatchupId = React.useMemo(() => {
+    const now = Date.now();
+    // Find the most recent game that has a score AND is in the past
     for (let i = teamMatchupsWithRecord.length - 1; i >= 0; i -= 1) {
-      if (teamMatchupsWithRecord[i].outcome) {
-        return `matchup-${teamMatchupsWithRecord[i].game_id}`;
+      const game = teamMatchupsWithRecord[i];
+      const gameTimestamp = getGameTimestamp(game);
+      // Only consider games that:
+      // 1. Have an outcome (have been played)
+      // 2. Are in the past (timestamp < now)
+      if (game.outcome && gameTimestamp > 0 && gameTimestamp < now) {
+        return `matchup-${game.game_id}`;
       }
     }
     return null;
@@ -1922,7 +1929,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
       style={{ animation: 'fadeIn 0.2s ease-out' }}
     >
       <div
-        className="relative bg-background rounded-2xl max-w-6xl w-full max-h-[85vh] overflow-hidden border"
+        className="relative bg-background rounded-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden border"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: 'scaleIn 0.25s ease-out' }}
       >
@@ -1955,7 +1962,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
         </div>
 
         {/* Roster / Matchups */}
-        <div className={`p-6 ${modalTab === 'stats' ? 'overflow-y-hidden' : 'overflow-y-auto'} max-h-[calc(85vh-120px)] space-y-4`}>
+        <div className={`p-6 ${modalTab === 'stats' ? 'overflow-y-hidden' : 'overflow-y-auto'} max-h-[calc(90vh-140px)] space-y-4`}>
           <div className="w-full">
             <div className="inline-flex w-full items-center justify-center rounded-full bg-muted/40 p-1 shadow-inner backdrop-blur-sm">
               {MODAL_TAB_CONFIG.map((tab) => (
@@ -2006,12 +2013,12 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                 <div className="relative z-10 p-4 text-white">
                   <Card
                     className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1"
-                    style={{ backgroundColor: '#0000004c', opacity: 1, minHeight: '57vh' }}
+                    style={{ backgroundColor: '#0000004c', opacity: 1 }}
                   >
-                    <CardContent className="pt-6 pb-6 max-h-[60vh] overflow-hidden">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-20">
+                    <CardContent className="pt-6 pb-6 max-h-[70vh] overflow-y-auto">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4 xl:gap-x-10">
                         {TEAM_MODAL_STAT_COLUMNS.map((column, colIndex) => (
-                          <div key={`modal-col-${colIndex}`} className="space-y-3.5">
+                          <div key={`modal-col-${colIndex}`} className="space-y-3">
                             {column.map((stat) => (
                               <StatRow
                                 key={`modal-${stat.key}`}
@@ -3532,12 +3539,12 @@ useEffect(() => {
                 <button
                   key={t.TEAM_ID}
                   onClick={() => setSelectedTeamAll(t)}
-                  className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center transition-all duration-200 snap-start`}
+                  className={`relative w-full aspect-square rounded-xl overflow-hidden bg-card/70 flex items-center justify-center transition-all duration-200 snap-start focus:outline-none focus-visible:outline-none active:outline-none`}
                   style={
                     isActive
                       ? {
                           border: '3px solid white',
-                          boxShadow: '0 0 20px rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.3)',
+                          boxShadow: '0 0 20px rgba(255,255,255,0.6)',
                         }
                       : {
                           border: '1px solid rgba(255,255,255,0.1)',
@@ -3559,6 +3566,7 @@ useEffect(() => {
               );
             })}
           </div>
+
         </div>
 
         {/* Right: wide team card + players; parent does not scroll; inner players list scrolls */}
@@ -3795,40 +3803,55 @@ useEffect(() => {
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
           .sort((a, b) => b.W - a.W)
-          .map((team, index) => (
-            <div
-              key={team.TEAM_ID}
-              className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
-              onClick={() => setSelectedTeam(team)}
-              style={{
-                animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
-              }}
-            >
+          .map((team, index) => {
+            const teamAbbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
+            const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
+            const secondaryColor = teamColors[teamAbbr]?.secondary || '#dc2626';
+            
+            return (
               <div
-                className="absolute inset-0.5 rounded-lg"
-                style={{ backgroundColor: '#16181d47' }}
-                aria-hidden
-              />
-              <div className="relative z-10 flex items-center gap-3 p-2 border">
-                <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
-                  {index + 1}
-                </Badge>
-                <div className="flex-1 min-w-0 text-right">
-                  <h3 className="text-sm font-semibold truncate">({team.W}-{team.L}) {team.TEAM_NAME}</h3>
+                key={team.TEAM_ID}
+                className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
+                onClick={() => setSelectedTeam(team)}
+                style={{
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}66 0%, ${primaryColor}66 60%, ${secondaryColor}66 100%)`,
+                  animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+                }}
+              >
+                {/* Card content */}
+                <div className="relative z-10 flex items-center justify-between px-4 py-3 h-20">
+                  {/* Team Logo - Large on left */}
+                  {team.LOGO_URL && (
+                    <img
+                      src={team.LOGO_URL}
+                      alt={`${team.TEAM_NAME} logo`}
+                      className="h-32 w-32 object-contain"
+                      loading="lazy"
+                    />
+                  )}
+                  
+                  {/* Right side - Ranking and Record */}
+                  <div className="flex flex-col items-end justify-between h-16">
+                    {/* Ranking number at top */}
+                    <div 
+                      className="text-2xl font-black text-white"
+                      style={{ lineHeight: '1' }}
+                    >
+                      #{index + 1}
+                    </div>
+                    
+                    {/* Record at bottom */}
+                    <div 
+                      className="text-xl font-bold text-white"
+                      style={{ lineHeight: '1' }}
+                    >
+                      {team.W}-{team.L}
+                    </div>
+                  </div>
                 </div>
-                {team.LOGO_URL && (
-                  <img
-                    src={team.LOGO_URL}
-                    alt={`${team.TEAM_NAME} logo`}
-                    className="w-10 h-10 rounded-sm object-contain"
-                    loading="lazy"
-                    width={40}
-                    height={40}
-                  />
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
     </div>
 
@@ -3839,40 +3862,55 @@ useEffect(() => {
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')
           .sort((a, b) => b.W - a.W)
-          .map((team, index) => (
-            <div
-              key={team.TEAM_ID}
-              className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
-              onClick={() => setSelectedTeam(team)}
-              style={{
-                animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
-              }}
-            >
+          .map((team, index) => {
+            const teamAbbr = teamAbbreviations[team.TEAM_NAME] || 'UNK';
+            const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
+            const secondaryColor = teamColors[teamAbbr]?.secondary || '#dc2626';
+            
+            return (
               <div
-                className="absolute inset-0.5 rounded-lg"
-                style={{ backgroundColor: '#16181d47' }}
-                aria-hidden
-              />
-              <div className="relative z-10 flex items-center gap-3 p-2 border">
-                {team.LOGO_URL && (
-                  <img
-                    src={team.LOGO_URL}
-                    alt={`${team.TEAM_NAME} logo`}
-                    className="w-10 h-10 rounded-sm object-contain"
-                    loading="lazy"
-                    width={40}
-                    height={40}
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold truncate">{team.TEAM_NAME} ({team.W}-{team.L})</h3>
+                key={team.TEAM_ID}
+                className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
+                onClick={() => setSelectedTeam(team)}
+                style={{
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}66 0%, ${primaryColor}66 60%, ${secondaryColor}66 100%)`,
+                  animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+                }}
+              >
+                {/* Card content */}
+                <div className="relative z-10 flex items-center justify-between px-4 py-3 h-20">
+                  {/* Team Logo - Large on left */}
+                  {team.LOGO_URL && (
+                    <img
+                      src={team.LOGO_URL}
+                      alt={`${team.TEAM_NAME} logo`}
+                      className="h-32 w-32 object-contain"
+                      loading="lazy"
+                    />
+                  )}
+                  
+                  {/* Right side - Ranking and Record */}
+                  <div className="flex flex-col items-end justify-between h-16">
+                    {/* Ranking number at top */}
+                    <div 
+                      className="text-2xl font-black text-white"
+                      style={{ lineHeight: '1' }}
+                    >
+                      #{index + 1}
+                    </div>
+                    
+                    {/* Record at bottom */}
+                    <div 
+                      className="text-xl font-bold text-white"
+                      style={{ lineHeight: '1' }}
+                    >
+                      {team.W}-{team.L}
+                    </div>
+                  </div>
                 </div>
-                <Badge className="text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
-                  {index + 1}
-                </Badge>
               </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
     </div>
   </div>

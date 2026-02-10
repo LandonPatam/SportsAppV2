@@ -1,3 +1,60 @@
+/* Custom Fonts - Helvetica */
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/Helvetica.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/helvetica-light-587ebe5a59211.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/Helvetica-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/helvetica-rounded-bold-5871d05ead8de.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/Helvetica-Oblique.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/Helvetica-BoldOblique.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/data/fonts/helvetica-compressed-5871d14b6903a.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 /* Uni Sans Heavy (local) */
@@ -108,7 +165,8 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
+    font-family: 'Helvetica', 'Inter', sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
@@ -176,31 +234,53 @@
     @apply animate-pulse-gentle;
   }
 
-  /* Remove blue focus outline from tabs and navigation */
+  /* AGGRESSIVE FOCUS REMOVAL - Remove ALL focus outlines, rings, and highlights */
+  *,
+  *::before,
+  *::after,
+  button,
   button:focus,
   button:focus-visible,
+  button:active,
+  [role="tab"],
   [role="tab"]:focus,
   [role="tab"]:focus-visible,
+  a,
   a:focus,
   a:focus-visible {
     outline: none !important;
+    outline-width: 0 !important;
+    outline-style: none !important;
+    outline-color: transparent !important;
     box-shadow: none !important;
-    ring: 0 !important;
-  }
-
-  /* Remove focus ring specifically */
-  *:focus,
-  *:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
     --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-color: transparent !important;
+    --tw-ring-offset-color: transparent !important;
   }
 
   /* Target Tailwind ring utilities specifically */
   .focus\:ring-2:focus,
-  .focus-visible\:ring-2:focus-visible {
+  .focus-visible\:ring-2:focus-visible,
+  .focus\:ring:focus,
+  .focus-visible\:ring:focus-visible {
     --tw-ring-offset-shadow: 0 0 #0000 !important;
     --tw-ring-shadow: 0 0 #0000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Remove focus-visible entirely */
+  *:focus-visible {
+    outline: none !important;
+    outline-width: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Remove active state outlines */
+  *:active {
+    outline: none !important;
     box-shadow: none !important;
   }
 }
