@@ -2435,7 +2435,7 @@ const getHighlight = (statKey: TeamStatKey) => {
 
 return (
   <div
-className="relative rounded-xl overflow-hidden backdrop-blur-md bg-white/20"    style={{
+className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"    style={{
       backgroundImage: `linear-gradient(300deg, ${ 
         teamGradientColors[teamAbbr]?.start || '#1e40af}'
       }90, ${teamGradientColors[teamAbbr]?.end || '#dc2626'}90)`,
