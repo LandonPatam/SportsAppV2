@@ -833,7 +833,7 @@ const DashboardTodaySchedule = ({
           const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
 
           // Get team gradient colors for background
-          const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#1e40af';
+          const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#f8f8f8';
           const homeColor = homeAbbr && teamGradientColors[homeAbbr]?.start || '#dc2626';
 
           return (
@@ -1349,8 +1349,8 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: 
             const homeName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
 
             // Get team colors for vertical split with gradient
-            const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#1e40af';
-            const homeColor = homeAbbr && teamGradientColors[homeAbbr]?.start || '#dc2626';
+            const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#37fff5';
+            const homeColor = homeAbbr && teamGradientColors[homeAbbr]?.start || '#4d20c7';
 
             // Determine if we should show team names based on card count
             const showTeamNames = games.length <= 6;
@@ -3454,7 +3454,7 @@ useEffect(() => {
               className="relative rounded-xl overflow-hidden"
               style={{
                 backgroundImage: `linear-gradient(300deg, ${
-                  teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af'
+                  teamColors[player.TEAM_ABBREVIATION]?.primary || '#f0f0f0'
                 }, ${teamColors[player.TEAM_ABBREVIATION]?.secondary || '#dc2626'})`,
                 padding: '3px',
               }}
