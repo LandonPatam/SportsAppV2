@@ -6,8 +6,8 @@ type TabsTheme = "default" | "nfl" | "nba"
 
 const gradientMap: Record<TabsTheme, { from: string; to: string }> = {
   default: { from: "#F6EA41", to: "#F048C6" },
-  nfl: { from: "#07A3B2", to: "#D9ECC7" },
-  nba: { from: "#00ffeeff", to: "#cc00ffff" },
+  nfl: { from: "#ff7979", to: "#ffca58" },
+  nba: { from: "rgba(98, 0, 164, 0.95)", to: "rgba(0, 241, 246, 0.95)" },
 }
 
 const TabsGradientContext = React.createContext(gradientMap.default)

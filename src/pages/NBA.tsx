@@ -455,7 +455,7 @@ const teamGradientColors: Record<string, { start: string; end: string }> = {
   'SAC': { start: '#5A2D81', end: '#63727A' },
   'SAS': { start: '#C4CED4', end: '#000000' },
   'TOR': { start: '#CE1141', end: '#000000' },
-  'UTA': { start: '#270063ff', end: '#ffffffff' },
+  'UTA': { start: '#270063', end: '#ffffff' },
   'WAS': { start: '#002B5C', end: '#E31837' },
 };
 
@@ -832,6 +832,10 @@ const DashboardTodaySchedule = ({
           const awayFavorite = !!(awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID));
           const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
 
+          // Get team gradient colors for background
+          const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#1e40af';
+          const homeColor = homeAbbr && teamGradientColors[homeAbbr]?.start || '#dc2626';
+
           return (
             <Card
               key={g.game_id || `${g.matchup}-${g.date}`}
@@ -841,16 +845,26 @@ const DashboardTodaySchedule = ({
                 padding: `0 ${padding}px`,
               }}
             >
-               <div className="absolute top-2 left-2 z-20 flex items-center gap-1">
+              {/* Gradient background from away team color to home team color */}
+              <div 
+                className="absolute inset-0" 
+                style={{
+                  background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)`
+                }}
+              />
+              {/* Semi-transparent overlay for better text readability */}
+              <div className="absolute inset-0 bg-black/40" />
+              
+              <div className="absolute top-2 left-2 z-20 flex items-center gap-1">
                   {isLive && (
-                     <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[9px] tracking-wide rounded-full shadow-sm border-0">LIVE</Badge>
+                    <Badge className="bg-red-600 text-white font-bold px-2 py-0.5 text-[9px] tracking-wide rounded-full shadow-sm border-0">LIVE</Badge>
                   )}
                   {providers.length > 0 && providers.slice(0, 2).map(p => (
-                     <span key={p} className={`text-[9px] px-2 py-0.5 rounded-full font-bold tracking-wider ${getProviderStyle(p)}`}>
-                       {p}
-                     </span>
+                    <span key={p} className={`text-[9px] px-2 py-0.5 rounded-full font-bold tracking-wider ${getProviderStyle(p)}`}>
+                      {p}
+                    </span>
                   ))}
-               </div>
+              </div>
 
               <div className="flex-1 flex items-center justify-between w-full h-full relative z-10">
                 
@@ -1977,8 +1991,8 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
           </div>
         </div>
 
-        {/* Roster / Matchups */}
-        <div className={`p-6 ${modalTab === 'stats' ? 'overflow-y-hidden' : 'overflow-y-auto'} max-h-[calc(90vh-140px)] space-y-4`}>
+        {/* Tabs Navigation - Sticky */}
+        <div className="sticky top-[88px] bg-background border-b px-6 py-3 z-10">
           <div className="w-full">
             <div className="inline-flex w-full items-center justify-center rounded-full bg-muted/40 p-1 shadow-inner backdrop-blur-sm">
               {MODAL_TAB_CONFIG.map((tab) => (
@@ -2010,6 +2024,10 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Tab Content - Scrollable */}
+        <div className={`p-6 ${modalTab === 'stats' ? 'overflow-y-hidden' : 'overflow-y-auto'} max-h-[calc(90vh-200px)] space-y-4`}>
           {modalTab === 'stats' && (
             <div className="relative rounded-xl overflow-hidden">
               <div
@@ -2032,7 +2050,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                     style={{ backgroundColor: '#0000004c', opacity: 1 }}
                   >
                     <CardContent className="pt-6 pb-6 max-h-[70vh] overflow-y-auto">
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4 xl:gap-x-10">
+                      <div className="grid grid-cols-4 gap-x-3 gap-y-3">
                         {TEAM_MODAL_STAT_COLUMNS.map((column, colIndex) => (
                           <div key={`modal-col-${colIndex}`} className="space-y-3">
                             {column.map((stat) => (
@@ -2203,8 +2221,8 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                       <Card
                         key={`${game.game_id}-${matchupLabel}`}
                         id={cardId}
-                        className={`relative overflow-hidden transition-all duration-300 bg-card border p-2 ${
-                          highlightedMatchupId === cardId ? 'ring-2 ring-white shadow-[0_0_20px_rgba(255,255,255,0.45)]' : ''
+                        className={`relative overflow-hidden transition-all duration-300 bg-card p-2 ${
+                          highlightedMatchupId === cardId ? 'ring-4 ring-white border-2 border-white shadow-[0_0_20px_rgba(255,255,255,0.6)]' : 'border'
                         }`}
                       >
                         {/* TV badges */}
@@ -2228,14 +2246,14 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                             })}
                           </div>
                         )}
-                        <CardContent className="pt-2 text-white space-y-1.5">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center justify-center flex-1 self-stretch translate-y-[15px]">
+                        <CardContent className="py-1 px-2 text-white space-y-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center justify-center flex-1">
                               {awayLogo && (
                                 <img
                                   src={awayLogo}
                                   alt={awayAbbrResolved || 'Away'}
-                                  className={`h-10 w-10 rounded-sm object-contain ${
+                                  className={`h-18 w-18 rounded-sm object-contain ${
                                     isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''
                                   }`}
                                   style={
@@ -2248,8 +2266,8 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                               )}
                             </div>
 
-                            <div className="flex flex-col items-center justify-center gap-1 px-2 min-w-[120px] self-stretch">
-                              <div className="text-[11px] text-muted-foreground translate-y-[-10px]">{dateLabel}</div>
+                            <div className="flex flex-col items-center justify-center gap-1 px-2 min-w-[120px]">
+                              <div className="text-[11px] text-muted-foreground">{dateLabel}</div>
                               {isLive && (
                                 <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-0.5 text-[10px]">
                                   LIVE
@@ -2266,12 +2284,12 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                               )}
                             </div>
 
-                            <div className="flex items-center justify-center flex-1 self-stretch translate-y-[12px]">
+                            <div className="flex items-center justify-center flex-1">
                               {homeLogo && (
                                 <img
                                   src={homeLogo}
                                   alt={homeAbbrResolved || 'Home'}
-                                  className={`h-10 w-10 rounded-sm object-contain ${
+                                  className={`h-18 w-18 rounded-sm object-contain ${
                                     isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''
                                   }`}
                                   style={
@@ -2285,7 +2303,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                             </div>
                           </div>
 
-                          <div className="text-[10px] text-muted-foreground text-center translate-y-[20px]">
+                          <div className="text-[10px] text-muted-foreground text-center mt-1">
                             {game.location || (game.tv || (game.tv_providers || []).join(', ')) || 'Venue TBA'}
                           </div>
                         </CardContent>
@@ -2505,22 +2523,22 @@ return (
           
         </CardHeader>
 
-        <CardContent>
-          {/* 4-column stat grid to reduce height */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
+        <CardContent className="pt-0 pb-6 px-6">
+          {/* 4-column stat grid with increased spacing */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="space-y-3">
               <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
               <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
               <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
               <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
               <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} />
               <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} />
               <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} />
               <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
               <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
@@ -2528,7 +2546,7 @@ return (
                 highlight={getBpiHighlight('bpi')}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')}
                 highlight={getBpiHighlight('off')}
               />
@@ -3303,82 +3321,193 @@ useEffect(() => {
           }
         }}
       >
-<TabsList className="grid py-2 px-2 w-full grid-cols-5 max-w-none mb-4 pl-28 gap-2 -mt-1">
+<TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 pl-28 gap-2 -mt-1">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
   <TabsTrigger value="standings">Standings</TabsTrigger>
-  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
   <TabsTrigger value="all">Team Stats</TabsTrigger>
   <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
 </TabsList>
 
 <TabsContent value="dashboard">
-  {/* === Outer Grid === */}
-  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
+  {/* === Outer Container - Vertical Stack === */}
+  <div className="flex flex-col h-[calc(100vh-135px)] overflow-hidden -mt-0">
     
-    {/* === LEFT COLUMN (2 equal static cards) === */}
-    <div className="flex flex-col gap-4 lg:col-span-7 h-full overflow-hidden">
-      {/* Top Teams */}
-      <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-1">
-          <div className="mb-5 px-1 flex-shrink-0">
-            {/* Header content here if needed */}
-          </div>
-          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
+    {/* === TOP SECTION (Conference Leaders) === */}
+    <div className="w-full h-[35%]">
+      <Card className="bg-transparent border-0 w-full h-full flex flex-col overflow-hidden">
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">          
+          <div className="grid grid-cols-2 gap-4 flex-1">
+            {/* Western Conference Leader */}
             {(() => {
-              const list = dashboardTeamList;
-              return list.length ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {list.map((t) => (
-                    <DashboardTeamMiniCard
-                      key={t.TEAM_ID}
-                      team={t}
-                      highlight={dashboardHighlightTeamId === t.TEAM_ID}
-                      onClick={() => setSelectedTeam(t)}
-                      ref={(el) => {
-                        if (el) {
-                          dashboardTeamRefs.current[t.TEAM_ID] = el;
-                        } else {
-                          delete dashboardTeamRefs.current[t.TEAM_ID];
-                        }
-                      }}
-                    />
-                  ))}
+              const westLeader = nbaTeams
+                .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
+                .sort((a, b) => b.W - a.W)[0];
+              
+              if (!westLeader) return null;
+              
+              const teamAbbr = teamAbbreviations[westLeader.TEAM_NAME] || 'UNK';
+              const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
+              const secondaryColor = teamColors[teamAbbr]?.secondary || '#dc2626';
+              
+              return (
+                <div>
+                  <div
+                    className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
+                    onClick={() => setSelectedTeam(westLeader)}
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
+                    }}
+                  >
+                    <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
+                      {westLeader.LOGO_URL && (
+                        <img
+                          src={westLeader.LOGO_URL}
+                          alt={`${westLeader.TEAM_NAME} logo`}
+                          className="h-40 w-40 object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="flex flex-col items-end justify-between h-16">
+                        <div className="text-lg font-black text-white" style={{ lineHeight: '1' }}>
+                          #1
+                        </div>
+                        <div className="text-4xl font-bold text-white" style={{ lineHeight: '1' }}>
+                          {westLeader.W} - {westLeader.L}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-sm text-muted-foreground py-4">No team data</div>
               );
             })()}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Top Players */}
-      <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-1">
-          <div className="mb-5 px-1 flex-shrink-0">
-            {/* Header content here if needed */}
-          </div>
-          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
+            
+            {/* Eastern Conference Leader */}
             {(() => {
-              const list = dashboardPlayerList;
-              return list.length ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {list.map((p, idx) => (
-                    <DashboardPlayerMiniCard key={p.PLAYER_ID} player={p} logoMap={abbrToLogo} rank={idx + 1} />
-                  ))}
+              const eastLeader = nbaTeams
+                .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')
+                .sort((a, b) => b.W - a.W)[0];
+              
+              if (!eastLeader) return null;
+              
+              const teamAbbr = teamAbbreviations[eastLeader.TEAM_NAME] || 'UNK';
+              const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
+              const secondaryColor = teamColors[teamAbbr]?.secondary || '#dc2626';
+              
+              return (
+                <div>
+                  <div
+                    className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
+                    onClick={() => setSelectedTeam(eastLeader)}
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
+                    }}
+                  >
+                    <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
+                      {eastLeader.LOGO_URL && (
+                        <img
+                          src={eastLeader.LOGO_URL}
+                          alt={`${eastLeader.TEAM_NAME} logo`}
+                          className="h-40 w-40 object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="flex flex-col items-end justify-between h-16">
+                        <div className="text-lg font-black text-white" style={{ lineHeight: '1' }}>
+                          #1
+                        </div>
+                        <div className="text-4xl font-bold text-white" style={{ lineHeight: '1' }}>
+                          {eastLeader.W} - {eastLeader.L}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-sm text-muted-foreground py-4">No player data</div>
               );
             })()}
           </div>
         </CardContent>
       </Card>
     </div>
+
+    {/* === STAT LEADERS SECTION === */}
+    <div className="w-full px-4 pb-4">
+      <div className="grid grid-cols-2 gap-4">
+        {(() => {
+          const allPlayers = Object.values(nbaPlayerData).flat();
+          
+          // Find leaders for each stat
+          const statLeaders = {
+            PTS: [...allPlayers].sort((a, b) => b.PTS - a.PTS)[0],
+            REB: [...allPlayers].sort((a, b) => b.REB - a.REB)[0],
+            AST: [...allPlayers].sort((a, b) => b.AST - a.AST)[0],
+            BLK: [...allPlayers].sort((a, b) => b.BLK - a.BLK)[0],
+            FGA: [...allPlayers].sort((a, b) => b.FGA - a.FGA)[0],
+            FG3A: [...allPlayers].sort((a, b) => b.FG3A - a.FG3A)[0],
+            FTA: [...allPlayers].sort((a, b) => b.FTA - a.FTA)[0],
+          };
+
+          // Group stats by player
+          const playerStats: Record<number, { player: Player; stats: Array<{ label: string; value: number }> }> = {};
+          
+          Object.entries(statLeaders).forEach(([stat, player]) => {
+            if (!player) return;
+            if (!playerStats[player.PLAYER_ID]) {
+              playerStats[player.PLAYER_ID] = { player, stats: [] };
+            }
+            const label = stat === 'PTS' ? 'PPG' : stat === 'FG3A' ? '3PA' : stat;
+            const value = player[stat as keyof Player] as number;
+            playerStats[player.PLAYER_ID].stats.push({ label, value });
+          });
+
+          // Render combined cards
+          return Object.values(playerStats).map(({ player, stats }) => (
+            <div
+              key={player.PLAYER_ID}
+              className="relative rounded-xl overflow-hidden"
+              style={{
+                backgroundImage: `linear-gradient(300deg, ${
+                  teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af'
+                }, ${teamColors[player.TEAM_ABBREVIATION]?.secondary || '#dc2626'})`,
+                padding: '3px',
+              }}
+            >
+              <div
+                className="absolute inset-1 rounded-xl"
+                style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
+                aria-hidden
+              />
+              <div className="relative z-10 p-3 text-white">
+                <div className="flex items-center gap-2">
+                  {abbrToLogo[player.TEAM_ABBREVIATION] && (
+                    <img
+                      src={abbrToLogo[player.TEAM_ABBREVIATION]}
+                      alt={`${player.TEAM_ABBREVIATION} logo`}
+                      className="w-10 h-10 rounded-sm flex-shrink-0"
+                      loading="lazy"
+                      width={40}
+                      height={40}
+                    />
+                  )}
+                  <h3 className="text-sm font-bold truncate flex-1">{player.PLAYER_NAME}</h3>
+                  <div className="flex gap-4 flex-shrink-0">
+                    {stats.map((stat, idx) => (
+                      <div key={idx} className="text-right">
+                        <div className="text-xs text-gray-400 leading-none">{stat.label}</div>
+                        <div className="text-lg font-bold text-yellow-400 leading-tight">{stat.value.toFixed(1)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ));
+        })()}
+      </div>
+    </div>
     
-    {/* Right column */}
-    <div className="lg:col-span-5 h-full overflow-hidden">
-      <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
+    {/* === BOTTOM SECTION (Schedule) === */}
+    <div className="w-full flex-1 min-h-0">
+      <Card className="bg-transparent border-0 w-full h-full flex flex-col overflow-hidden">
         <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
           <DashboardTodaySchedule
             scheduleData={scheduleData}
@@ -3585,8 +3714,8 @@ useEffect(() => {
 
         </div>
 
-        {/* Right: wide team card + players; parent does not scroll; inner players list scrolls */}
-        <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col gap-5 pr-0">
+        {/* Right: wide team card + players; entire section scrolls together */}
+        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-24">
           {currentTeam && (() => {
             const teamAbbr = teamAbbreviations[currentTeam.TEAM_NAME] || 'UNK';
             const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
@@ -3700,7 +3829,7 @@ useEffect(() => {
             return (
               <div className="w-full flex flex-wrap gap-4 items-start">
                 {/* Team card - fixed width, no shrinking */}
-                <div className="w-full min-w-[450px] max-w-[550px] shrink-0">
+                <div className="w-full min-w-[550px] max-w-[800px] shrink-0">
                   <TeamCard
                     team={{ ...currentTeam, rank: (teams.findIndex((tt) => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
                     leagueAverages={leagueAverages}
@@ -3732,11 +3861,11 @@ useEffect(() => {
             );
           })()}
 
-          {/* Players list (scrollable with snap, no rank number) */}
-          <div className="flex-1 min-h-0 flex flex-col">
+          {/* Players list (no independent scroll, uses parent scroll) */}
+          <div className="flex-1 flex flex-col">
             {topTeamPlayers.length ? (
               <div
-                className="flex-1 min-h-0 overflow-y-auto no-scrollbar snap-y snap-mandatory pt-0 pb-8"
+                className="snap-y snap-mandatory pt-0 pb-24"
                 style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
               >
                 <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
@@ -3830,7 +3959,7 @@ useEffect(() => {
                 className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
                 onClick={() => setSelectedTeam(team)}
                 style={{
-                  backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}85 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
                   animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                 }}
               >
@@ -3889,7 +4018,7 @@ useEffect(() => {
                 className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
                 onClick={() => setSelectedTeam(team)}
                 style={{
-                  backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}85 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
                   animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                 }}
               >

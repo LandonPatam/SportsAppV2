@@ -1097,9 +1097,8 @@ useEffect(() => {
         onValueChange={(v) => setActiveTab(v)}
       >
         {!scheduleOnly && (
-          <TabsList className="grid w-full grid-cols-5 mb-4 max-w-none pl-28">
+          <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 pl-28 gap-2 -mt-1">
             <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="all">Team Stats</TabsTrigger>
             <TabsTrigger value="AFC">AFC</TabsTrigger>
             <TabsTrigger value="NFC">NFC</TabsTrigger>
