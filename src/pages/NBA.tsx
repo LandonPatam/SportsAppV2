@@ -3309,7 +3309,7 @@ useEffect(() => {
           }
         }}
       >
-<TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-4 pl-32">
+  <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
   <TabsTrigger value="standings">Standings</TabsTrigger>
   <TabsTrigger value="all">Team Stats</TabsTrigger>
