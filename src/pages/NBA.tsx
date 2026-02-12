@@ -1358,7 +1358,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: 
             return (
               <Card 
                 key={g.game_id} 
-                className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20"
+                className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
                 onClick={(e) => {
                   e.stopPropagation();
                   console.log('Card clicked, game_id:', g.game_id);
@@ -1452,13 +1452,13 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: 
                       {/* Center time or score */}
                       <div className="flex items-center justify-center">
                         {hasScores ? (
-                          <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1rem, 3.5cqi, 1.5rem)" }}>
+                          <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
                             <span className={awayScoreClass}>{aScore}</span>
                             <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                             <span className={homeScoreClass}>{hScore}</span>
                           </div>
                         ) : (
-                          <div className="font-bold text-white" style={{ fontSize: "clamp(0.75rem, 2.8cqi, 1.1rem)" }}>
+                          <div className="font-bold text-white" style={{ fontSize: "clamp(0.875rem, 3.2cqi, 1.3rem)" }}>
                             {g.time || 'TBA'}
                           </div>
                         )}
@@ -3959,24 +3959,14 @@ useEffect(() => {
                 className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
                 onClick={() => setSelectedTeam(team)}
                 style={{
-                  backgroundImage: `linear-gradient(90deg, ${primaryColor}85 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
+                  backgroundImage: `linear-gradient(-90deg, ${primaryColor}95 0%, ${primaryColor}45 20%, transparent 85%)`,
                   animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                 }}
               >
                 {/* Card content */}
                 <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
-                  {/* Team Logo - Large on left */}
-                  {team.LOGO_URL && (
-                    <img
-                      src={team.LOGO_URL}
-                      alt={`${team.TEAM_NAME} logo`}
-                      className="h-40 w-40 object-contain"
-                      loading="lazy"
-                    />
-                  )}
-                  
-                  {/* Right side - Ranking and Record */}
-                  <div className="flex flex-col items-end justify-between h-16">
+                  {/* Left side - Ranking and Record */}
+                  <div className="flex flex-col items-start justify-between h-16">
                     {/* Ranking number at top */}
                     <div 
                       className="text-lg font-black text-white"
@@ -3993,6 +3983,16 @@ useEffect(() => {
                       {team.W} - {team.L}
                     </div>
                   </div>
+                  
+                  {/* Team Logo - Large on right */}
+                  {team.LOGO_URL && (
+                    <img
+                      src={team.LOGO_URL}
+                      alt={`${team.TEAM_NAME} logo`}
+                      className="h-40 w-40 object-contain"
+                      loading="lazy"
+                    />
+                  )}
                 </div>
               </div>
             );
@@ -4018,7 +4018,7 @@ useEffect(() => {
                 className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
                 onClick={() => setSelectedTeam(team)}
                 style={{
-                  backgroundImage: `linear-gradient(90deg, ${primaryColor}85 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
+                  backgroundImage: `linear-gradient(90deg, ${primaryColor}95 0%, ${primaryColor}45 20%, transparent 85%)`,
                   animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                 }}
               >
