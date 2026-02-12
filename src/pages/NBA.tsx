@@ -428,7 +428,7 @@ const teamAbbreviations: Record<string, string> = {
 
 const teamGradientColors: Record<string, { start: string; end: string }> = {
   'ATL': { start: '#ff0004ff', end: '#fff831ff' },
-  'BOS': { start: '#007A33', end: '#ffffffff' },
+  'BOS': { start: '#ffffff', end: '#007A33' },
   'BKN': { start: '#000000', end: '#FFFFFF' },
   'CHA': { start: '#1D1160', end: '#00788C' },
   'CHI': { start: '#CE1141', end: '#000000' },
@@ -449,7 +449,7 @@ const teamGradientColors: Record<string, { start: string; end: string }> = {
   'NYK': { start: '#006BB6', end: '#F58426' },
   'OKC': { start: '#007AC1', end: '#EF3B24' },
   'ORL': { start: '#0077C0', end: '#C4CED4' },
-  'PHI': { start: '#006BB6', end: '#ED174C' },
+  'PHI': { start: '#ED184C', end: '#012B5C' },
   'PHX': { start: '#1D1160', end: '#E56020' },
   'POR': { start: '#ffffffff', end: '#E03A3E' },
   'SAC': { start: '#5A2D81', end: '#63727A' },
@@ -2435,25 +2435,13 @@ const getHighlight = (statKey: TeamStatKey) => {
 
 return (
   <div
-    className="relative rounded-xl overflow-hidden"
-    style={{
-      backgroundImage: `linear-gradient(300deg, ${
-        teamGradientColors[teamAbbr]?.start || '#1e40af'
-      }, ${teamGradientColors[teamAbbr]?.end || '#dc2626'})`,
-      padding: '3px',
+className="relative rounded-xl overflow-hidden backdrop-blur-md bg-white/20"    style={{
+      backgroundImage: `linear-gradient(300deg, ${ 
+        teamGradientColors[teamAbbr]?.start || '#1e40af}'
+      }90, ${teamGradientColors[teamAbbr]?.end || '#dc2626'}90)`,
     }}
   >
-    {/* === Dark overlay over the gradient === */}
-    <div
-      className="absolute inset-1 rounded-xl"
-      style={{
-        backgroundColor: '#1d1d1dff',
-        opacity: 1,
-      }}
-      aria-hidden
-    />
-
-    {/* === Foreground content (sits above overlay) === */}
+    {/* === Foreground content (sits above gradient) === */}
     <div className="relative z-10 p-4 text-white">
       {/* === Team header on top of gradient === */}
       <div className="flex items-center gap-2 mb-3">
@@ -2461,7 +2449,7 @@ return (
           <img
             src={team.LOGO_URL}
             alt={`${team.TEAM_NAME} logo`}
-            className="w-8 h-8 rounded-sm"
+            className="w-16 h-16 rounded-sm"
           />
         )}
         <div className="flex items-center gap-2 min-w-0">
@@ -2514,7 +2502,7 @@ return (
           onClick ? 'cursor-pointer' : ''
         }`}
         style={{
-        backgroundColor: '#0000004c',
+        backgroundColor: '#000000d2',
         opacity: 1,
       }}
  
@@ -3321,7 +3309,7 @@ useEffect(() => {
           }
         }}
       >
-<TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 pl-28 gap-2 -mt-1">
+<TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-4 pl-32">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
   <TabsTrigger value="standings">Standings</TabsTrigger>
   <TabsTrigger value="all">Team Stats</TabsTrigger>

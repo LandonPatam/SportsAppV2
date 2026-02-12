@@ -25,7 +25,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className="fixed top-6 left-6 z-50">
         <button
           onClick={handleToggle}
-          className="relative inline-flex h-10 w-20 items-center rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background shadow-lg overflow-hidden"
+          className="relative inline-flex h-11 w-20 items-center rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background shadow-lg overflow-hidden"
           style={{
             background: isNBA 
               ? 'linear-gradient(to right, rgba(98, 0, 164, 0.95), rgba(0, 241, 246, 0.95))' 

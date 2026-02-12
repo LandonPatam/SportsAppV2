@@ -1097,7 +1097,7 @@ useEffect(() => {
         onValueChange={(v) => setActiveTab(v)}
       >
         {!scheduleOnly && (
-          <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 pl-28 gap-2 -mt-1">
+  <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
             <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
             <TabsTrigger value="all">Team Stats</TabsTrigger>
             <TabsTrigger value="AFC">AFC</TabsTrigger>
@@ -2127,7 +2127,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full pb-16">
           {games.map((g) => {
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
@@ -2166,7 +2166,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
             return (
               <Card 
                 key={g.game_id} 
-                className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20"
+                className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
                 onClick={() => {
                   if (g.game_id && onGameClick) {
                     onGameClick(g.game_id);
@@ -2266,7 +2266,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
                           const s = String(g.status || '').toLowerCase();
                           if (s === 'final') {
                             return (
-                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1rem, 3.5cqi, 1.5rem)" }}>
+                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
                                 <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                                 <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                                 <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
@@ -2276,7 +2276,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
                           if (s.includes('live')) {
                             return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
                           }
-                          return <div className="font-bold text-white" style={{ fontSize: "clamp(0.75rem, 2.8cqi, 1.1rem)" }}>{g.time || 'TBA'}</div>;
+                          return <div className="font-bold text-white" style={{ fontSize: "clamp(0.875rem, 3.2cqi, 1.3rem)" }}>{g.time || 'TBA'}</div>;
                         })()}
                         {g.tv && providers.length === 0 && (
                           <div className="text-white/70 truncate mx-auto max-w-[140px] mt-1" style={{ fontSize: "clamp(0.5rem, 1.5cqi, 0.625rem)" }}>{String(g.tv)}</div>
@@ -2301,11 +2301,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
                     </div>
                   </div>
 
-                  {/* Footer: location */}
-                  {g.location && (
-                    <div className="text-white/60 text-center" style={{ marginTop: "0.5cqi", fontSize: "clamp(0.5rem, 1.5cqi, 0.75rem)" }}>{g.location}</div>
-                  )}
-                </CardContent>
+              </CardContent>
               </Card>
             );
           })}
