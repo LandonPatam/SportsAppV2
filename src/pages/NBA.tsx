@@ -427,7 +427,7 @@ const teamAbbreviations: Record<string, string> = {
 };
 
 const teamGradientColors: Record<string, { start: string; end: string }> = {
-  'ATL': { start: '#ff0004ff', end: '#fff831ff' },
+  'ATL': { start: '#E03A3E', end: '#C1D32F' },
   'BOS': { start: '#ffffff', end: '#007A33' },
   'BKN': { start: '#000000', end: '#FFFFFF' },
   'CHA': { start: '#1D1160', end: '#00788C' },
@@ -439,7 +439,7 @@ const teamGradientColors: Record<string, { start: string; end: string }> = {
   'GSW': { start: '#1D428A', end: '#FFC72C' },
   'HOU': { start: '#CE1141', end: '#000000' },
   'IND': { start: '#002D62', end: '#FDBB30' },
-  'LAC': { start: '#ffffffff', end: '#1D428A' },
+  'LAC': { start: '#C8102E', end: '#1D428A' },
   'LAL': { start: '#552583', end: '#FDB927' },
   'MEM': { start: '#5D76A9', end: '#12173F' },
   'MIA': { start: '#98002E', end: '#F9A01B' },
@@ -451,7 +451,7 @@ const teamGradientColors: Record<string, { start: string; end: string }> = {
   'ORL': { start: '#0077C0', end: '#C4CED4' },
   'PHI': { start: '#ED184C', end: '#012B5C' },
   'PHX': { start: '#1D1160', end: '#E56020' },
-  'POR': { start: '#ffffffff', end: '#E03A3E' },
+  'POR': { start: '#E03A3E', end: '#000000' },
   'SAC': { start: '#5A2D81', end: '#63727A' },
   'SAS': { start: '#C4CED4', end: '#000000' },
   'TOR': { start: '#CE1141', end: '#000000' },
@@ -3816,6 +3816,7 @@ useEffect(() => {
                 {/* Team card - fixed width, no shrinking */}
                 <div className="w-full min-w-[550px] max-w-[800px] shrink-0">
                   <TeamCard
+                    key={currentTeam.TEAM_ID}
                     team={{ ...currentTeam, rank: (teams.findIndex((tt) => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
                     leagueAverages={leagueAverages}
                     allTeams={nbaTeams}

@@ -589,21 +589,23 @@ const TeamCard = ({
       {/* === Foreground content === */}
       <div className={`relative z-10 text-white ${compact ? 'p-2' : 'p-4'}`}>
         {compact ? (
-          // Compact layout: logo, name, record, rank in one line
+          // Compact layout: logo, name on left, rank and record stacked vertically on right
           <div className="flex items-center gap-2">
             {team.logo && (
               <img
                 src={team.logo}
                 alt={`${team.name} logo`}
-                className="w-10 h-10 rounded-sm flex-shrink-0"
+                className="w-12 h-12 rounded-sm flex-shrink-0"
               />
             )}
-            <h3 className="text-base font-bold truncate flex-1 min-w-0">{team.name}</h3>
-            <div className="text-xl font-bold whitespace-nowrap flex-shrink-0">
-              {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
-            </div>
-            <div className="text-xl font-bold flex-shrink-0 ml-3">
-              #{(team as any).rank || '—'}
+            <h3 className="text-lg font-bold truncate flex-1 min-w-0">{team.name}</h3>
+            <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+              <div className="text-xl font-bold whitespace-nowrap">
+                #{(team as any).rank || '—'}
+              </div>
+              <div className="text-xl font-bold whitespace-nowrap">
+                {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
+              </div>
             </div>
           </div>
         ) : (
