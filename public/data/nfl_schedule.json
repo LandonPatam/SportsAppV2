@@ -1,0 +1,4603 @@
+[
+  {
+    "game_id": "401772510",
+    "matchup": "Dallas Cowboys @ Philadelphia Eagles",
+    "date": "2025-09-04",
+    "time": "5:20 PM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772510/cowboys-eagles",
+    "winner": "Philadelphia Eagles",
+    "home_score": "24",
+    "away_score": "20",
+    "ts_utc": 1757031600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772714",
+    "matchup": "Kansas City Chiefs @ Los Angeles Chargers",
+    "date": "2025-09-05",
+    "time": "5:00 PM",
+    "location": "Corinthians Arena",
+    "tv_providers": [],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772714/chiefs-chargers",
+    "winner": "Los Angeles Chargers",
+    "home_score": "27",
+    "away_score": "21",
+    "ts_utc": 1757116800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772718",
+    "matchup": "Arizona Cardinals @ New Orleans Saints",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772718/cardinals-saints",
+    "winner": "Arizona Cardinals",
+    "home_score": "13",
+    "away_score": "20",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772719",
+    "matchup": "Miami Dolphins @ Indianapolis Colts",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772719/dolphins-colts",
+    "winner": "Indianapolis Colts",
+    "home_score": "33",
+    "away_score": "8",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772720",
+    "matchup": "Las Vegas Raiders @ New England Patriots",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772720/raiders-patriots",
+    "winner": "Las Vegas Raiders",
+    "home_score": "13",
+    "away_score": "20",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772721",
+    "matchup": "Pittsburgh Steelers @ New York Jets",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772721/steelers-jets",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "32",
+    "away_score": "34",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772827",
+    "matchup": "New York Giants @ Washington Commanders",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772827/giants-commanders",
+    "winner": "Washington Commanders",
+    "home_score": "21",
+    "away_score": "6",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772828",
+    "matchup": "Carolina Panthers @ Jacksonville Jaguars",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772828/panthers-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "26",
+    "away_score": "10",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772829",
+    "matchup": "Cincinnati Bengals @ Cleveland Browns",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772829/bengals-browns",
+    "winner": "Cincinnati Bengals",
+    "home_score": "16",
+    "away_score": "17",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772830",
+    "matchup": "Tampa Bay Buccaneers @ Atlanta Falcons",
+    "date": "2025-09-07",
+    "time": "10:00 AM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772830/buccaneers-falcons",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "20",
+    "away_score": "23",
+    "ts_utc": 1757264400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772831",
+    "matchup": "San Francisco 49ers @ Seattle Seahawks",
+    "date": "2025-09-07",
+    "time": "1:05 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772831/49ers-seahawks",
+    "winner": "San Francisco 49ers",
+    "home_score": "13",
+    "away_score": "17",
+    "ts_utc": 1757275500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772832",
+    "matchup": "Tennessee Titans @ Denver Broncos",
+    "date": "2025-09-07",
+    "time": "1:05 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772832/titans-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "20",
+    "away_score": "12",
+    "ts_utc": 1757275500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772722",
+    "matchup": "Detroit Lions @ Green Bay Packers",
+    "date": "2025-09-07",
+    "time": "1:25 PM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772722/lions-packers",
+    "winner": "Green Bay Packers",
+    "home_score": "27",
+    "away_score": "13",
+    "ts_utc": 1757276700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772723",
+    "matchup": "Houston Texans @ Los Angeles Rams",
+    "date": "2025-09-07",
+    "time": "1:25 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772723/texans-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "14",
+    "away_score": "9",
+    "ts_utc": 1757276700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772918",
+    "matchup": "Baltimore Ravens @ Buffalo Bills",
+    "date": "2025-09-07",
+    "time": "5:20 PM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772918/ravens-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "41",
+    "away_score": "40",
+    "ts_utc": 1757290800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772810",
+    "matchup": "Minnesota Vikings @ Chicago Bears",
+    "date": "2025-09-08",
+    "time": "5:15 PM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772810/vikings-bears",
+    "winner": "Minnesota Vikings",
+    "home_score": "24",
+    "away_score": "27",
+    "ts_utc": 1757376900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772936",
+    "matchup": "Washington Commanders @ Green Bay Packers",
+    "date": "2025-09-11",
+    "time": "5:15 PM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772936/commanders-packers",
+    "winner": "Green Bay Packers",
+    "home_score": "27",
+    "away_score": "18",
+    "ts_utc": 1757636100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772724",
+    "matchup": "Los Angeles Rams @ Tennessee Titans",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772724/rams-titans",
+    "winner": "Los Angeles Rams",
+    "home_score": "19",
+    "away_score": "33",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772725",
+    "matchup": "Jacksonville Jaguars @ Cincinnati Bengals",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772725/jaguars-bengals",
+    "winner": "Cincinnati Bengals",
+    "home_score": "31",
+    "away_score": "27",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772726",
+    "matchup": "Cleveland Browns @ Baltimore Ravens",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772726/browns-ravens",
+    "winner": "Baltimore Ravens",
+    "home_score": "41",
+    "away_score": "17",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772727",
+    "matchup": "Buffalo Bills @ New York Jets",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772727/bills-jets",
+    "winner": "Buffalo Bills",
+    "home_score": "10",
+    "away_score": "30",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772728",
+    "matchup": "New England Patriots @ Miami Dolphins",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772728/patriots-dolphins",
+    "winner": "New England Patriots",
+    "home_score": "27",
+    "away_score": "33",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772833",
+    "matchup": "San Francisco 49ers @ New Orleans Saints",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772833/49ers-saints",
+    "winner": "San Francisco 49ers",
+    "home_score": "21",
+    "away_score": "26",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772834",
+    "matchup": "New York Giants @ Dallas Cowboys",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772834/giants-cowboys",
+    "winner": "Dallas Cowboys",
+    "home_score": "40",
+    "away_score": "37",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772835",
+    "matchup": "Chicago Bears @ Detroit Lions",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772835/bears-lions",
+    "winner": "Detroit Lions",
+    "home_score": "52",
+    "away_score": "21",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772836",
+    "matchup": "Seattle Seahawks @ Pittsburgh Steelers",
+    "date": "2025-09-14",
+    "time": "10:00 AM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772836/seahawks-steelers",
+    "winner": "Seattle Seahawks",
+    "home_score": "17",
+    "away_score": "31",
+    "ts_utc": 1757869200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772729",
+    "matchup": "Denver Broncos @ Indianapolis Colts",
+    "date": "2025-09-14",
+    "time": "1:05 PM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772729/broncos-colts",
+    "winner": "Indianapolis Colts",
+    "home_score": "29",
+    "away_score": "28",
+    "ts_utc": 1757880300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772730",
+    "matchup": "Carolina Panthers @ Arizona Cardinals",
+    "date": "2025-09-14",
+    "time": "1:05 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772730/panthers-cardinals",
+    "winner": "Arizona Cardinals",
+    "home_score": "27",
+    "away_score": "22",
+    "ts_utc": 1757880300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772837",
+    "matchup": "Philadelphia Eagles @ Kansas City Chiefs",
+    "date": "2025-09-14",
+    "time": "1:25 PM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772837/eagles-chiefs",
+    "winner": "Philadelphia Eagles",
+    "home_score": "17",
+    "away_score": "20",
+    "ts_utc": 1757881500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772919",
+    "matchup": "Atlanta Falcons @ Minnesota Vikings",
+    "date": "2025-09-14",
+    "time": "5:20 PM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772919/falcons-vikings",
+    "winner": "Atlanta Falcons",
+    "home_score": "6",
+    "away_score": "22",
+    "ts_utc": 1757895600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772715",
+    "matchup": "Tampa Bay Buccaneers @ Houston Texans",
+    "date": "2025-09-15",
+    "time": "4:00 PM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772715/buccaneers-texans",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "19",
+    "away_score": "20",
+    "ts_utc": 1757977200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772811",
+    "matchup": "Los Angeles Chargers @ Las Vegas Raiders",
+    "date": "2025-09-15",
+    "time": "7:00 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772811/chargers-raiders",
+    "winner": "Los Angeles Chargers",
+    "home_score": "9",
+    "away_score": "20",
+    "ts_utc": 1757988000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772937",
+    "matchup": "Miami Dolphins @ Buffalo Bills",
+    "date": "2025-09-18",
+    "time": "5:15 PM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772937/dolphins-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "31",
+    "away_score": "21",
+    "ts_utc": 1758240900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772731",
+    "matchup": "Cincinnati Bengals @ Minnesota Vikings",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772731/bengals-vikings",
+    "winner": "Minnesota Vikings",
+    "home_score": "48",
+    "away_score": "10",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772732",
+    "matchup": "Pittsburgh Steelers @ New England Patriots",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772732/steelers-patriots",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "14",
+    "away_score": "21",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772733",
+    "matchup": "Indianapolis Colts @ Tennessee Titans",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772733/colts-titans",
+    "winner": "Indianapolis Colts",
+    "home_score": "20",
+    "away_score": "41",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772734",
+    "matchup": "Houston Texans @ Jacksonville Jaguars",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772734/texans-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "17",
+    "away_score": "10",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772838",
+    "matchup": "Atlanta Falcons @ Carolina Panthers",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772838/falcons-panthers",
+    "winner": "Carolina Panthers",
+    "home_score": "30",
+    "away_score": "0",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772839",
+    "matchup": "Los Angeles Rams @ Philadelphia Eagles",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772839/rams-eagles",
+    "winner": "Philadelphia Eagles",
+    "home_score": "33",
+    "away_score": "26",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772840",
+    "matchup": "New York Jets @ Tampa Bay Buccaneers",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772840/jets-buccaneers",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "29",
+    "away_score": "27",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772841",
+    "matchup": "Las Vegas Raiders @ Washington Commanders",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772841/raiders-commanders",
+    "winner": "Washington Commanders",
+    "home_score": "41",
+    "away_score": "24",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772842",
+    "matchup": "Green Bay Packers @ Cleveland Browns",
+    "date": "2025-09-21",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772842/packers-browns",
+    "winner": "Cleveland Browns",
+    "home_score": "13",
+    "away_score": "10",
+    "ts_utc": 1758474000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772735",
+    "matchup": "Denver Broncos @ Los Angeles Chargers",
+    "date": "2025-09-21",
+    "time": "1:05 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772735/broncos-chargers",
+    "winner": "Los Angeles Chargers",
+    "home_score": "23",
+    "away_score": "20",
+    "ts_utc": 1758485100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772736",
+    "matchup": "New Orleans Saints @ Seattle Seahawks",
+    "date": "2025-09-21",
+    "time": "1:05 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772736/saints-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "44",
+    "away_score": "13",
+    "ts_utc": 1758485100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772843",
+    "matchup": "Arizona Cardinals @ San Francisco 49ers",
+    "date": "2025-09-21",
+    "time": "1:25 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772843/cardinals-49ers",
+    "winner": "San Francisco 49ers",
+    "home_score": "16",
+    "away_score": "15",
+    "ts_utc": 1758486300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772844",
+    "matchup": "Dallas Cowboys @ Chicago Bears",
+    "date": "2025-09-21",
+    "time": "1:25 PM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772844/cowboys-bears",
+    "winner": "Chicago Bears",
+    "home_score": "31",
+    "away_score": "14",
+    "ts_utc": 1758486300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772920",
+    "matchup": "Kansas City Chiefs @ New York Giants",
+    "date": "2025-09-21",
+    "time": "5:20 PM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772920/chiefs-giants",
+    "winner": "Kansas City Chiefs",
+    "home_score": "9",
+    "away_score": "22",
+    "ts_utc": 1758500400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772812",
+    "matchup": "Detroit Lions @ Baltimore Ravens",
+    "date": "2025-09-22",
+    "time": "5:15 PM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772812/lions-ravens",
+    "winner": "Detroit Lions",
+    "home_score": "30",
+    "away_score": "38",
+    "ts_utc": 1758586500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772938",
+    "matchup": "Seattle Seahawks @ Arizona Cardinals",
+    "date": "2025-09-25",
+    "time": "5:15 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772938/seahawks-cardinals",
+    "winner": "Seattle Seahawks",
+    "home_score": "20",
+    "away_score": "23",
+    "ts_utc": 1758845700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772632",
+    "matchup": "Minnesota Vikings @ Pittsburgh Steelers",
+    "date": "2025-09-28",
+    "time": "6:30 AM",
+    "location": "Croke Park",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772632/vikings-steelers",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "24",
+    "away_score": "21",
+    "ts_utc": 1759066200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772737",
+    "matchup": "Los Angeles Chargers @ New York Giants",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772737/chargers-giants",
+    "winner": "New York Giants",
+    "home_score": "21",
+    "away_score": "18",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772738",
+    "matchup": "Tennessee Titans @ Houston Texans",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772738/titans-texans",
+    "winner": "Houston Texans",
+    "home_score": "26",
+    "away_score": "0",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772739",
+    "matchup": "Washington Commanders @ Atlanta Falcons",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772739/commanders-falcons",
+    "winner": "Atlanta Falcons",
+    "home_score": "34",
+    "away_score": "27",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772740",
+    "matchup": "New Orleans Saints @ Buffalo Bills",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772740/saints-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "31",
+    "away_score": "19",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772845",
+    "matchup": "Philadelphia Eagles @ Tampa Bay Buccaneers",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772845/eagles-buccaneers",
+    "winner": "Philadelphia Eagles",
+    "home_score": "25",
+    "away_score": "31",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772846",
+    "matchup": "Cleveland Browns @ Detroit Lions",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772846/browns-lions",
+    "winner": "Detroit Lions",
+    "home_score": "34",
+    "away_score": "10",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772847",
+    "matchup": "Carolina Panthers @ New England Patriots",
+    "date": "2025-09-28",
+    "time": "10:00 AM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772847/panthers-patriots",
+    "winner": "New England Patriots",
+    "home_score": "42",
+    "away_score": "13",
+    "ts_utc": 1759078800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772848",
+    "matchup": "Jacksonville Jaguars @ San Francisco 49ers",
+    "date": "2025-09-28",
+    "time": "1:05 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772848/jaguars-49ers",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "21",
+    "away_score": "26",
+    "ts_utc": 1759089900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772849",
+    "matchup": "Indianapolis Colts @ Los Angeles Rams",
+    "date": "2025-09-28",
+    "time": "1:05 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772849/colts-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "27",
+    "away_score": "20",
+    "ts_utc": 1759089900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772741",
+    "matchup": "Baltimore Ravens @ Kansas City Chiefs",
+    "date": "2025-09-28",
+    "time": "1:25 PM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772741/ravens-chiefs",
+    "winner": "Kansas City Chiefs",
+    "home_score": "37",
+    "away_score": "20",
+    "ts_utc": 1759091100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772742",
+    "matchup": "Chicago Bears @ Las Vegas Raiders",
+    "date": "2025-09-28",
+    "time": "1:25 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772742/bears-raiders",
+    "winner": "Chicago Bears",
+    "home_score": "24",
+    "away_score": "25",
+    "ts_utc": 1759091100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772921",
+    "matchup": "Green Bay Packers @ Dallas Cowboys",
+    "date": "2025-09-28",
+    "time": "5:20 PM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772921/packers-cowboys",
+    "winner": "TIE",
+    "home_score": "40",
+    "away_score": "40",
+    "ts_utc": 1759105200,
+    "tie": true,
+    "status": "final"
+  },
+  {
+    "game_id": "401772813",
+    "matchup": "New York Jets @ Miami Dolphins",
+    "date": "2025-09-29",
+    "time": "4:15 PM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772813/jets-dolphins",
+    "winner": "Miami Dolphins",
+    "home_score": "27",
+    "away_score": "21",
+    "ts_utc": 1759187700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772716",
+    "matchup": "Cincinnati Bengals @ Denver Broncos",
+    "date": "2025-09-29",
+    "time": "5:15 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "ABC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772716/bengals-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "28",
+    "away_score": "3",
+    "ts_utc": 1759191300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772939",
+    "matchup": "San Francisco 49ers @ Los Angeles Rams",
+    "date": "2025-10-02",
+    "time": "5:15 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772939/49ers-rams",
+    "winner": "San Francisco 49ers",
+    "home_score": "23",
+    "away_score": "26",
+    "ts_utc": 1759450500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772633",
+    "matchup": "Minnesota Vikings @ Cleveland Browns",
+    "date": "2025-10-05",
+    "time": "6:30 AM",
+    "location": "Tottenham Hotspur Stadium",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772633/vikings-browns",
+    "winner": "Minnesota Vikings",
+    "home_score": "17",
+    "away_score": "21",
+    "ts_utc": 1759671000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772743",
+    "matchup": "Houston Texans @ Baltimore Ravens",
+    "date": "2025-10-05",
+    "time": "10:00 AM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772743/texans-ravens",
+    "winner": "Houston Texans",
+    "home_score": "10",
+    "away_score": "44",
+    "ts_utc": 1759683600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772744",
+    "matchup": "New York Giants @ New Orleans Saints",
+    "date": "2025-10-05",
+    "time": "10:00 AM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772744/giants-saints",
+    "winner": "New Orleans Saints",
+    "home_score": "26",
+    "away_score": "14",
+    "ts_utc": 1759683600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772745",
+    "matchup": "Denver Broncos @ Philadelphia Eagles",
+    "date": "2025-10-05",
+    "time": "10:00 AM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772745/broncos-eagles",
+    "winner": "Denver Broncos",
+    "home_score": "17",
+    "away_score": "21",
+    "ts_utc": 1759683600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772850",
+    "matchup": "Dallas Cowboys @ New York Jets",
+    "date": "2025-10-05",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772850/cowboys-jets",
+    "winner": "Dallas Cowboys",
+    "home_score": "22",
+    "away_score": "37",
+    "ts_utc": 1759683600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772851",
+    "matchup": "Las Vegas Raiders @ Indianapolis Colts",
+    "date": "2025-10-05",
+    "time": "10:00 AM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772851/raiders-colts",
+    "winner": "Indianapolis Colts",
+    "home_score": "40",
+    "away_score": "6",
+    "ts_utc": 1759683600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772852",
+    "matchup": "Miami Dolphins @ Carolina Panthers",
+    "date": "2025-10-05",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772852/dolphins-panthers",
+    "winner": "Carolina Panthers",
+    "home_score": "27",
+    "away_score": "24",
+    "ts_utc": 1759683600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772746",
+    "matchup": "Tampa Bay Buccaneers @ Seattle Seahawks",
+    "date": "2025-10-05",
+    "time": "1:05 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772746/buccaneers-seahawks",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "35",
+    "away_score": "38",
+    "ts_utc": 1759694700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772747",
+    "matchup": "Tennessee Titans @ Arizona Cardinals",
+    "date": "2025-10-05",
+    "time": "1:05 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772747/titans-cardinals",
+    "winner": "Tennessee Titans",
+    "home_score": "21",
+    "away_score": "22",
+    "ts_utc": 1759694700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772853",
+    "matchup": "Washington Commanders @ Los Angeles Chargers",
+    "date": "2025-10-05",
+    "time": "1:25 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772853/commanders-chargers",
+    "winner": "Washington Commanders",
+    "home_score": "10",
+    "away_score": "27",
+    "ts_utc": 1759695900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772854",
+    "matchup": "Detroit Lions @ Cincinnati Bengals",
+    "date": "2025-10-05",
+    "time": "1:25 PM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772854/lions-bengals",
+    "winner": "Detroit Lions",
+    "home_score": "24",
+    "away_score": "37",
+    "ts_utc": 1759695900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772922",
+    "matchup": "New England Patriots @ Buffalo Bills",
+    "date": "2025-10-05",
+    "time": "5:20 PM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772922/patriots-bills",
+    "winner": "New England Patriots",
+    "home_score": "20",
+    "away_score": "23",
+    "ts_utc": 1759710000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772814",
+    "matchup": "Kansas City Chiefs @ Jacksonville Jaguars",
+    "date": "2025-10-06",
+    "time": "5:15 PM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772814/chiefs-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "31",
+    "away_score": "28",
+    "ts_utc": 1759796100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772940",
+    "matchup": "Philadelphia Eagles @ New York Giants",
+    "date": "2025-10-09",
+    "time": "5:15 PM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772940/eagles-giants",
+    "winner": "New York Giants",
+    "home_score": "34",
+    "away_score": "17",
+    "ts_utc": 1760055300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772634",
+    "matchup": "Denver Broncos @ New York Jets",
+    "date": "2025-10-12",
+    "time": "6:30 AM",
+    "location": "Tottenham Hotspur Stadium",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772634/broncos-jets",
+    "winner": "Denver Broncos",
+    "home_score": "11",
+    "away_score": "13",
+    "ts_utc": 1760275800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772748",
+    "matchup": "Cleveland Browns @ Pittsburgh Steelers",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772748/browns-steelers",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "23",
+    "away_score": "9",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772750",
+    "matchup": "Los Angeles Chargers @ Miami Dolphins",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772750/chargers-dolphins",
+    "winner": "Los Angeles Chargers",
+    "home_score": "27",
+    "away_score": "29",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772751",
+    "matchup": "New England Patriots @ New Orleans Saints",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772751/patriots-saints",
+    "winner": "New England Patriots",
+    "home_score": "19",
+    "away_score": "25",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772855",
+    "matchup": "Los Angeles Rams @ Baltimore Ravens",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772855/rams-ravens",
+    "winner": "Los Angeles Rams",
+    "home_score": "3",
+    "away_score": "17",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772856",
+    "matchup": "Arizona Cardinals @ Indianapolis Colts",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772856/cardinals-colts",
+    "winner": "Indianapolis Colts",
+    "home_score": "31",
+    "away_score": "27",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772857",
+    "matchup": "Seattle Seahawks @ Jacksonville Jaguars",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772857/seahawks-jaguars",
+    "winner": "Seattle Seahawks",
+    "home_score": "12",
+    "away_score": "20",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772858",
+    "matchup": "Dallas Cowboys @ Carolina Panthers",
+    "date": "2025-10-12",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772858/cowboys-panthers",
+    "winner": "Carolina Panthers",
+    "home_score": "30",
+    "away_score": "27",
+    "ts_utc": 1760288400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772859",
+    "matchup": "Tennessee Titans @ Las Vegas Raiders",
+    "date": "2025-10-12",
+    "time": "1:05 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772859/titans-raiders",
+    "winner": "Las Vegas Raiders",
+    "home_score": "20",
+    "away_score": "10",
+    "ts_utc": 1760299500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772749",
+    "matchup": "San Francisco 49ers @ Tampa Bay Buccaneers",
+    "date": "2025-10-12",
+    "time": "1:25 PM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772749/49ers-buccaneers",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "30",
+    "away_score": "19",
+    "ts_utc": 1760300700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772752",
+    "matchup": "Cincinnati Bengals @ Green Bay Packers",
+    "date": "2025-10-12",
+    "time": "1:25 PM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772752/bengals-packers",
+    "winner": "Green Bay Packers",
+    "home_score": "27",
+    "away_score": "18",
+    "ts_utc": 1760300700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772923",
+    "matchup": "Detroit Lions @ Kansas City Chiefs",
+    "date": "2025-10-12",
+    "time": "5:20 PM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772923/lions-chiefs",
+    "winner": "Kansas City Chiefs",
+    "home_score": "30",
+    "away_score": "17",
+    "ts_utc": 1760314800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772815",
+    "matchup": "Buffalo Bills @ Atlanta Falcons",
+    "date": "2025-10-13",
+    "time": "4:15 PM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772815/bills-falcons",
+    "winner": "Atlanta Falcons",
+    "home_score": "24",
+    "away_score": "14",
+    "ts_utc": 1760397300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772717",
+    "matchup": "Chicago Bears @ Washington Commanders",
+    "date": "2025-10-13",
+    "time": "5:15 PM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "ABC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772717/bears-commanders",
+    "winner": "Chicago Bears",
+    "home_score": "24",
+    "away_score": "25",
+    "ts_utc": 1760400900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772941",
+    "matchup": "Pittsburgh Steelers @ Cincinnati Bengals",
+    "date": "2025-10-16",
+    "time": "5:15 PM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772941/steelers-bengals",
+    "winner": "Cincinnati Bengals",
+    "home_score": "33",
+    "away_score": "31",
+    "ts_utc": 1760660100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772635",
+    "matchup": "Los Angeles Rams @ Jacksonville Jaguars",
+    "date": "2025-10-19",
+    "time": "6:30 AM",
+    "location": "Wembley Stadium",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772635/rams-jaguars",
+    "winner": "Los Angeles Rams",
+    "home_score": "7",
+    "away_score": "35",
+    "ts_utc": 1760880600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772753",
+    "matchup": "Las Vegas Raiders @ Kansas City Chiefs",
+    "date": "2025-10-19",
+    "time": "10:00 AM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772753/raiders-chiefs",
+    "winner": "Kansas City Chiefs",
+    "home_score": "31",
+    "away_score": "0",
+    "ts_utc": 1760893200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772754",
+    "matchup": "Miami Dolphins @ Cleveland Browns",
+    "date": "2025-10-19",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772754/dolphins-browns",
+    "winner": "Cleveland Browns",
+    "home_score": "31",
+    "away_score": "6",
+    "ts_utc": 1760893200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772755",
+    "matchup": "New England Patriots @ Tennessee Titans",
+    "date": "2025-10-19",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772755/patriots-titans",
+    "winner": "New England Patriots",
+    "home_score": "13",
+    "away_score": "31",
+    "ts_utc": 1760893200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772860",
+    "matchup": "Carolina Panthers @ New York Jets",
+    "date": "2025-10-19",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772860/panthers-jets",
+    "winner": "Carolina Panthers",
+    "home_score": "6",
+    "away_score": "13",
+    "ts_utc": 1760893200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772861",
+    "matchup": "New Orleans Saints @ Chicago Bears",
+    "date": "2025-10-19",
+    "time": "10:00 AM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772861/saints-bears",
+    "winner": "Chicago Bears",
+    "home_score": "26",
+    "away_score": "14",
+    "ts_utc": 1760893200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772862",
+    "matchup": "Philadelphia Eagles @ Minnesota Vikings",
+    "date": "2025-10-19",
+    "time": "10:00 AM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772862/eagles-vikings",
+    "winner": "Philadelphia Eagles",
+    "home_score": "22",
+    "away_score": "28",
+    "ts_utc": 1760893200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772756",
+    "matchup": "Indianapolis Colts @ Los Angeles Chargers",
+    "date": "2025-10-19",
+    "time": "1:05 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772756/colts-chargers",
+    "winner": "Indianapolis Colts",
+    "home_score": "24",
+    "away_score": "38",
+    "ts_utc": 1760904300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772757",
+    "matchup": "New York Giants @ Denver Broncos",
+    "date": "2025-10-19",
+    "time": "1:05 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772757/giants-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "33",
+    "away_score": "32",
+    "ts_utc": 1760904300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772863",
+    "matchup": "Green Bay Packers @ Arizona Cardinals",
+    "date": "2025-10-19",
+    "time": "1:25 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772863/packers-cardinals",
+    "winner": "Green Bay Packers",
+    "home_score": "23",
+    "away_score": "27",
+    "ts_utc": 1760905500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772864",
+    "matchup": "Washington Commanders @ Dallas Cowboys",
+    "date": "2025-10-19",
+    "time": "1:25 PM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772864/commanders-cowboys",
+    "winner": "Dallas Cowboys",
+    "home_score": "44",
+    "away_score": "22",
+    "ts_utc": 1760905500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772924",
+    "matchup": "Atlanta Falcons @ San Francisco 49ers",
+    "date": "2025-10-19",
+    "time": "5:20 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772924/falcons-49ers",
+    "winner": "San Francisco 49ers",
+    "home_score": "20",
+    "away_score": "10",
+    "ts_utc": 1760919600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772816",
+    "matchup": "Tampa Bay Buccaneers @ Detroit Lions",
+    "date": "2025-10-20",
+    "time": "4:00 PM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772816/buccaneers-lions",
+    "winner": "Detroit Lions",
+    "home_score": "24",
+    "away_score": "9",
+    "ts_utc": 1761001200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772826",
+    "matchup": "Houston Texans @ Seattle Seahawks",
+    "date": "2025-10-20",
+    "time": "7:00 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772826/texans-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "27",
+    "away_score": "19",
+    "ts_utc": 1761012000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772942",
+    "matchup": "Minnesota Vikings @ Los Angeles Chargers",
+    "date": "2025-10-23",
+    "time": "5:15 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772942/vikings-chargers",
+    "winner": "Los Angeles Chargers",
+    "home_score": "37",
+    "away_score": "10",
+    "ts_utc": 1761264900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772758",
+    "matchup": "New York Jets @ Cincinnati Bengals",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772758/jets-bengals",
+    "winner": "New York Jets",
+    "home_score": "38",
+    "away_score": "39",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772759",
+    "matchup": "Chicago Bears @ Baltimore Ravens",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772759/bears-ravens",
+    "winner": "Baltimore Ravens",
+    "home_score": "30",
+    "away_score": "16",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772760",
+    "matchup": "Miami Dolphins @ Atlanta Falcons",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772760/dolphins-falcons",
+    "winner": "Miami Dolphins",
+    "home_score": "10",
+    "away_score": "34",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772865",
+    "matchup": "Buffalo Bills @ Carolina Panthers",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772865/bills-panthers",
+    "winner": "Buffalo Bills",
+    "home_score": "9",
+    "away_score": "40",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772866",
+    "matchup": "San Francisco 49ers @ Houston Texans",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772866/49ers-texans",
+    "winner": "Houston Texans",
+    "home_score": "26",
+    "away_score": "15",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772867",
+    "matchup": "New York Giants @ Philadelphia Eagles",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772867/giants-eagles",
+    "winner": "Philadelphia Eagles",
+    "home_score": "38",
+    "away_score": "20",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772868",
+    "matchup": "Cleveland Browns @ New England Patriots",
+    "date": "2025-10-26",
+    "time": "10:00 AM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772868/browns-patriots",
+    "winner": "New England Patriots",
+    "home_score": "32",
+    "away_score": "13",
+    "ts_utc": 1761498000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772869",
+    "matchup": "Tampa Bay Buccaneers @ New Orleans Saints",
+    "date": "2025-10-26",
+    "time": "1:05 PM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772869/buccaneers-saints",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "3",
+    "away_score": "23",
+    "ts_utc": 1761509100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772761",
+    "matchup": "Tennessee Titans @ Indianapolis Colts",
+    "date": "2025-10-26",
+    "time": "1:25 PM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772761/titans-colts",
+    "winner": "Indianapolis Colts",
+    "home_score": "38",
+    "away_score": "14",
+    "ts_utc": 1761510300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772762",
+    "matchup": "Dallas Cowboys @ Denver Broncos",
+    "date": "2025-10-26",
+    "time": "1:25 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772762/cowboys-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "44",
+    "away_score": "24",
+    "ts_utc": 1761510300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772925",
+    "matchup": "Green Bay Packers @ Pittsburgh Steelers",
+    "date": "2025-10-26",
+    "time": "5:20 PM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "NBC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772925/packers-steelers",
+    "winner": "Green Bay Packers",
+    "home_score": "25",
+    "away_score": "35",
+    "ts_utc": 1761524400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772817",
+    "matchup": "Washington Commanders @ Kansas City Chiefs",
+    "date": "2025-10-27",
+    "time": "5:15 PM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772817/commanders-chiefs",
+    "winner": "Kansas City Chiefs",
+    "home_score": "28",
+    "away_score": "7",
+    "ts_utc": 1761610500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772943",
+    "matchup": "Baltimore Ravens @ Miami Dolphins",
+    "date": "2025-10-30",
+    "time": "5:15 PM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772943/ravens-dolphins",
+    "winner": "Baltimore Ravens",
+    "home_score": "6",
+    "away_score": "28",
+    "ts_utc": 1761869700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772763",
+    "matchup": "Atlanta Falcons @ New England Patriots",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772763/falcons-patriots",
+    "winner": "New England Patriots",
+    "home_score": "24",
+    "away_score": "23",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772764",
+    "matchup": "Los Angeles Chargers @ Tennessee Titans",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772764/chargers-titans",
+    "winner": "Los Angeles Chargers",
+    "home_score": "20",
+    "away_score": "27",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772765",
+    "matchup": "Chicago Bears @ Cincinnati Bengals",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772765/bears-bengals",
+    "winner": "Chicago Bears",
+    "home_score": "42",
+    "away_score": "47",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772766",
+    "matchup": "Indianapolis Colts @ Pittsburgh Steelers",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772766/colts-steelers",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "27",
+    "away_score": "20",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772767",
+    "matchup": "San Francisco 49ers @ New York Giants",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772767/49ers-giants",
+    "winner": "San Francisco 49ers",
+    "home_score": "24",
+    "away_score": "34",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772870",
+    "matchup": "Denver Broncos @ Houston Texans",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772870/broncos-texans",
+    "winner": "Denver Broncos",
+    "home_score": "15",
+    "away_score": "18",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772871",
+    "matchup": "Minnesota Vikings @ Detroit Lions",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772871/vikings-lions",
+    "winner": "Minnesota Vikings",
+    "home_score": "24",
+    "away_score": "27",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772872",
+    "matchup": "Carolina Panthers @ Green Bay Packers",
+    "date": "2025-11-02",
+    "time": "10:00 AM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772872/panthers-packers",
+    "winner": "Carolina Panthers",
+    "home_score": "13",
+    "away_score": "16",
+    "ts_utc": 1762106400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772873",
+    "matchup": "Jacksonville Jaguars @ Las Vegas Raiders",
+    "date": "2025-11-02",
+    "time": "1:05 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772873/jaguars-raiders",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "29",
+    "away_score": "30",
+    "ts_utc": 1762117500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772874",
+    "matchup": "New Orleans Saints @ Los Angeles Rams",
+    "date": "2025-11-02",
+    "time": "1:05 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772874/saints-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "34",
+    "away_score": "10",
+    "ts_utc": 1762117500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772768",
+    "matchup": "Kansas City Chiefs @ Buffalo Bills",
+    "date": "2025-11-02",
+    "time": "1:25 PM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772768/chiefs-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "28",
+    "away_score": "21",
+    "ts_utc": 1762118700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772926",
+    "matchup": "Seattle Seahawks @ Washington Commanders",
+    "date": "2025-11-02",
+    "time": "5:20 PM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772926/seahawks-commanders",
+    "winner": "Seattle Seahawks",
+    "home_score": "14",
+    "away_score": "38",
+    "ts_utc": 1762132800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772818",
+    "matchup": "Arizona Cardinals @ Dallas Cowboys",
+    "date": "2025-11-03",
+    "time": "5:15 PM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772818/cardinals-cowboys",
+    "winner": "Arizona Cardinals",
+    "home_score": "17",
+    "away_score": "27",
+    "ts_utc": 1762218900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772944",
+    "matchup": "Las Vegas Raiders @ Denver Broncos",
+    "date": "2025-11-06",
+    "time": "5:15 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772944/raiders-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "10",
+    "away_score": "7",
+    "ts_utc": 1762478100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772636",
+    "matchup": "Atlanta Falcons @ Indianapolis Colts",
+    "date": "2025-11-09",
+    "time": "6:30 AM",
+    "location": "Olympic Stadium Berlin",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772636/falcons-colts",
+    "winner": "Indianapolis Colts",
+    "home_score": "31",
+    "away_score": "25",
+    "ts_utc": 1762698600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772769",
+    "matchup": "Cleveland Browns @ New York Jets",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772769/browns-jets",
+    "winner": "New York Jets",
+    "home_score": "27",
+    "away_score": "20",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772770",
+    "matchup": "Jacksonville Jaguars @ Houston Texans",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772770/jaguars-texans",
+    "winner": "Houston Texans",
+    "home_score": "36",
+    "away_score": "29",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772771",
+    "matchup": "Buffalo Bills @ Miami Dolphins",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772771/bills-dolphins",
+    "winner": "Miami Dolphins",
+    "home_score": "30",
+    "away_score": "13",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772772",
+    "matchup": "New England Patriots @ Tampa Bay Buccaneers",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772772/patriots-buccaneers",
+    "winner": "New England Patriots",
+    "home_score": "23",
+    "away_score": "28",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772875",
+    "matchup": "New York Giants @ Chicago Bears",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772875/giants-bears",
+    "winner": "Chicago Bears",
+    "home_score": "24",
+    "away_score": "20",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772876",
+    "matchup": "Baltimore Ravens @ Minnesota Vikings",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772876/ravens-vikings",
+    "winner": "Baltimore Ravens",
+    "home_score": "19",
+    "away_score": "27",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772877",
+    "matchup": "New Orleans Saints @ Carolina Panthers",
+    "date": "2025-11-09",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772877/saints-panthers",
+    "winner": "New Orleans Saints",
+    "home_score": "7",
+    "away_score": "17",
+    "ts_utc": 1762711200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772773",
+    "matchup": "Arizona Cardinals @ Seattle Seahawks",
+    "date": "2025-11-09",
+    "time": "1:05 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772773/cardinals-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "44",
+    "away_score": "22",
+    "ts_utc": 1762722300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772878",
+    "matchup": "Detroit Lions @ Washington Commanders",
+    "date": "2025-11-09",
+    "time": "1:25 PM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772878/lions-commanders",
+    "winner": "Detroit Lions",
+    "home_score": "22",
+    "away_score": "44",
+    "ts_utc": 1762723500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772879",
+    "matchup": "Los Angeles Rams @ San Francisco 49ers",
+    "date": "2025-11-09",
+    "time": "1:25 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772879/rams-49ers",
+    "winner": "Los Angeles Rams",
+    "home_score": "26",
+    "away_score": "42",
+    "ts_utc": 1762723500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772927",
+    "matchup": "Pittsburgh Steelers @ Los Angeles Chargers",
+    "date": "2025-11-09",
+    "time": "5:20 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772927/steelers-chargers",
+    "winner": "Los Angeles Chargers",
+    "home_score": "25",
+    "away_score": "10",
+    "ts_utc": 1762737600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772630",
+    "matchup": "Philadelphia Eagles @ Green Bay Packers",
+    "date": "2025-11-10",
+    "time": "5:15 PM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772630/eagles-packers",
+    "winner": "Philadelphia Eagles",
+    "home_score": "7",
+    "away_score": "10",
+    "ts_utc": 1762823700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772945",
+    "matchup": "New York Jets @ New England Patriots",
+    "date": "2025-11-13",
+    "time": "5:15 PM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772945/jets-patriots",
+    "winner": "New England Patriots",
+    "home_score": "27",
+    "away_score": "14",
+    "ts_utc": 1763082900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772631",
+    "matchup": "Washington Commanders @ Miami Dolphins",
+    "date": "2025-11-16",
+    "time": "6:30 AM",
+    "location": "Santiago Bernabéu",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772631/commanders-dolphins",
+    "winner": "Miami Dolphins",
+    "home_score": "16",
+    "away_score": "13",
+    "ts_utc": 1763303400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772774",
+    "matchup": "Cincinnati Bengals @ Pittsburgh Steelers",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772774/bengals-steelers",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "34",
+    "away_score": "12",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772775",
+    "matchup": "Los Angeles Chargers @ Jacksonville Jaguars",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772775/chargers-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "35",
+    "away_score": "6",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772776",
+    "matchup": "Tampa Bay Buccaneers @ Buffalo Bills",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772776/buccaneers-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "44",
+    "away_score": "32",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772880",
+    "matchup": "Chicago Bears @ Minnesota Vikings",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772880/bears-vikings",
+    "winner": "Chicago Bears",
+    "home_score": "17",
+    "away_score": "19",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772881",
+    "matchup": "Houston Texans @ Tennessee Titans",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772881/texans-titans",
+    "winner": "Houston Texans",
+    "home_score": "13",
+    "away_score": "16",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772882",
+    "matchup": "Carolina Panthers @ Atlanta Falcons",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772882/panthers-falcons",
+    "winner": "Carolina Panthers",
+    "home_score": "27",
+    "away_score": "30",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772883",
+    "matchup": "Green Bay Packers @ New York Giants",
+    "date": "2025-11-16",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772883/packers-giants",
+    "winner": "Green Bay Packers",
+    "home_score": "20",
+    "away_score": "27",
+    "ts_utc": 1763316000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772884",
+    "matchup": "Seattle Seahawks @ Los Angeles Rams",
+    "date": "2025-11-16",
+    "time": "1:05 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772884/seahawks-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "21",
+    "away_score": "19",
+    "ts_utc": 1763327100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772885",
+    "matchup": "San Francisco 49ers @ Arizona Cardinals",
+    "date": "2025-11-16",
+    "time": "1:05 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772885/49ers-cardinals",
+    "winner": "San Francisco 49ers",
+    "home_score": "22",
+    "away_score": "41",
+    "ts_utc": 1763327100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772777",
+    "matchup": "Baltimore Ravens @ Cleveland Browns",
+    "date": "2025-11-16",
+    "time": "1:25 PM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772777/ravens-browns",
+    "winner": "Baltimore Ravens",
+    "home_score": "16",
+    "away_score": "23",
+    "ts_utc": 1763328300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772778",
+    "matchup": "Kansas City Chiefs @ Denver Broncos",
+    "date": "2025-11-16",
+    "time": "1:25 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772778/chiefs-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "22",
+    "away_score": "19",
+    "ts_utc": 1763328300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772928",
+    "matchup": "Detroit Lions @ Philadelphia Eagles",
+    "date": "2025-11-16",
+    "time": "5:20 PM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772928/lions-eagles",
+    "winner": "Philadelphia Eagles",
+    "home_score": "16",
+    "away_score": "9",
+    "ts_utc": 1763342400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772819",
+    "matchup": "Dallas Cowboys @ Las Vegas Raiders",
+    "date": "2025-11-17",
+    "time": "5:15 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772819/cowboys-raiders",
+    "winner": "Dallas Cowboys",
+    "home_score": "16",
+    "away_score": "33",
+    "ts_utc": 1763428500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772946",
+    "matchup": "Buffalo Bills @ Houston Texans",
+    "date": "2025-11-20",
+    "time": "5:15 PM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772946/bills-texans",
+    "winner": "Houston Texans",
+    "home_score": "23",
+    "away_score": "19",
+    "ts_utc": 1763687700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772779",
+    "matchup": "Indianapolis Colts @ Kansas City Chiefs",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772779/colts-chiefs",
+    "winner": "Kansas City Chiefs",
+    "home_score": "23",
+    "away_score": "20",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772780",
+    "matchup": "Pittsburgh Steelers @ Chicago Bears",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772780/steelers-bears",
+    "winner": "Chicago Bears",
+    "home_score": "31",
+    "away_score": "28",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772781",
+    "matchup": "New England Patriots @ Cincinnati Bengals",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772781/patriots-bengals",
+    "winner": "New England Patriots",
+    "home_score": "20",
+    "away_score": "26",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772782",
+    "matchup": "New York Jets @ Baltimore Ravens",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772782/jets-ravens",
+    "winner": "Baltimore Ravens",
+    "home_score": "23",
+    "away_score": "10",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772886",
+    "matchup": "Seattle Seahawks @ Tennessee Titans",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772886/seahawks-titans",
+    "winner": "Seattle Seahawks",
+    "home_score": "24",
+    "away_score": "30",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772887",
+    "matchup": "Minnesota Vikings @ Green Bay Packers",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772887/vikings-packers",
+    "winner": "Green Bay Packers",
+    "home_score": "23",
+    "away_score": "6",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772888",
+    "matchup": "New York Giants @ Detroit Lions",
+    "date": "2025-11-23",
+    "time": "10:00 AM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772888/giants-lions",
+    "winner": "Detroit Lions",
+    "home_score": "34",
+    "away_score": "27",
+    "ts_utc": 1763920800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772783",
+    "matchup": "Jacksonville Jaguars @ Arizona Cardinals",
+    "date": "2025-11-23",
+    "time": "1:05 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772783/jaguars-cardinals",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "24",
+    "away_score": "27",
+    "ts_utc": 1763931900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772784",
+    "matchup": "Cleveland Browns @ Las Vegas Raiders",
+    "date": "2025-11-23",
+    "time": "1:05 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772784/browns-raiders",
+    "winner": "Cleveland Browns",
+    "home_score": "10",
+    "away_score": "24",
+    "ts_utc": 1763931900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772889",
+    "matchup": "Atlanta Falcons @ New Orleans Saints",
+    "date": "2025-11-23",
+    "time": "1:25 PM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772889/falcons-saints",
+    "winner": "Atlanta Falcons",
+    "home_score": "10",
+    "away_score": "24",
+    "ts_utc": 1763933100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772890",
+    "matchup": "Philadelphia Eagles @ Dallas Cowboys",
+    "date": "2025-11-23",
+    "time": "1:25 PM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772890/eagles-cowboys",
+    "winner": "Dallas Cowboys",
+    "home_score": "24",
+    "away_score": "21",
+    "ts_utc": 1763933100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772929",
+    "matchup": "Tampa Bay Buccaneers @ Los Angeles Rams",
+    "date": "2025-11-23",
+    "time": "5:20 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772929/buccaneers-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "34",
+    "away_score": "7",
+    "ts_utc": 1763947200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772820",
+    "matchup": "Carolina Panthers @ San Francisco 49ers",
+    "date": "2025-11-24",
+    "time": "5:15 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772820/panthers-49ers",
+    "winner": "San Francisco 49ers",
+    "home_score": "20",
+    "away_score": "9",
+    "ts_utc": 1764033300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772891",
+    "matchup": "Green Bay Packers @ Detroit Lions",
+    "date": "2025-11-27",
+    "time": "10:00 AM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772891/packers-lions",
+    "winner": "Green Bay Packers",
+    "home_score": "24",
+    "away_score": "31",
+    "ts_utc": 1764266400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772694",
+    "matchup": "Kansas City Chiefs @ Dallas Cowboys",
+    "date": "2025-11-27",
+    "time": "1:30 PM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772694/chiefs-cowboys",
+    "winner": "Dallas Cowboys",
+    "home_score": "31",
+    "away_score": "28",
+    "ts_utc": 1764279000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772930",
+    "matchup": "Cincinnati Bengals @ Baltimore Ravens",
+    "date": "2025-11-27",
+    "time": "5:20 PM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772930/bengals-ravens",
+    "winner": "Cincinnati Bengals",
+    "home_score": "14",
+    "away_score": "32",
+    "ts_utc": 1764292800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772621",
+    "matchup": "Chicago Bears @ Philadelphia Eagles",
+    "date": "2025-11-28",
+    "time": "12:00 PM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772621/bears-eagles",
+    "winner": "Chicago Bears",
+    "home_score": "15",
+    "away_score": "24",
+    "ts_utc": 1764360000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772785",
+    "matchup": "San Francisco 49ers @ Cleveland Browns",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772785/49ers-browns",
+    "winner": "San Francisco 49ers",
+    "home_score": "8",
+    "away_score": "26",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772786",
+    "matchup": "Jacksonville Jaguars @ Tennessee Titans",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772786/jaguars-titans",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "3",
+    "away_score": "25",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772787",
+    "matchup": "Houston Texans @ Indianapolis Colts",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772787/texans-colts",
+    "winner": "Houston Texans",
+    "home_score": "16",
+    "away_score": "20",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772892",
+    "matchup": "New Orleans Saints @ Miami Dolphins",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772892/saints-dolphins",
+    "winner": "Miami Dolphins",
+    "home_score": "21",
+    "away_score": "17",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772893",
+    "matchup": "Atlanta Falcons @ New York Jets",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772893/falcons-jets",
+    "winner": "New York Jets",
+    "home_score": "27",
+    "away_score": "24",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772894",
+    "matchup": "Los Angeles Rams @ Carolina Panthers",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772894/rams-panthers",
+    "winner": "Carolina Panthers",
+    "home_score": "31",
+    "away_score": "28",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772895",
+    "matchup": "Arizona Cardinals @ Tampa Bay Buccaneers",
+    "date": "2025-11-30",
+    "time": "10:00 AM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772895/cardinals-buccaneers",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "20",
+    "away_score": "17",
+    "ts_utc": 1764525600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772896",
+    "matchup": "Minnesota Vikings @ Seattle Seahawks",
+    "date": "2025-11-30",
+    "time": "1:05 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772896/vikings-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "26",
+    "away_score": "0",
+    "ts_utc": 1764536700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772788",
+    "matchup": "Las Vegas Raiders @ Los Angeles Chargers",
+    "date": "2025-11-30",
+    "time": "1:25 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772788/raiders-chargers",
+    "winner": "Los Angeles Chargers",
+    "home_score": "31",
+    "away_score": "14",
+    "ts_utc": 1764537900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772789",
+    "matchup": "Buffalo Bills @ Pittsburgh Steelers",
+    "date": "2025-11-30",
+    "time": "1:25 PM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772789/bills-steelers",
+    "winner": "Buffalo Bills",
+    "home_score": "7",
+    "away_score": "26",
+    "ts_utc": 1764537900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772931",
+    "matchup": "Denver Broncos @ Washington Commanders",
+    "date": "2025-11-30",
+    "time": "5:20 PM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772931/broncos-commanders",
+    "winner": "Denver Broncos",
+    "home_score": "26",
+    "away_score": "27",
+    "ts_utc": 1764552000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772821",
+    "matchup": "New York Giants @ New England Patriots",
+    "date": "2025-12-01",
+    "time": "5:15 PM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772821/giants-patriots",
+    "winner": "New England Patriots",
+    "home_score": "33",
+    "away_score": "15",
+    "ts_utc": 1764638100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772947",
+    "matchup": "Dallas Cowboys @ Detroit Lions",
+    "date": "2025-12-04",
+    "time": "5:15 PM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772947/cowboys-lions",
+    "winner": "Detroit Lions",
+    "home_score": "44",
+    "away_score": "30",
+    "ts_utc": 1764897300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772790",
+    "matchup": "Miami Dolphins @ New York Jets",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772790/dolphins-jets",
+    "winner": "Miami Dolphins",
+    "home_score": "10",
+    "away_score": "34",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772791",
+    "matchup": "Pittsburgh Steelers @ Baltimore Ravens",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772791/steelers-ravens",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "22",
+    "away_score": "27",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772792",
+    "matchup": "New Orleans Saints @ Tampa Bay Buccaneers",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772792/saints-buccaneers",
+    "winner": "New Orleans Saints",
+    "home_score": "20",
+    "away_score": "24",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772793",
+    "matchup": "Indianapolis Colts @ Jacksonville Jaguars",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772793/colts-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "36",
+    "away_score": "19",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772898",
+    "matchup": "Tennessee Titans @ Cleveland Browns",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772898/titans-browns",
+    "winner": "Tennessee Titans",
+    "home_score": "29",
+    "away_score": "31",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772899",
+    "matchup": "Washington Commanders @ Minnesota Vikings",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772899/commanders-vikings",
+    "winner": "Minnesota Vikings",
+    "home_score": "31",
+    "away_score": "0",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772900",
+    "matchup": "Seattle Seahawks @ Atlanta Falcons",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772900/seahawks-falcons",
+    "winner": "Seattle Seahawks",
+    "home_score": "9",
+    "away_score": "37",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772902",
+    "matchup": "Cincinnati Bengals @ Buffalo Bills",
+    "date": "2025-12-07",
+    "time": "10:00 AM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772902/bengals-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "39",
+    "away_score": "34",
+    "ts_utc": 1765130400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772794",
+    "matchup": "Denver Broncos @ Las Vegas Raiders",
+    "date": "2025-12-07",
+    "time": "1:05 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772794/broncos-raiders",
+    "winner": "Denver Broncos",
+    "home_score": "17",
+    "away_score": "24",
+    "ts_utc": 1765141500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772897",
+    "matchup": "Chicago Bears @ Green Bay Packers",
+    "date": "2025-12-07",
+    "time": "1:25 PM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772897/bears-packers",
+    "winner": "Green Bay Packers",
+    "home_score": "28",
+    "away_score": "21",
+    "ts_utc": 1765142700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772901",
+    "matchup": "Los Angeles Rams @ Arizona Cardinals",
+    "date": "2025-12-07",
+    "time": "1:25 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772901/rams-cardinals",
+    "winner": "Los Angeles Rams",
+    "home_score": "17",
+    "away_score": "45",
+    "ts_utc": 1765142700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772932",
+    "matchup": "Houston Texans @ Kansas City Chiefs",
+    "date": "2025-12-07",
+    "time": "5:20 PM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772932/texans-chiefs",
+    "winner": "Houston Texans",
+    "home_score": "10",
+    "away_score": "20",
+    "ts_utc": 1765156800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772822",
+    "matchup": "Philadelphia Eagles @ Los Angeles Chargers",
+    "date": "2025-12-08",
+    "time": "5:15 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772822/eagles-chargers",
+    "winner": "Los Angeles Chargers",
+    "home_score": "22",
+    "away_score": "19",
+    "ts_utc": 1765242900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772948",
+    "matchup": "Atlanta Falcons @ Tampa Bay Buccaneers",
+    "date": "2025-12-11",
+    "time": "5:15 PM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772948/falcons-buccaneers",
+    "winner": "Atlanta Falcons",
+    "home_score": "28",
+    "away_score": "29",
+    "ts_utc": 1765502100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772795",
+    "matchup": "Buffalo Bills @ New England Patriots",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772795/bills-patriots",
+    "winner": "Buffalo Bills",
+    "home_score": "31",
+    "away_score": "35",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772796",
+    "matchup": "Baltimore Ravens @ Cincinnati Bengals",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772796/ravens-bengals",
+    "winner": "Baltimore Ravens",
+    "home_score": "0",
+    "away_score": "24",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772797",
+    "matchup": "New York Jets @ Jacksonville Jaguars",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772797/jets-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "48",
+    "away_score": "20",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772798",
+    "matchup": "Los Angeles Chargers @ Kansas City Chiefs",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772798/chargers-chiefs",
+    "winner": "Los Angeles Chargers",
+    "home_score": "13",
+    "away_score": "16",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772903",
+    "matchup": "Arizona Cardinals @ Houston Texans",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772903/cardinals-texans",
+    "winner": "Houston Texans",
+    "home_score": "40",
+    "away_score": "20",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772904",
+    "matchup": "Cleveland Browns @ Chicago Bears",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772904/browns-bears",
+    "winner": "Chicago Bears",
+    "home_score": "31",
+    "away_score": "3",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772905",
+    "matchup": "Washington Commanders @ New York Giants",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772905/commanders-giants",
+    "winner": "Washington Commanders",
+    "home_score": "21",
+    "away_score": "29",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772906",
+    "matchup": "Las Vegas Raiders @ Philadelphia Eagles",
+    "date": "2025-12-14",
+    "time": "10:00 AM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772906/raiders-eagles",
+    "winner": "Philadelphia Eagles",
+    "home_score": "31",
+    "away_score": "0",
+    "ts_utc": 1765735200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772799",
+    "matchup": "Indianapolis Colts @ Seattle Seahawks",
+    "date": "2025-12-14",
+    "time": "1:25 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772799/colts-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "18",
+    "away_score": "16",
+    "ts_utc": 1765747500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772800",
+    "matchup": "Green Bay Packers @ Denver Broncos",
+    "date": "2025-12-14",
+    "time": "1:25 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772800/packers-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "34",
+    "away_score": "26",
+    "ts_utc": 1765747500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772907",
+    "matchup": "Tennessee Titans @ San Francisco 49ers",
+    "date": "2025-12-14",
+    "time": "1:25 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772907/titans-49ers",
+    "winner": "San Francisco 49ers",
+    "home_score": "37",
+    "away_score": "24",
+    "ts_utc": 1765747500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772908",
+    "matchup": "Carolina Panthers @ New Orleans Saints",
+    "date": "2025-12-14",
+    "time": "1:25 PM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772908/panthers-saints",
+    "winner": "New Orleans Saints",
+    "home_score": "20",
+    "away_score": "17",
+    "ts_utc": 1765747500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772909",
+    "matchup": "Detroit Lions @ Los Angeles Rams",
+    "date": "2025-12-14",
+    "time": "1:25 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772909/lions-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "41",
+    "away_score": "34",
+    "ts_utc": 1765747500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772933",
+    "matchup": "Minnesota Vikings @ Dallas Cowboys",
+    "date": "2025-12-14",
+    "time": "5:20 PM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772933/vikings-cowboys",
+    "winner": "Minnesota Vikings",
+    "home_score": "26",
+    "away_score": "34",
+    "ts_utc": 1765761600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772823",
+    "matchup": "Miami Dolphins @ Pittsburgh Steelers",
+    "date": "2025-12-15",
+    "time": "5:15 PM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772823/dolphins-steelers",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "28",
+    "away_score": "15",
+    "ts_utc": 1765847700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772949",
+    "matchup": "Los Angeles Rams @ Seattle Seahawks",
+    "date": "2025-12-18",
+    "time": "5:15 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772949/rams-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "38",
+    "away_score": "37",
+    "ts_utc": 1766106900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772612",
+    "matchup": "Philadelphia Eagles @ Washington Commanders",
+    "date": "2025-12-20",
+    "time": "2:00 PM",
+    "location": "Northwest Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772612/eagles-commanders",
+    "winner": "Philadelphia Eagles",
+    "home_score": "18",
+    "away_score": "29",
+    "ts_utc": 1766268000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772613",
+    "matchup": "Green Bay Packers @ Chicago Bears",
+    "date": "2025-12-20",
+    "time": "5:20 PM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772613/packers-bears",
+    "winner": "Chicago Bears",
+    "home_score": "22",
+    "away_score": "16",
+    "ts_utc": 1766280000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772801",
+    "matchup": "New York Jets @ New Orleans Saints",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "Caesars Superdome",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772801/jets-saints",
+    "winner": "New Orleans Saints",
+    "home_score": "29",
+    "away_score": "6",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772802",
+    "matchup": "Buffalo Bills @ Cleveland Browns",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772802/bills-browns",
+    "winner": "Buffalo Bills",
+    "home_score": "20",
+    "away_score": "23",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772803",
+    "matchup": "Kansas City Chiefs @ Tennessee Titans",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772803/chiefs-titans",
+    "winner": "Tennessee Titans",
+    "home_score": "26",
+    "away_score": "9",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772910",
+    "matchup": "Los Angeles Chargers @ Dallas Cowboys",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "AT&T Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772910/chargers-cowboys",
+    "winner": "Los Angeles Chargers",
+    "home_score": "17",
+    "away_score": "34",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772911",
+    "matchup": "Minnesota Vikings @ New York Giants",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772911/vikings-giants",
+    "winner": "Minnesota Vikings",
+    "home_score": "13",
+    "away_score": "16",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772912",
+    "matchup": "Tampa Bay Buccaneers @ Carolina Panthers",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772912/buccaneers-panthers",
+    "winner": "Carolina Panthers",
+    "home_score": "23",
+    "away_score": "20",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772934",
+    "matchup": "Cincinnati Bengals @ Miami Dolphins",
+    "date": "2025-12-21",
+    "time": "10:00 AM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772934/bengals-dolphins",
+    "winner": "Cincinnati Bengals",
+    "home_score": "21",
+    "away_score": "45",
+    "ts_utc": 1766340000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772913",
+    "matchup": "Jacksonville Jaguars @ Denver Broncos",
+    "date": "2025-12-21",
+    "time": "1:05 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772913/jaguars-broncos",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "20",
+    "away_score": "34",
+    "ts_utc": 1766351100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772914",
+    "matchup": "Atlanta Falcons @ Arizona Cardinals",
+    "date": "2025-12-21",
+    "time": "1:05 PM",
+    "location": "State Farm Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772914/falcons-cardinals",
+    "winner": "Atlanta Falcons",
+    "home_score": "19",
+    "away_score": "26",
+    "ts_utc": 1766351100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772805",
+    "matchup": "Las Vegas Raiders @ Houston Texans",
+    "date": "2025-12-21",
+    "time": "1:25 PM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772805/raiders-texans",
+    "winner": "Houston Texans",
+    "home_score": "23",
+    "away_score": "21",
+    "ts_utc": 1766352300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772806",
+    "matchup": "Pittsburgh Steelers @ Detroit Lions",
+    "date": "2025-12-21",
+    "time": "1:25 PM",
+    "location": "Ford Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772806/steelers-lions",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "24",
+    "away_score": "29",
+    "ts_utc": 1766352300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772804",
+    "matchup": "New England Patriots @ Baltimore Ravens",
+    "date": "2025-12-21",
+    "time": "5:20 PM",
+    "location": "M&T Bank Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772804/patriots-ravens",
+    "winner": "New England Patriots",
+    "home_score": "24",
+    "away_score": "28",
+    "ts_utc": 1766366400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772824",
+    "matchup": "San Francisco 49ers @ Indianapolis Colts",
+    "date": "2025-12-22",
+    "time": "5:15 PM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "ESPN",
+      "ABC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772824/49ers-colts",
+    "winner": "San Francisco 49ers",
+    "home_score": "27",
+    "away_score": "48",
+    "ts_utc": 1766452500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772710",
+    "matchup": "Dallas Cowboys @ Washington Commanders",
+    "date": "2025-12-25",
+    "time": "10:00 AM",
+    "location": "Northwest Stadium",
+    "tv_providers": [],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772710/cowboys-commanders",
+    "winner": "Dallas Cowboys",
+    "home_score": "23",
+    "away_score": "30",
+    "ts_utc": 1766685600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772711",
+    "matchup": "Detroit Lions @ Minnesota Vikings",
+    "date": "2025-12-25",
+    "time": "1:30 PM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772711/lions-vikings",
+    "winner": "Minnesota Vikings",
+    "home_score": "23",
+    "away_score": "10",
+    "ts_utc": 1766698200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772622",
+    "matchup": "Denver Broncos @ Kansas City Chiefs",
+    "date": "2025-12-25",
+    "time": "5:15 PM",
+    "location": "GEHA Field at Arrowhead Stadium",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772622/broncos-chiefs",
+    "winner": "Denver Broncos",
+    "home_score": "13",
+    "away_score": "20",
+    "ts_utc": 1766711700,
+    "status": "final"
+  },
+  {
+    "game_id": "401772951",
+    "matchup": "Houston Texans @ Los Angeles Chargers",
+    "date": "2025-12-27",
+    "time": "1:30 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "NFL Network"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772951/texans-chargers",
+    "winner": "Houston Texans",
+    "home_score": "16",
+    "away_score": "20",
+    "ts_utc": 1766871000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772953",
+    "matchup": "Baltimore Ravens @ Green Bay Packers",
+    "date": "2025-12-27",
+    "time": "5:00 PM",
+    "location": "Lambeau Field",
+    "tv_providers": [
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772953/ravens-packers",
+    "winner": "Baltimore Ravens",
+    "home_score": "24",
+    "away_score": "41",
+    "ts_utc": 1766883600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772807",
+    "matchup": "Pittsburgh Steelers @ Cleveland Browns",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "Huntington Bank Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772807/steelers-browns",
+    "winner": "Cleveland Browns",
+    "home_score": "13",
+    "away_score": "6",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772808",
+    "matchup": "New England Patriots @ New York Jets",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772808/patriots-jets",
+    "winner": "New England Patriots",
+    "home_score": "10",
+    "away_score": "42",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772809",
+    "matchup": "New Orleans Saints @ Tennessee Titans",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "Nissan Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772809/saints-titans",
+    "winner": "New Orleans Saints",
+    "home_score": "26",
+    "away_score": "34",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772915",
+    "matchup": "Jacksonville Jaguars @ Indianapolis Colts",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "Lucas Oil Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772915/jaguars-colts",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "17",
+    "away_score": "23",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772916",
+    "matchup": "Tampa Bay Buccaneers @ Miami Dolphins",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "Hard Rock Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772916/buccaneers-dolphins",
+    "winner": "Miami Dolphins",
+    "home_score": "20",
+    "away_score": "17",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772952",
+    "matchup": "Seattle Seahawks @ Carolina Panthers",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772952/seahawks-panthers",
+    "winner": "Seattle Seahawks",
+    "home_score": "10",
+    "away_score": "27",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772954",
+    "matchup": "Arizona Cardinals @ Cincinnati Bengals",
+    "date": "2025-12-28",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772954/cardinals-bengals",
+    "winner": "Cincinnati Bengals",
+    "home_score": "37",
+    "away_score": "14",
+    "ts_utc": 1766944800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772950",
+    "matchup": "New York Giants @ Las Vegas Raiders",
+    "date": "2025-12-28",
+    "time": "1:05 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772950/giants-raiders",
+    "winner": "New York Giants",
+    "home_score": "10",
+    "away_score": "34",
+    "ts_utc": 1766955900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772917",
+    "matchup": "Philadelphia Eagles @ Buffalo Bills",
+    "date": "2025-12-28",
+    "time": "1:25 PM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772917/eagles-bills",
+    "winner": "Philadelphia Eagles",
+    "home_score": "12",
+    "away_score": "13",
+    "ts_utc": 1766957100,
+    "status": "final"
+  },
+  {
+    "game_id": "401772935",
+    "matchup": "Chicago Bears @ San Francisco 49ers",
+    "date": "2025-12-28",
+    "time": "5:20 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772935/bears-49ers",
+    "winner": "San Francisco 49ers",
+    "home_score": "42",
+    "away_score": "38",
+    "ts_utc": 1766971200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772825",
+    "matchup": "Los Angeles Rams @ Atlanta Falcons",
+    "date": "2025-12-29",
+    "time": "5:15 PM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772825/rams-falcons",
+    "winner": "Atlanta Falcons",
+    "home_score": "27",
+    "away_score": "24",
+    "ts_utc": 1767057300,
+    "status": "final"
+  },
+  {
+    "game_id": "401772969",
+    "matchup": "Carolina Panthers @ Tampa Bay Buccaneers",
+    "date": "2026-01-03",
+    "time": "1:30 PM",
+    "location": "Raymond James Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772969/panthers-buccaneers",
+    "winner": "Tampa Bay Buccaneers",
+    "home_score": "16",
+    "away_score": "14",
+    "ts_utc": 1767475800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772961",
+    "matchup": "Seattle Seahawks @ San Francisco 49ers",
+    "date": "2026-01-03",
+    "time": "5:00 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "ABC",
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772961/seahawks-49ers",
+    "winner": "Seattle Seahawks",
+    "home_score": "3",
+    "away_score": "13",
+    "ts_utc": 1767488400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772962",
+    "matchup": "Indianapolis Colts @ Houston Texans",
+    "date": "2026-01-04",
+    "time": "10:00 AM",
+    "location": "NRG Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772962/colts-texans",
+    "winner": "Houston Texans",
+    "home_score": "38",
+    "away_score": "30",
+    "ts_utc": 1767549600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772963",
+    "matchup": "Dallas Cowboys @ New York Giants",
+    "date": "2026-01-04",
+    "time": "10:00 AM",
+    "location": "MetLife Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772963/cowboys-giants",
+    "winner": "New York Giants",
+    "home_score": "34",
+    "away_score": "17",
+    "ts_utc": 1767549600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772964",
+    "matchup": "Cleveland Browns @ Cincinnati Bengals",
+    "date": "2026-01-04",
+    "time": "10:00 AM",
+    "location": "Paycor Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772964/browns-bengals",
+    "winner": "Cleveland Browns",
+    "home_score": "18",
+    "away_score": "20",
+    "ts_utc": 1767549600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772966",
+    "matchup": "New Orleans Saints @ Atlanta Falcons",
+    "date": "2026-01-04",
+    "time": "10:00 AM",
+    "location": "Mercedes-Benz Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772966/saints-falcons",
+    "winner": "Atlanta Falcons",
+    "home_score": "19",
+    "away_score": "17",
+    "ts_utc": 1767549600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772968",
+    "matchup": "Green Bay Packers @ Minnesota Vikings",
+    "date": "2026-01-04",
+    "time": "10:00 AM",
+    "location": "U.S. Bank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772968/packers-vikings",
+    "winner": "Minnesota Vikings",
+    "home_score": "16",
+    "away_score": "3",
+    "ts_utc": 1767549600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772970",
+    "matchup": "Tennessee Titans @ Jacksonville Jaguars",
+    "date": "2026-01-04",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772970/titans-jaguars",
+    "winner": "Jacksonville Jaguars",
+    "home_score": "41",
+    "away_score": "7",
+    "ts_utc": 1767549600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772955",
+    "matchup": "Arizona Cardinals @ Los Angeles Rams",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "SoFi Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772955/cardinals-rams",
+    "winner": "Los Angeles Rams",
+    "home_score": "37",
+    "away_score": "20",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772956",
+    "matchup": "Los Angeles Chargers @ Denver Broncos",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772956/chargers-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "19",
+    "away_score": "3",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772957",
+    "matchup": "Kansas City Chiefs @ Las Vegas Raiders",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "Allegiant Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772957/chiefs-raiders",
+    "winner": "Las Vegas Raiders",
+    "home_score": "14",
+    "away_score": "12",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772958",
+    "matchup": "Miami Dolphins @ New England Patriots",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772958/dolphins-patriots",
+    "winner": "New England Patriots",
+    "home_score": "38",
+    "away_score": "10",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772959",
+    "matchup": "Washington Commanders @ Philadelphia Eagles",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772959/commanders-eagles",
+    "winner": "Washington Commanders",
+    "home_score": "17",
+    "away_score": "24",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772965",
+    "matchup": "Detroit Lions @ Chicago Bears",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772965/lions-bears",
+    "winner": "Detroit Lions",
+    "home_score": "16",
+    "away_score": "19",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772967",
+    "matchup": "New York Jets @ Buffalo Bills",
+    "date": "2026-01-04",
+    "time": "1:25 PM",
+    "location": "Highmark Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772967/jets-bills",
+    "winner": "Buffalo Bills",
+    "home_score": "35",
+    "away_score": "8",
+    "ts_utc": 1767561900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772960",
+    "matchup": "Baltimore Ravens @ Pittsburgh Steelers",
+    "date": "2026-01-04",
+    "time": "5:20 PM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772960/ravens-steelers",
+    "winner": "Pittsburgh Steelers",
+    "home_score": "26",
+    "away_score": "24",
+    "ts_utc": 1767576000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772979",
+    "matchup": "Los Angeles Rams @ Carolina Panthers",
+    "date": "2026-01-10",
+    "time": "1:30 PM",
+    "location": "Bank of America Stadium",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772979/rams-panthers",
+    "winner": "Los Angeles Rams",
+    "home_score": "31",
+    "away_score": "34",
+    "ts_utc": 1768080600,
+    "status": "final"
+  },
+  {
+    "game_id": "401772981",
+    "matchup": "Green Bay Packers @ Chicago Bears",
+    "date": "2026-01-10",
+    "time": "5:00 PM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772981/packers-bears",
+    "winner": "Chicago Bears",
+    "home_score": "31",
+    "away_score": "27",
+    "ts_utc": 1768093200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772977",
+    "matchup": "Buffalo Bills @ Jacksonville Jaguars",
+    "date": "2026-01-11",
+    "time": "10:00 AM",
+    "location": "EverBank Stadium",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772977/bills-jaguars",
+    "winner": "Buffalo Bills",
+    "home_score": "24",
+    "away_score": "27",
+    "ts_utc": 1768154400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772980",
+    "matchup": "San Francisco 49ers @ Philadelphia Eagles",
+    "date": "2026-01-11",
+    "time": "1:30 PM",
+    "location": "Lincoln Financial Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772980/49ers-eagles",
+    "winner": "San Francisco 49ers",
+    "home_score": "19",
+    "away_score": "23",
+    "ts_utc": 1768167000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772978",
+    "matchup": "Los Angeles Chargers @ New England Patriots",
+    "date": "2026-01-11",
+    "time": "5:15 PM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772978/chargers-patriots",
+    "winner": "New England Patriots",
+    "home_score": "16",
+    "away_score": "3",
+    "ts_utc": 1768180500,
+    "status": "final"
+  },
+  {
+    "game_id": "401772976",
+    "matchup": "Houston Texans @ Pittsburgh Steelers",
+    "date": "2026-01-12",
+    "time": "5:15 PM",
+    "location": "Acrisure Stadium",
+    "tv_providers": [
+      "ESPN",
+      "ABC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772976/texans-steelers",
+    "winner": "Houston Texans",
+    "home_score": "6",
+    "away_score": "30",
+    "ts_utc": 1768266900,
+    "status": "final"
+  },
+  {
+    "game_id": "401772982",
+    "matchup": "Buffalo Bills @ Denver Broncos",
+    "date": "2026-01-17",
+    "time": "1:30 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772982/bills-broncos",
+    "winner": "Denver Broncos",
+    "home_score": "33",
+    "away_score": "30",
+    "ts_utc": 1768685400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772984",
+    "matchup": "San Francisco 49ers @ Seattle Seahawks",
+    "date": "2026-01-17",
+    "time": "5:00 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772984/49ers-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "41",
+    "away_score": "6",
+    "ts_utc": 1768698000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772983",
+    "matchup": "Houston Texans @ New England Patriots",
+    "date": "2026-01-18",
+    "time": "12:00 PM",
+    "location": "Gillette Stadium",
+    "tv_providers": [
+      "ESPN",
+      "ABC"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772983/texans-patriots",
+    "winner": "New England Patriots",
+    "home_score": "28",
+    "away_score": "16",
+    "ts_utc": 1768766400,
+    "status": "final"
+  },
+  {
+    "game_id": "401772985",
+    "matchup": "Los Angeles Rams @ Chicago Bears",
+    "date": "2026-01-18",
+    "time": "3:30 PM",
+    "location": "Soldier Field",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772985/rams-bears",
+    "winner": "Los Angeles Rams",
+    "home_score": "17",
+    "away_score": "20",
+    "ts_utc": 1768779000,
+    "status": "final"
+  },
+  {
+    "game_id": "401772986",
+    "matchup": "New England Patriots @ Denver Broncos",
+    "date": "2026-01-25",
+    "time": "12:00 PM",
+    "location": "Empower Field at Mile High",
+    "tv_providers": [
+      "CBS"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772986/patriots-broncos",
+    "winner": "New England Patriots",
+    "home_score": "7",
+    "away_score": "10",
+    "ts_utc": 1769371200,
+    "status": "final"
+  },
+  {
+    "game_id": "401772987",
+    "matchup": "Los Angeles Rams @ Seattle Seahawks",
+    "date": "2026-01-25",
+    "time": "3:30 PM",
+    "location": "Lumen Field",
+    "tv_providers": [
+      "FOX"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772987/rams-seahawks",
+    "winner": "Seattle Seahawks",
+    "home_score": "31",
+    "away_score": "27",
+    "ts_utc": 1769383800,
+    "status": "final"
+  },
+  {
+    "game_id": "401831718",
+    "matchup": "NFC @ AFC",
+    "date": "2026-02-03",
+    "time": "5:00 PM",
+    "location": "Moscone Center",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401831718/nfc-afc",
+    "winner": "NFC",
+    "home_score": "52",
+    "away_score": "66",
+    "ts_utc": 1770166800,
+    "status": "final"
+  },
+  {
+    "game_id": "401772988",
+    "matchup": "Seattle Seahawks @ New England Patriots",
+    "date": "2026-02-08",
+    "time": "3:30 PM",
+    "location": "Levi's Stadium",
+    "tv_providers": [
+      "NBC",
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nfl/game/_/gameId/401772988/seahawks-patriots",
+    "home_score": "13",
+    "away_score": "29",
+    "ts_utc": 1770593400,
+    "status": "final",
+    "winner": "Seattle Seahawks"
+  }
+]

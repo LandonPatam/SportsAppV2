@@ -23,12 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-#Ignore cache directories
-f1_cache
-nba_cache
-
-#Ignore JSON files
-src/*.json
-
-public/data
-public/data/nfl_site_nfl_standings.json
