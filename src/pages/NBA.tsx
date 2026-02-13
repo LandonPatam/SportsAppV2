@@ -1418,6 +1418,8 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: 
                         style = { backgroundColor: '#FFFFFF', color: '#000000' };
                       } else if (name.includes('espn')) {
                         style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                      } else if (name.includes('abc')) {
+                        style = { backgroundColor: '#000000', color: '#ffffff' };
                       }
                       return (
                         <Badge key={p} className="font-semibold" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
@@ -2237,6 +2239,8 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                                 style = { backgroundColor: '#FFFFFF', color: '#000000' };
                               } else if (name.includes('espn')) {
                                 style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                              } else if (name.includes('abc')) {
+                                style = { backgroundColor: '#000000', color: '#ffffff' };
                               }
                               return (
                                 <Badge key={p} className="text-[9px] font-semibold px-1.5 py-0.5" style={style}>
