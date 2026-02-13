@@ -2443,8 +2443,13 @@ className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"    style
   >
     {/* === Foreground content (sits above gradient) === */}
     <div className="relative z-10 p-4 text-white">
+      {/* === Ranking in top right corner === */}
+      <div className="absolute top-4 right-4 text-2xl font-bold text-white">
+        #{team.rank}
+      </div>
+
       {/* === Team header on top of gradient === */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 relative">
         {team.LOGO_URL && (
           <img
             src={team.LOGO_URL}
@@ -2452,8 +2457,8 @@ className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"    style
             className="w-16 h-16 rounded-sm"
           />
         )}
-        <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-lg font-bold truncate">{team.TEAM_NAME}</h3>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <h3 className="text-2xl font-bold truncate">{team.TEAM_NAME}</h3>
           {onToggleFavorite && (
             <button
               type="button"
@@ -2476,22 +2481,10 @@ className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"    style
             </button>
           )}
         </div>
-        <Badge
-          className="ml-auto border-0 text-white font-semibold"
-          style={{
-            backgroundImage:
-              team.W >= team.L
-                ? 'linear-gradient(90deg, #ffffffff, #ffffffff)'
-                : 'linear-gradient(90deg, #000000ff, #000000ff)',
-            color: team.W >= team.L ? '#2b2b2bff' : '#ffffffff',
-            padding: '0.25rem 0.6rem',
-            borderRadius: '0.4rem',
-            letterSpacing: '0.5px',
-            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-          }}
-        >
+        {/* === Record in bottom right of header === */}
+        <div className="absolute bottom-0 right-0 text-3xl font-bold text-white">
           {team.W} - {team.L}
-        </Badge>
+        </div>
       </div>
 
       {/* === White stats card === */}
@@ -3931,7 +3924,7 @@ useEffect(() => {
   <div className="grid grid-cols-2 gap-4">
     {/* Western Conference */}
     <div>
-      <h2 className="text-xl mb-3 text-white text-center">WESTERN CONFERENCE</h2>
+      <h2 className="text-xl mb-3 font-semibold text-white text-center">WESTERN CONFERENCE</h2>
       <div className="grid grid-cols-1 gap-3">
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
@@ -3990,7 +3983,7 @@ useEffect(() => {
 
     {/* Eastern Conference */}
     <div>
-      <h2 className="text-xl mb-3 text-white text-center">EASTERN CONFERENCE</h2>
+      <h2 className="text-xl mb-3 font-semibold text-white text-center">EASTERN CONFERENCE</h2>
       <div className="grid grid-cols-1 gap-3">
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')

@@ -426,11 +426,13 @@ const TeamCard = ({
   leagueAverages,
   conferenceAverages,
   allTeams,
+  compact = false,
 }: {
   team: NFLTeam;
   leagueAverages: any;
   conferenceAverages: Record<string, { divPct: number; confPct: number; last5Pct: number }>;
   allTeams?: NFLTeam[];
+  compact?: boolean;
 }) => {
   const totalGames = team.wins + team.losses + team.ties;
   const teamColor = teamColors[team.name] || { primary: '#1e40af', secondary: '#dc2626' };
@@ -569,63 +571,75 @@ const TeamCard = ({
     return diff > 0 ? 'high' : 'low';
   };
 
+  const getColorWithOpacity = (color: string, opacity: string = '90') => {
+    // Remove existing alpha channel if present (last 2 chars if 8-char hex)
+    const cleanColor = color.length === 9 && color.startsWith('#') 
+      ? color.substring(0, 7) 
+      : color;
+    return `${cleanColor}${opacity}`;
+  };
+
   return (
     <div
-      className="relative rounded-xl shadow-lg overflow-hidden"
+      className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"
       style={{
-        backgroundImage: `linear-gradient(-200deg, ${teamColor.primary}, ${teamColor.secondary})`,
-        padding: '3px',
+        backgroundImage: `linear-gradient(300deg, ${getColorWithOpacity(teamColor.secondary)}, ${getColorWithOpacity(teamColor.primary)})`,
       }}
     >
-      {/* === Dark overlay over gradient === */}
-      <div
-        className="absolute inset-1 rounded-xl"
-        style={{
-          backgroundColor: '#1d1d1dff',
-          opacity: 1,
-        }}
-        aria-hidden
-      />
-
       {/* === Foreground content === */}
-      <div className="relative z-10 p-4 text-white">
-        
-        {/* === Team header === */}
-        <div className="flex items-center gap-2 mb-3">
-          {team.logo && (
-            <img
-              src={team.logo}
-              alt={`${team.name} logo`}
-              className="w-7 h-7 rounded-sm"
-            />
-          )}
+      <div className={`relative z-10 text-white ${compact ? 'p-2' : 'p-4'}`}>
+        {compact ? (
+          // Compact layout: logo, name, record, rank in one line
+          <div className="flex items-center gap-2">
+            {team.logo && (
+              <img
+                src={team.logo}
+                alt={`${team.name} logo`}
+                className="w-10 h-10 rounded-sm flex-shrink-0"
+              />
+            )}
+            <h3 className="text-base font-bold truncate flex-1 min-w-0">{team.name}</h3>
+            <div className="text-xl font-bold whitespace-nowrap flex-shrink-0">
+              {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
+            </div>
+            <div className="text-xl font-bold flex-shrink-0 ml-3">
+              #{(team as any).rank || '—'}
+            </div>
+          </div>
+        ) : (
+          // Full layout: original structure
+          <>
+            {/* === Ranking in top right corner === */}
+            <div className="absolute top-4 right-4 text-2xl font-bold text-white">
+              #{(team as any).rank || '—'}
+            </div>
 
-          <h3 className="text-lg font-bold">{team.name}</h3>
-
-          <Badge
-            className="ml-auto border-0 text-white font-semibold shadow-sm"
-            style={{
-              backgroundImage:
-                team.win_pct >= 0.5
-                  ? 'linear-gradient(90deg, #ffffffff, #ffffffff)'
-                  : 'linear-gradient(90deg, #000000ff, #000000ff)',
-              color: team.win_pct >= 0.5 ? '#2b2b2bff' : '#ffffffff',
-              padding: '0.25rem 0.6rem',
-              borderRadius: '0.4rem',
-              letterSpacing: '0.5px',
-              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-            }}
-          >
-            {team.wins}-{team.losses}
-            {team.ties > 0 ? `-${team.ties}` : ''}
-          </Badge>
-        </div>
+            {/* === Team header === */}
+            <div className="flex items-center gap-2 mb-3 relative">
+              {team.logo && (
+                <img
+                  src={team.logo}
+                  alt={`${team.name} logo`}
+                  className="w-16 h-16 rounded-sm"
+                />
+              )}
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <h3 className="text-2xl font-bold truncate">{team.name}</h3>
+              </div>
+              {/* === Record in bottom right of header === */}
+              <div className="absolute bottom-0 right-0 text-3xl font-bold text-white">
+                {team.wins}-{team.losses}
+                {team.ties > 0 ? `-${team.ties}` : ''}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* === White stats card === */}
         <Card
-          className="overflow-hidden transition-all duration-300 hover:shadow-md bg-card/50 backdrop-blur-sm border-1 h-full"
+          className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
           style={{
-          backgroundColor: '#0000004c',
+          backgroundColor: '#000000d2',
           opacity: 1,
         }}
         >
@@ -1278,15 +1292,15 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Right: wide team card + roster - MATCHING NBA STRUCTURE */}
-                <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col gap-5 pr-0">
+                {/* Right: wide team card + roster - entire section scrolls together */}
+                <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-24">
                   {currentTeam && (
                     <div className="w-full flex flex-wrap gap-4 items-start">
                       {/* Team card - fixed width, no shrinking - MATCHING NBA */}
-                      <div className="w-full min-w-[450px] max-w-[550px] shrink-0">
+                      <div className="w-full min-w-[550px] max-w-[800px] shrink-0">
                         <TeamCard
                           key={currentTeam.name}
-                          team={currentTeam}
+                          team={{ ...currentTeam, rank: (orderedTeams.findIndex((t) => t.name === currentTeam.name) + 1) || 1 }}
                           leagueAverages={leagueAverages}
                           conferenceAverages={conferenceAverages}
                           allTeams={teams}
@@ -1378,7 +1392,11 @@ useEffect(() => {
                                 };
                                 const vals = raw.map((v, i) => norm(v, mins[i], maxs[i]));
                                 const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
-                                const bg = colors.secondary && colors.secondary.length === 7 ? `${colors.secondary}55` : colors.primary;
+                                // Always add transparency to background
+                                const cleanSecondary = colors.secondary.length === 9 && colors.secondary.startsWith('#') 
+                                  ? colors.secondary.substring(0, 7) 
+                                  : colors.secondary;
+                                const bg = `${cleanSecondary}55`;
                                 return {
                                   labels,
                                   datasets: [
@@ -1428,11 +1446,11 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Roster list - scrollable - MATCHING NBA STRUCTURE */}
-                  <div className="flex-1 min-h-0 flex flex-col">
+                  {/* Roster list (no independent scroll, uses parent scroll) */}
+                  <div className="flex-1 flex flex-col">
                     {currentTeam && (
                       <div
-                        className="flex-1 min-h-0 overflow-y-auto no-scrollbar snap-y snap-mandatory pt-0 pb-8"
+                        className="snap-y snap-mandatory pt-0 pb-24"
                         style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
                       >
                         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
@@ -1450,7 +1468,13 @@ useEffect(() => {
         )}
 
         {/* AFC and NFC Conference Tabs */}
-        {!scheduleOnly && ['AFC', 'NFC'].map((conference) => (
+        {!scheduleOnly && ['AFC', 'NFC'].map((conference) => {
+          // Calculate conference-wide rankings
+          const conferenceTeams = teams
+            .filter((team) => team.conference === conference)
+            .sort((a, b) => b.wins - a.wins);
+          
+          return (
           <TabsContent
             key={conference}
             value={conference}
@@ -1468,25 +1492,31 @@ useEffect(() => {
 
               return (
                 <div key={`${conference}-${division}`} className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-muted-foreground">
+                  <h3 className="text-lg font-semibold mb-3 text-white">
                     {conference} {division}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {divisionTeams.map((team) => (
-                      <TeamCard
-                        key={team.name}
-                        team={team}
-                        leagueAverages={leagueAverages}
-                        conferenceAverages={conferenceAverages}
-                        allTeams={teams}
-                      />
-                    ))}
+                    {divisionTeams.map((team) => {
+                      // Find conference-wide rank
+                      const conferenceRank = conferenceTeams.findIndex((t) => t.name === team.name) + 1;
+                      return (
+                        <TeamCard
+                          key={team.name}
+                          team={{ ...team, rank: conferenceRank }}
+                          leagueAverages={leagueAverages}
+                          conferenceAverages={conferenceAverages}
+                          allTeams={teams}
+                          compact={true}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
           </TabsContent>
-        ))}
+          );
+        })}
 
         {/* Schedule Tab */}
         <TabsContent
