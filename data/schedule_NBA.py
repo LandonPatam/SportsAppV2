@@ -10,7 +10,8 @@ import time
 # ==========================================================
 FIND_SCHEDULE = False   # Toggle True to force a full crawl from SEASON_START_DATE
 SAVE_PATH = "public/data/nba_schedule.json"
-VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN"}
+TEMP_PATH = SAVE_PATH + ".tmp"  # Path for safe swapping
+VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN", "ABC"}
 SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
 
@@ -121,8 +122,11 @@ def load_schedule() -> tuple:
         print(f"[NEW SEASON DETECTED] Earliest game in JSON is {earliest}, "
               f"but current season starts {SEASON_START_DATE}. Resetting schedule.")
         os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-        with open(SAVE_PATH, "w", encoding="utf-8") as f:
+        
+        
+        with open(TEMP_PATH, "w", encoding="utf-8") as f:
             json.dump([], f)
+        os.replace(TEMP_PATH, SAVE_PATH)
         # Also nuke the last-scan state file so postseason auto-crawl doesn't
         # think it already ran for the new season
         if os.path.exists(_STATE_PATH):
@@ -299,8 +303,9 @@ if FIND_SCHEDULE:
         schedule.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")))
 
         os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-        with open(SAVE_PATH, "w", encoding="utf-8") as out:
+        with open(TEMP_PATH, "w", encoding="utf-8") as out:
             json.dump(schedule, out, indent=2, ensure_ascii=False)
+        os.replace(TEMP_PATH, SAVE_PATH)
 
         current_date += timedelta(days=1)
         time.sleep(SLEEP_BETWEEN_CALLS)
@@ -474,7 +479,8 @@ else:
 
     # Final sort and save
     schedule.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")))
-    with open(SAVE_PATH, "w", encoding="utf-8") as out:
+    with open(TEMP_PATH, "w", encoding="utf-8") as out:
         json.dump(schedule, out, indent=2, ensure_ascii=False)
+    os.replace(TEMP_PATH, SAVE_PATH)
 
     print(f"Schedule saved to {SAVE_PATH}")

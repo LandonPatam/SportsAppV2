@@ -224,6 +224,8 @@ interface ScheduleGameAny {
   matchup?: string;       // e.g., 'Atlanta Hawks @ Indiana Pacers'
   location?: string;
   game_link?: string;
+  period?: number;        // quarter/period number (1-4, or 5+ for OT)
+  clock?: string;         // remaining time in period (e.g., "10.0")
 }
 
 type NBAScheduleData =
@@ -915,13 +917,42 @@ const DashboardTodaySchedule = ({
                 </div>
 
                 {/* --- Center Score / Time --- */}
-                <div className="flex flex-col items-center justify-center shrink-0 z-10" style={{ width: scoreColWidth }}>
+                <div className="flex items-center justify-center shrink-0 z-10 relative" style={{ width: scoreColWidth }}>
                   {hasScores ? (
-                    <div className="font-extrabold tracking-wide flex items-center justify-center gap-3" style={{ fontSize: scoreSize }}>
-                      <span className={awayScoreClass}>{aScore}</span>
-                      <span className="text-muted-foreground/50 text-[0.8em]">-</span>
-                      <span className={homeScoreClass}>{hScore}</span>
-                    </div>
+                    <>
+                      <div className="font-extrabold tracking-wide flex items-center justify-center gap-3" style={{ fontSize: scoreSize }}>
+                        <span className={awayScoreClass}>{aScore}</span>
+                        <span className="text-muted-foreground/50 text-[0.8em]">-</span>
+                        <span className={homeScoreClass}>{hScore}</span>
+                      </div>
+                      {/* Show quarter and time for live games - positioned absolutely below score */}
+                      {isLive && (g.period || g.clock) && (
+                        <div className="absolute top-full text-white/90 font-semibold text-center whitespace-nowrap mt-1" style={{ fontSize: Math.max(10, scoreSize * 0.5) }}>
+                          {(() => {
+                            const parts: string[] = [];
+                            
+                            // Format period/quarter
+                            if (g.period) {
+                              const period = Number(g.period);
+                              if (period <= 4) {
+                                parts.push(`Q${period}`);
+                              } else {
+                                // Overtime
+                                const otNum = period - 4;
+                                parts.push(otNum === 1 ? 'OT' : `${otNum}OT`);
+                              }
+                            }
+                            
+                            // Add clock time
+                            if (g.clock) {
+                              parts.push(String(g.clock));
+                            }
+                            
+                            return parts.length > 0 ? parts.join(' • ') : 'LIVE';
+                          })()}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="font-bold text-center leading-tight" style={{ fontSize: timeSize }}>
                       {g.time || 'TBA'}
@@ -1228,7 +1259,7 @@ const ScheduleView = ({ scheduleData }: { scheduleData: NBAScheduleData | null }
 };
 
 // Compact, arrow-controlled view
-const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, onGameClick?: (gameId: string) => void }) => {
+const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, onGameClick?: (gameId: string) => void }) => {
   // Build games grouped by date from the provided schedule
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
@@ -1438,27 +1469,63 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: 
                       {/* Away side */}
                       <div className="flex flex-col items-center justify-center gap-1">
                         {awayLogo && (
-                          <img
-                            src={awayLogo}
-                            alt={awayAbbr || 'Away'}
-                            className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                            style={{
-                              objectFit: 'contain',
-                              ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
-                            }}
-                            loading="lazy"
-                          />
+                          <>
+                            <img
+                              src={awayLogo}
+                              alt={awayAbbr || 'Away'}
+                              className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                              style={{
+                                objectFit: 'contain',
+                                ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
+                              }}
+                              loading="lazy"
+                            />
+                            {awayAbbr && recordMap[awayAbbr] && (
+                              <div className="text-white/80 font-bold text-center" style={{ fontSize: "clamp(0.6rem, 2.2cqi, 0.75rem)" }}>
+                                ({recordMap[awayAbbr]})
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
 
                       {/* Center time or score */}
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center relative">
                         {hasScores ? (
-                          <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
-                            <span className={awayScoreClass}>{aScore}</span>
-                            <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
-                            <span className={homeScoreClass}>{hScore}</span>
-                          </div>
+                          <>
+                            <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
+                              <span className={awayScoreClass}>{aScore}</span>
+                              <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
+                              <span className={homeScoreClass}>{hScore}</span>
+                            </div>
+                            {/* Show quarter and time for live games - positioned absolutely below score */}
+                            {isLiveGame && (g.period || g.clock) && (
+                              <div className="absolute top-full text-white/90 font-semibold text-center whitespace-nowrap" style={{ fontSize: "clamp(0.65rem, 2.5cqi, 0.85rem)", marginTop: "0.2cqi" }}>
+                                {(() => {
+                                  const parts: string[] = [];
+                                  
+                                  // Format period/quarter
+                                  if (g.period) {
+                                    const period = Number(g.period);
+                                    if (period <= 4) {
+                                      parts.push(`Q${period}`);
+                                    } else {
+                                      // Overtime
+                                      const otNum = period - 4;
+                                      parts.push(otNum === 1 ? 'OT' : `${otNum}OT`);
+                                    }
+                                  }
+                                  
+                                  // Add clock time
+                                  if (g.clock) {
+                                    parts.push(String(g.clock));
+                                  }
+                                  
+                                  return parts.length > 0 ? parts.join(' • ') : 'LIVE';
+                                })()}
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <div className="font-bold text-white" style={{ fontSize: "clamp(0.875rem, 3.2cqi, 1.3rem)" }}>
                             {g.time || 'TBA'}
@@ -1469,16 +1536,23 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: 
                       {/* Home side */}
                       <div className="flex flex-col items-center justify-center gap-1">
                         {homeLogo && (
-                          <img
-                            src={homeLogo}
-                            alt={homeAbbr || 'Home'}
-                            className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                            style={{
-                              objectFit: 'contain',
-                              ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
-                            }}
-                            loading="lazy"
-                          />
+                          <>
+                            <img
+                              src={homeLogo}
+                              alt={homeAbbr || 'Home'}
+                              className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                              style={{
+                                objectFit: 'contain',
+                                ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
+                              }}
+                              loading="lazy"
+                            />
+                            {homeAbbr && recordMap[homeAbbr] && (
+                              <div className="text-white/80 font-bold text-center" style={{ fontSize: "clamp(0.6rem, 2.2cqi, 0.75rem)" }}>
+                                ({recordMap[homeAbbr]})
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -2819,7 +2893,7 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, [autoRefresh]);
 
-// Lightweight schedule-only polling with adaptive interval
+// Lightweight schedule-only polling (matches NFL pattern)
 useEffect(() => {
   let cancelled = false;
   if (!autoRefresh) return;
@@ -2827,49 +2901,33 @@ useEffect(() => {
   const fetchScheduleOnly = async () => {
     try {
       if (typeof document !== 'undefined' && document.hidden) return;
-      const resp = await fetch('/data/nba_schedule.json', { cache: 'no-cache' });
+      const resp = await fetch('/data/nba_schedule.json?_=' + Date.now(), { cache: 'no-store' });
       if (!resp.ok) return;
       const text = await resp.text();
       if (cancelled) return;
       const next = JSON.parse(text) as NBAScheduleData;
-      const currentText = JSON.stringify(scheduleData ?? null);
-      if (text !== currentText) setScheduleData(next);
+      setScheduleData((prev) => {
+        const prevText = JSON.stringify(prev ?? null);
+        return prevText === text ? prev : next;
+      });
     } catch {}
   };
 
-  const computeInterval = () => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const todayKey = `${y}-${m}-${d}`;
-    const gamesArr: any[] = Array.isArray(scheduleData)
-      ? (scheduleData as any[])
-      : ((scheduleData as any)?.games || []);
-    const todays = gamesArr.filter((g) => String(g.date || '').slice(0, 10) === todayKey);
-    const anyLive = todays.some((g) => !(g.home_score && g.away_score));
-    return anyLive ? 3000 : 60000;
+  fetchScheduleOnly();
+  const id = setInterval(fetchScheduleOnly, 15000); // Poll every 15 seconds
+  
+  // Refresh on visibility
+  const vis = () => { 
+    if (document.visibilityState === 'visible') fetchScheduleOnly(); 
   };
-
-  const tick = () => fetchScheduleOnly();
-  const id = setInterval(tick, computeInterval());
-  tick();
-  return () => { cancelled = true; clearInterval(id); };
-}, [autoRefresh, scheduleData]);
-
-// Refresh schedule immediately on tab visibility
-useEffect(() => {
-  const onVis = () => {
-    if (document.visibilityState === 'visible') {
-      fetch('/data/nba_schedule.json', { cache: 'no-cache' })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => d && setScheduleData(d))
-        .catch(() => {});
-    }
+  document.addEventListener('visibilitychange', vis);
+  
+  return () => { 
+    cancelled = true; 
+    clearInterval(id); 
+    document.removeEventListener('visibilitychange', vis);
   };
-  document.addEventListener('visibilitychange', onVis);
-  return () => document.removeEventListener('visibilitychange', onVis);
-}, []);
+}, [autoRefresh]);
 
 
   // Compute league averages
@@ -3044,7 +3102,7 @@ const abbrToRecord = React.useMemo(() => {
   const map: Record<string, string> = {};
   nbaTeams.forEach((t) => {
     const abbr = teamAbbreviations[t.TEAM_NAME];
-    if (abbr) map[abbr] = `${t.W}-${t.L}`;
+    if (abbr) map[abbr] = `${t.W} - ${t.L}`;
   });
   return map;
 }, [nbaTeams]);
@@ -3921,7 +3979,7 @@ useEffect(() => {
 
 {/* === Schedule === */}
 <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
-  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} onGameClick={(gameId) => setEspnGameId(gameId)} />
+  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} onGameClick={(gameId) => setEspnGameId(gameId)} />
 </TabsContent>
 
 {/* === Standings === */}
