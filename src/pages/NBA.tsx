@@ -2147,7 +2147,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                       >
                         <div
                           className="absolute inset-1 rounded-xl"
-                          style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
+                          style={{ backgroundColor: '#141414', opacity: 1 }}
                           aria-hidden
                         />
                         <div className="relative z-10 p-4 text-white">
@@ -2493,7 +2493,7 @@ return (
     {/* === Dark inner fill (creates the gradient border effect) === */}
     <div
       className="absolute inset-1 rounded-xl"
-      style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
+      style={{ backgroundColor: '#141414', opacity: 1 }}
       aria-hidden
     />
 
@@ -2551,7 +2551,7 @@ return (
           onClick ? 'cursor-pointer' : ''
         }`}
         style={{
-        backgroundColor: '#000000d2',
+        backgroundColor: '#0000004c',
         opacity: 1,
       }}
  
@@ -2804,45 +2804,55 @@ const fetchData = async () => {
   try {
     setLoading(true);
     
-    // Fetch team data with cache-busting timestamp
-    const teamResponse = await fetch('/data/espn_NBA_team_stats.json?' + Date.now());
-    if (!teamResponse.ok) throw new Error('Failed to fetch team data');
-    const teamData = await teamResponse.json();
-    
-    // Fetch player data
-    const playerResponse = await fetch('/data/espn_NBA_player_stats.json?' + Date.now());
-    if (!playerResponse.ok) throw new Error('Failed to fetch player data');
-    const playerData = await playerResponse.json();
-    
-    // Map team data with conference + division
-    const teamsWithConference = teamData.map((team: NBATeam) => ({
-      ...team,
-      conference: teamConferences[team.TEAM_NAME]?.conference || 'Unknown',
-      division: teamConferences[team.TEAM_NAME]?.division || 'Unknown',
-    }));
-    
-    setNbaTeams(teamsWithConference);
-    ALL_TEAMS_CACHE = teamsWithConference;
-    setNbaPlayerData(playerData);
-
-    // Fetch schedule data (initial load only; polling handled separately)
-    try {
-      const schedResp = await fetch('/data/nba_schedule.json', { cache: 'no-cache' });
-      if (schedResp.ok) {
-        const schedJson = (await schedResp.json()) as NBAScheduleData;
-        setScheduleData(schedJson);
-      } else {
-        console.warn('Failed to fetch nba_schedule.json');
+    // Safe JSON fetch helper — returns null if response is partial/corrupt
+    const safeFetchJson = async (url: string) => {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const text = await resp.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        console.warn(`Skipping corrupt JSON from ${url} — will retry next cycle`);
+        return null;
       }
-    } catch (e) {
-      console.warn('Schedule fetch error', e);
+    };
+
+    // Fetch team and player data with cache-busting timestamp
+    const [teamData, playerData] = await Promise.all([
+      safeFetchJson('/data/espn_NBA_team_stats.json?' + Date.now()),
+      safeFetchJson('/data/espn_NBA_player_stats.json?' + Date.now()),
+    ]);
+
+    if (teamData) {
+      const teamsWithConference = teamData.map((team: NBATeam) => ({
+        ...team,
+        conference: teamConferences[team.TEAM_NAME]?.conference || 'Unknown',
+        division: teamConferences[team.TEAM_NAME]?.division || 'Unknown',
+      }));
+      setNbaTeams(teamsWithConference);
+      ALL_TEAMS_CACHE = teamsWithConference;
     }
+
+    if (playerData) {
+      setNbaPlayerData(playerData);
+    }
+
+    // Fetch schedule on initial load only
+    try {
+      const text = await fetch('/data/nba_schedule.json', { cache: 'no-cache' }).then(r => r.ok ? r.text() : null);
+      if (text) {
+        const schedJson = JSON.parse(text) as NBAScheduleData;
+        setScheduleData(schedJson);
+      }
+    } catch {
+      // Silently ignore — partial write, retry next cycle
+    }
+
     setLastUpdate(new Date());
     setLoading(false);
   } catch (error) {
     console.error('Error fetching NBA data:', error);
     setLoading(false);
-    alert('Failed to load NBA data. Check console for details.');
   }
 };
 
@@ -2852,21 +2862,19 @@ useEffect(() => {
   fetchData();
 }, []);
 
-// Auto-refresh teams/players periodically (decoupled from schedule)
+// Auto-refresh teams/players every 5 minutes (not 30s — no need to hammer the server)
 useEffect(() => {
   if (!autoRefresh) return;
-
   const interval = setInterval(() => {
-    try {
-      if (typeof document !== 'undefined' && document.hidden) return;
-    } catch {}
+    if (typeof document !== 'undefined' && document.hidden) return;
     fetchData();
-  }, 30000);
-
+  }, 5 * 60 * 1000);
   return () => clearInterval(interval);
 }, [autoRefresh]);
 
-// Lightweight schedule-only polling (matches NFL pattern)
+// Lightweight schedule-only polling
+// - Every 30s if there are live games, every 5 min otherwise
+// - Silently skips corrupt/partial JSON (mid-write race condition)
 useEffect(() => {
   let cancelled = false;
   if (!autoRefresh) return;
@@ -2875,10 +2883,16 @@ useEffect(() => {
     try {
       if (typeof document !== 'undefined' && document.hidden) return;
       const resp = await fetch('/data/nba_schedule.json?_=' + Date.now(), { cache: 'no-store' });
-      if (!resp.ok) return;
+      if (!resp.ok || cancelled) return;
       const text = await resp.text();
       if (cancelled) return;
-      const next = JSON.parse(text) as NBAScheduleData;
+      // Validate JSON before applying — silently drop partial writes
+      let next: NBAScheduleData;
+      try {
+        next = JSON.parse(text) as NBAScheduleData;
+      } catch {
+        return; // mid-write race — skip this cycle
+      }
       setScheduleData((prev) => {
         const prevText = JSON.stringify(prev ?? null);
         return prevText === text ? prev : next;
@@ -2886,21 +2900,43 @@ useEffect(() => {
     } catch {}
   };
 
+  // Determine poll interval based on whether any game is currently live
+  const getLiveGames = () => {
+    try {
+      const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
+        ? (scheduleData as ScheduleGameAny[])
+        : ((scheduleData as any)?.games || []);
+      return gamesArr.some((g: any) => g.status === 'live');
+    } catch { return false; }
+  };
+
+  let id: ReturnType<typeof setInterval>;
+  const start = () => {
+    const hasLive = getLiveGames();
+    const interval = hasLive ? 30_000 : 5 * 60_000;
+    id = setInterval(() => {
+      if (cancelled) return;
+      fetchScheduleOnly();
+      // Re-evaluate interval each cycle
+      clearInterval(id);
+      if (!cancelled) start();
+    }, interval);
+  };
+
   fetchScheduleOnly();
-  const id = setInterval(fetchScheduleOnly, 15000); // Poll every 15 seconds
-  
-  // Refresh on visibility
-  const vis = () => { 
-    if (document.visibilityState === 'visible') fetchScheduleOnly(); 
+  start();
+
+  const vis = () => {
+    if (document.visibilityState === 'visible') fetchScheduleOnly();
   };
   document.addEventListener('visibilitychange', vis);
-  
-  return () => { 
-    cancelled = true; 
-    clearInterval(id); 
+
+  return () => {
+    cancelled = true;
+    clearInterval(id);
     document.removeEventListener('visibilitychange', vis);
   };
-}, [autoRefresh]);
+}, [autoRefresh, scheduleData]);
 
 
 // Compute league averages for ALL team stats
@@ -3658,7 +3694,7 @@ useEffect(() => {
                       >
                         <div
                           className="absolute inset-1 rounded-xl"
-                          style={{ backgroundColor: '#1f1f1f', opacity: 1 }}
+                          style={{ backgroundColor: '#141414', opacity: 1 }}
                           aria-hidden
                         />
                         <div className="relative z-10 rounded-[16px] bg-[#111]/85 p-3 text-white">
@@ -3938,7 +3974,7 @@ useEffect(() => {
       >
         <div
           className="absolute inset-1 rounded-xl"
-          style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
+          style={{ backgroundColor: '#141414', opacity: 1 }}
           aria-hidden
         />
 

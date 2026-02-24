@@ -12487,13 +12487,12 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810683/spurs-pistons",
-    "home_score": "45",
-    "away_score": "47",
+    "home_score": "103",
+    "away_score": "114",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "live",
-    "period": 2,
-    "clock": "3:21"
+    "status": "final",
+    "winner": "San Antonio Spurs"
   },
   {
     "game_id": "401810684",
@@ -12503,11 +12502,12 @@
     "location": "FedExForum",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810684/kings-grizzlies",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "114",
+    "away_score": "123",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Sacramento Kings"
   },
   {
     "game_id": "401810685",
@@ -12519,11 +12519,12 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810685/jazz-rockets",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "125",
+    "away_score": "105",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Houston Rockets"
   },
   {
     "game_id": "401810686",
