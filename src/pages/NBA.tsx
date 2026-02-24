@@ -119,8 +119,6 @@ interface Player {
   DEF_RATING?: number;
   NET_RATING?: number;
   VALUE_SCORE?: number;
-  HYBRID_SCORE?: number;
-  THING?: number;
 }
 
 type LeagueAverageMap = {
@@ -534,10 +532,6 @@ const DashboardTeamMiniCard = React.forwardRef<HTMLDivElement, { team: NBATeam; 
             }
           : undefined
       }
-//            style={{
-//        backgroundImage: `linear-gradient(300deg, ${colors.primary}, ${colors.secondary})`,
-//        padding: '2px',
-//       }}
     >
 <div 
   className="absolute inset-0.5 rounded-lg" 
@@ -600,7 +594,6 @@ const DashboardPlayerMiniCard = ({
         </div>
 
          <div className="ml-auto text-2xl font-semibold text-white">
-          {}
         </div>
         <Badge className="ml-auto text-sm font-semibold bg-white text-black hover:bg-white hover:text-black">
           {rank ?? ''}
@@ -1020,62 +1013,6 @@ const DashboardTodaySchedule = ({
     </div>
   );
 };
-// ============================
-// 🧍 PlayerCard Component
-// Displays individual player stats
-// ============================
-
-const PlayerCard = React.memo(({ player, index }: { player: Player; index: number }) => (
-  <Card
-    className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-0 md:backdrop-blur-sm will-change-transform"
-    style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
-  >
-    <CardHeader className="pb-3">
-      <div className="flex items-start justify-between">
-        <div>
-          <CardTitle className="text-lg font-bold">{player.PLAYER_NAME}</CardTitle>
-
-          {/* Team badge with team colors */}
-          <Badge
-            className="text-xs font-semibold border mt-1"
-            style={{
-              color: teamColors[player.TEAM_ABBREVIATION]?.secondary,
-              backgroundColor: teamColors[player.TEAM_ABBREVIATION]?.primary || '#fff',
-              borderColor: teamColors[player.TEAM_ABBREVIATION]?.secondary || '#888',
-              borderWidth: '2px',
-              padding: '0.25rem 0.55rem',
-              borderRadius: '0.4rem',
-              letterSpacing: '0.5px',
-            }}
-          >
-            {player.TEAM_ABBREVIATION}
-          </Badge>
-        </div>
-
-
-      </div>
-    </CardHeader>
-
-    <CardContent>
-      {/* Player stats grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <StatRow label="PPG" value={player.PTS.toFixed(1)} />
-          <StatRow label="RPG" value={player.REB.toFixed(1)} />
-          <StatRow label="APG" value={player.AST.toFixed(1)} />
-          <StatRow label="STL" value={player.STL.toFixed(1)} />
-        </div>
-        <div className="space-y-2">
-          <StatRow label="FG%" value={(player.FG_PCT * 100).toFixed(1) + '%'} />
-          <StatRow label="3P%" value={(player.FG3_PCT * 100).toFixed(1) + '%'} />
-          <StatRow label="FT%" value={(player.FT_PCT * 100).toFixed(1) + '%'} />
-          <StatRow label="BLK" value={player.BLK.toFixed(1)} />
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-));
-
 // Small helper component for consistent stat layout
 const statDescriptions: Record<string, string> = {
   GP: 'Games played',
@@ -1118,11 +1055,13 @@ const StatRow = ({
   value,
   highlight,
   dense = false,
+  bold = false,
 }: {
   label: string;
   value: string | number;
   highlight?: 'high' | 'low' | 'neutral' | 'best';
   dense?: boolean;
+  bold?: boolean;
 }) => {
   const colorClass =
     highlight === 'best'
@@ -1138,8 +1077,8 @@ const StatRow = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={`flex items-center text-sm cursor-help text-left ${dense ? 'gap-[4rem]' : 'gap-[0.5rem]'}`}>
-            <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left`}>{label}</span>
-            <span className={`${colorClass}`}>{value}</span>
+            <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left ${bold ? 'font-bold' : ''}`}>{label}</span>
+            <span className={`${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" align="center">
@@ -1152,111 +1091,9 @@ const StatRow = ({
 
 
 // ============================
-// Schedule View Component (Next 7 Days)
+// 🗓️ ScheduleViewV2 Component
+// Arrow-controlled schedule grouped by date with live scores, TV badges, and ESPN modal support
 // ============================
-
-const ScheduleView = ({ scheduleData }: { scheduleData: NBAScheduleData | null }) => {
-  const days = useMemo(() => {
-    const arr: { key: string; label: string; date: Date }[] = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(today);
-      d.setHours(0, 0, 0, 0);
-      d.setDate(today.getDate() + i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const label = d.toLocaleDateString(undefined, {
-        weekday: 'short', month: 'short', day: 'numeric',
-      });
-      arr.push({ key, label, date: d });
-    }
-    return arr;
-  }, []);
-
-  const gamesByDate = useMemo(() => {
-    const map: Record<string, ScheduleGameAny[]> = {};
-    const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
-      ? (scheduleData as ScheduleGameAny[])
-      : (scheduleData?.games || []);
-
-    for (const g of gamesArr) {
-      const k = ((g.date as string) || '').slice(0, 10);
-      if (!k) continue;
-      if (!map[k]) map[k] = [];
-      map[k].push(g);
-    }
-    for (const k of Object.keys(map)) {
-      map[k].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-    }
-    return map;
-  }, [scheduleData]);
-
-  if (!scheduleData) {
-    return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
-  }
-
-  const logos: Record<string, string> = Array.isArray(scheduleData)
-    ? {}
-    : (scheduleData?.teams || {});
-
-  return (
-    <div className="overflow-x-auto pb-2">
-      <div className="flex gap-4 min-w-max">
-        {days.map((d) => {
-          const games = gamesByDate[d.key] || [];
-          return (
-            <Card key={d.key} className="w-72 shrink-0 bg-card/60 backdrop-blur border">
-              <CardHeader className="py-3">
-                <CardTitle className="text-base font-semibold">{d.label}</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {games.length === 0 ? (
-                  <div className="text-sm text-muted-foreground py-6 text-center">No games</div>
-                ) : (
-                  <div className="divide-y">
-                    {games.map((g) => (
-                      <div key={g.game_id} className="flex items-center justify-between gap-3 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            {/* If we have home/away abbrevs, show logos; else show matchup text */}
-                            {g.away && g.home ? (
-                              <>
-                                {logos[g.away] && (
-                                  <img src={logos[g.away]} alt={g.away} className="h-5 w-5 rounded-sm object-contain" loading="lazy" width="20" height="20" />
-                                )}
-                                <span className="text-sm font-semibold">{g.away}</span>
-                                <span className="text-xs text-muted-foreground">@</span>
-                                {logos[g.home] && (
-                                  <img src={logos[g.home]} alt={g.home} className="h-5 w-5 rounded-sm object-contain" loading="lazy" width="20" height="20" />
-                                )}
-                                <span className="text-sm font-semibold">{g.home}</span>
-                              </>
-                            ) : (
-                              <span className="text-sm font-semibold">
-                                {g.matchup || 'Matchup TBA'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs font-medium">{g.time || 'TBA'}</div>
-                          {(g.tv || (g.tv_providers && g.tv_providers.length)) && (
-                            <div className="text-[10px] text-muted-foreground truncate max-w-[140px]">
-                              {g.tv || (g.tv_providers || []).join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 // Compact, arrow-controlled view
 const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, onGameClick?: (gameId: string) => void }) => {
@@ -1302,6 +1139,22 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
   const [index, setIndex] = React.useState<number>(initialIndex);
   useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
 
+  const calendarRef = React.useRef<HTMLDivElement>(null);
+  const [showCalendar, setShowCalendar] = React.useState(false);
+  const [calendarMonth, setCalendarMonth] = React.useState<{ year: number; month: number } | null>(null);
+
+  // Close calendar on outside click
+  useEffect(() => {
+    if (!showCalendar) return;
+    const handler = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showCalendar]);
+
   if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
   const logos: Record<string, string> = Array.isArray(scheduleData) ? {} : (scheduleData?.teams || {});
 
@@ -1314,14 +1167,46 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
 
   if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
 
-
   const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
   const currentKey = dateKeys[clamp(index)];
   const games = gamesByDate[currentKey] || [];
 
+  const gameDateSet = new Set(dateKeys);
+
+  // Open calendar to the month of the current date
+  const openCalendar = () => {
+    const [y, m] = currentKey.split('-').map(Number);
+    setCalendarMonth({ year: y, month: m });
+    setShowCalendar(true);
+  };
+
+  // Build calendar grid for a given month
+  const buildCalendarGrid = (year: number, month: number) => {
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const cells: (string | null)[] = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    }
+    return cells;
+  };
+
+  const handleCalendarDayClick = (key: string) => {
+    if (!gameDateSet.has(key)) return;
+    const idx = dateKeys.indexOf(key);
+    if (idx >= 0) setIndex(idx);
+    setShowCalendar(false);
+  };
+
+  const calGrid = calendarMonth ? buildCalendarGrid(calendarMonth.year, calendarMonth.month) : [];
+  const calMonthLabel = calendarMonth
+    ? new Date(calendarMonth.year, calendarMonth.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    : '';
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-center gap-3">
+      <div className="relative flex items-center justify-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -1329,6 +1214,96 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full">
           <ChevronRight className="w-5 h-5" />
         </Button>
+
+        {/* Custom calendar picker */}
+        <div className="absolute right-0" ref={calendarRef}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full hover:bg-transparent"
+            onClick={openCalendar}
+            aria-label="Pick a date"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </Button>
+
+          {showCalendar && calendarMonth && (
+            <div
+              className="absolute top-11 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72"
+              style={{ backgroundColor: '#1a1a1a' }}
+            >
+              {/* Month navigation */}
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                  onClick={() => setCalendarMonth(({ year: y, month: m }) => {
+                    const d = new Date(y, m - 2, 1);
+                    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+                  })}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+                <button
+                  className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                  onClick={() => setCalendarMonth(({ year: y, month: m }) => {
+                    const d = new Date(y, m, 1);
+                    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+                  })}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Day-of-week headers */}
+              <div className="grid grid-cols-7 mb-1">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
+                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
+                ))}
+              </div>
+
+              {/* Day cells */}
+              <div className="grid grid-cols-7 gap-y-1">
+                {calGrid.map((key, i) => {
+                  if (!key) return <div key={`empty-${i}`} />;
+                  const hasGames = gameDateSet.has(key);
+                  const isSelected = key === currentKey;
+                  const isToday = key === todayKey;
+                  const dayNum = parseInt(key.split('-')[2], 10);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleCalendarDayClick(key)}
+                      disabled={!hasGames}
+                      className={`
+                        relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
+                        ${isSelected
+                          ? 'bg-white text-black shadow-lg'
+                          : hasGames
+                          ? 'text-white hover:bg-white/15 cursor-pointer'
+                          : 'text-white/20 cursor-default'}
+                      `}
+                    >
+                      {dayNum}
+                      {/* Dot indicator for today */}
+                      {isToday && !isSelected && (
+                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />
+                      )}
+                      {isToday && isSelected && (
+                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {games.length === 0 ? (
@@ -1392,9 +1367,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Card clicked, game_id:', g.game_id);
                   if (g.game_id && onGameClick) {
-                    console.log('Calling onGameClick with:', g.game_id);
                     onGameClick(g.game_id);
                   }
                 }}
@@ -1573,6 +1546,12 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
 
 // ============================
 // 🧑‍🤝‍🧑 PlayerModal Component
+// Full-screen overlay modal opened when a team is clicked.
+// Contains three tabs:
+//   - Full Stats: all team stat groups with color-coded highlights vs league average
+//   - Roster: player cards sorted by Value Score with per-game stats
+//   - Schedule: full season schedule with outcomes, running record, and "Jump to latest" button
+// ============================
 type TeamModalStatGroup = {
   title: string;
   stats: Array<{ key: keyof NBATeam; label?: string }>;
@@ -2040,13 +2019,13 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
         style={{ animation: 'scaleIn 0.25s ease-out' }}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-background border-b p-6 flex flex-wrap items-center gap-4 z-10">
+        <div className="sticky top-0 bg-background border-b p-3 flex flex-wrap items-center gap-4 z-10">
           <div className="flex-1 min-h-0 flex items-center gap-3">
             {teamLogo && (
               <img
                 src={teamLogo}
                 alt={`${team.TEAM_NAME} logo`}
-                className="w-10 h-10 rounded-md object-contain"
+                className="w-20 h-20 rounded-md object-contain"
                 loading="lazy"
               />
             )}
@@ -2054,12 +2033,12 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
           </div>
           <div className="flex items-center gap-6 ml-auto text-right text-white/90">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Record</p>
-              <p className="text-lg font-semibold text-white">{recordLabel}</p>
+              <p className="text-xs uppercase tracking-wide text-white/60 font-bold">Record</p>
+              <p className="text-lg font-bold text-white">{recordLabel}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">BPI Rank</p>
-              <p className="text-lg font-semibold text-white">{bpiRankLabel}</p>
+              <p className="text-xs uppercase tracking-wide text-white/60 font-bold">BPI Rank</p>
+              <p className="text-lg font-bold text-white">{bpiRankLabel}</p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors">
               <X className="w-6 h-6" />
@@ -2102,8 +2081,8 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
           </div>
         </div>
 
-        {/* Tab Content - Scrollable */}
-        <div className={`p-6 ${modalTab === 'stats' ? 'overflow-y-hidden' : 'overflow-y-auto'} max-h-[calc(90vh-200px)] space-y-4`}>
+        {/* Tab Content - Fixed height so modal doesn't resize between tabs */}
+        <div className="p-6 overflow-y-auto h-[calc(90vh-200px)] space-y-4">
           {modalTab === 'stats' && (
             <div className="relative rounded-xl overflow-hidden">
               <div
@@ -2125,10 +2104,10 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                     className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1"
                     style={{ backgroundColor: '#0000004c', opacity: 1 }}
                   >
-                    <CardContent className="pt-6 pb-6 max-h-[70vh] overflow-y-auto">
-                      <div className="grid grid-cols-4 gap-x-3 gap-y-3">
+                    <CardContent className="pt-4 pb-4 max-h-[70vh] overflow-y-auto">
+                      <div className="grid grid-cols-4 gap-x-3 gap-y-8">
                         {TEAM_MODAL_STAT_COLUMNS.map((column, colIndex) => (
-                          <div key={`modal-col-${colIndex}`} className="space-y-3">
+                          <div key={`modal-col-${colIndex}`} className="space-y-4">
                             {column.map((stat) => (
                               <StatRow
                                 key={`modal-${stat.key}`}
@@ -2136,6 +2115,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                                 value={formatTeamModalStatValue(team, stat.key)}
                                 highlight={getModalStatHighlight(stat.key)}
                                 dense
+                                bold
                               />
                             ))}
                           </div>
@@ -2201,22 +2181,22 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                             <CardContent>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                  <StatRow label="GP" value={player.GP.toFixed(0)} />
-                                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} />
-                                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} />
-                                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} />
-                                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} />
-                                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} />
-                                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} />
+                                  <StatRow label="GP" value={player.GP.toFixed(0)} bold />
+                                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} bold />
+                                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} bold />
+                                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} bold />
+                                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} bold />
+                                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} bold />
+                                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} bold />
                                 </div>
                                 <div className="space-y-2">
-                                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} />
-                                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} />
-                                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} />
-                                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} />
-                                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} />
-                                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} />
-                                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} />
+                                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} bold />
+                                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} bold />
+                                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} bold />
+                                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} bold />
+                                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} bold />
+                                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} bold />
+                                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} bold />
                                 </div>
                               </div>
                             </CardContent>
@@ -2331,21 +2311,22 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                                 <img
                                   src={awayLogo}
                                   alt={awayAbbrResolved || 'Away'}
-                                  className={`h-18 w-18 rounded-sm object-contain ${
+                                  className={`rounded-sm object-contain ${
                                     isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''
                                   }`}
-                                  style={
-                                    isFinal && awayWin
+                                  style={{
+                                    width: 96, height: 96,
+                                    ...(isFinal && awayWin
                                       ? { filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.8)) drop-shadow(0 0 10px rgba(255,255,255,0.5))' }
-                                      : undefined
-                                  }
+                                      : undefined)
+                                  }}
                                   loading="lazy"
                                 />
                               )}
                             </div>
 
                             <div className="flex flex-col items-center justify-center gap-1 px-2 min-w-[120px]">
-                              <div className="text-[11px] text-muted-foreground">{dateLabel}</div>
+                              <div className="text-[11px] text-muted-foreground font-bold">{dateLabel}</div>
                               {isLive && (
                                 <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-0.5 text-[10px]">
                                   LIVE
@@ -2367,21 +2348,22 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                                 <img
                                   src={homeLogo}
                                   alt={homeAbbrResolved || 'Home'}
-                                  className={`h-18 w-18 rounded-sm object-contain ${
+                                  className={`rounded-sm object-contain ${
                                     isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''
                                   }`}
-                                  style={
-                                    isFinal && homeWin
+                                  style={{
+                                    width: 96, height: 96,
+                                    ...(isFinal && homeWin
                                       ? { filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.8)) drop-shadow(0 0 10px rgba(255,255,255,0.5))' }
-                                      : undefined
-                                  }
+                                      : undefined)
+                                  }}
                                   loading="lazy"
                                 />
                               )}
                             </div>
                           </div>
 
-                          <div className="text-[10px] text-muted-foreground text-center mt-1">
+                          <div className="text-[10px] text-muted-foreground text-center mt-1 font-bold">
                             {game.location || (game.tv || (game.tv_providers || []).join(', ')) || 'Venue TBA'}
                           </div>
                         </CardContent>
@@ -2436,19 +2418,6 @@ const getHighlight = (statKey: TeamStatKey) => {
     const value = Number((team as any)[statKey]);
     const avgValue = Number((leagueAverages as any)?.[statKey]);
     const diff = value - avgValue;
-  
-  // 🔍 Detailed debug for TOV
-  if (statKey === 'TOV') {
-    console.log('TOV Debug:', {
-      statKey,
-      teamValue: (team as any)[statKey],
-      leagueAvg: (leagueAverages as any)[statKey],
-      diff: diff,
-      absCheck: Math.abs(diff) < 0.01,
-      setHas: new Set<TeamStatKey>(['TOV']).has(statKey),
-      expectedResult: diff < 0 ? 'high (green)' : 'low (red)'
-    });
-  }
   
   // Gold highlight if best in league (handles lower-is-better like TOV)
   try {
@@ -2513,13 +2482,22 @@ const getHighlight = (statKey: TeamStatKey) => {
 
 return (
   <div
-className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"    style={{
-      backgroundImage: `linear-gradient(300deg, ${ 
-        teamGradientColors[teamAbbr]?.start || '#1e40af}'
-      }90, ${teamGradientColors[teamAbbr]?.end || '#dc2626'}90)`,
+    className="relative rounded-xl overflow-hidden"
+    style={{
+      backgroundImage: `linear-gradient(300deg, ${
+        teamGradientColors[teamAbbr]?.start || '#1e40af'
+      }, ${teamGradientColors[teamAbbr]?.end || '#dc2626'})`,
+      padding: '3px',
     }}
   >
-    {/* === Foreground content (sits above gradient) === */}
+    {/* === Dark inner fill (creates the gradient border effect) === */}
+    <div
+      className="absolute inset-1 rounded-xl"
+      style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
+      aria-hidden
+    />
+
+    {/* === Foreground content (sits above dark fill) === */}
     <div className="relative z-10 p-4 text-white">
       {/* === Ranking in top right corner === */}
       <div className="absolute top-4 right-4 text-2xl font-bold text-white">
@@ -2586,36 +2564,40 @@ className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"    style
           {/* 4-column stat grid with increased spacing */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="space-y-3">
-              <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} />
-              <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} />
-              <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} />
-              <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} />
+              <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} bold />
+              <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} bold />
+              <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} bold />
+              <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} bold />
             </div>
             <div className="space-y-3">
-              <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} />
-              <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} />
-              <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} />
-              <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} />
+              <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} bold />
+              <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} bold />
+              <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} bold />
+              <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} bold />
             </div>
             <div className="space-y-3">
-              <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} />
-              <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} />
-              <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} />
+              <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} bold />
+              <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} bold />
+              <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} bold />
               <StatRow label="BPI" value={typeof (team as any).bpi === 'number' ? (team as any).bpi.toFixed(1) : ((team as any).bpi ?? '-')}
                 highlight={getBpiHighlight('bpi')}
+                bold
               />
             </div>
             <div className="space-y-3">
               <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')}
                 highlight={getBpiHighlight('off')}
+                bold
               />
               <StatRow label="DEF" value={typeof (team as any).def === 'number' ? (team as any).def.toFixed(1) : ((team as any).def ?? '-')}
                 highlight={getBpiHighlight('def')}
+                bold
               />
               <StatRow label="PBPI" value={typeof (team as any).pbpi === 'number' ? (team as any).pbpi.toFixed(1) : ((team as any).pbpi ?? '-')}
                 highlight={getBpiHighlight('pbpi')}
+                bold
               />
-              <StatRow label="BPI RK" value={(team as any).bpirank ?? '-'} />
+              <StatRow label="BPI RK" value={(team as any).bpirank ?? '-'} bold />
             </div>
           </div>
         </CardContent>
@@ -2680,7 +2662,6 @@ const NBA = () => {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
-  const [selectedConference, setSelectedConference] = useState<'all' | 'Eastern' | 'Western'>('all');
   const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'top-scorers', or 'schedule'
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
@@ -2706,7 +2687,6 @@ const NBA = () => {
   const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dashboardHighlightTeamId, setDashboardHighlightTeamId] = useState<number | null>(null);
-  const [focusedAllTeamPlayer, setFocusedAllTeamPlayer] = useState<Player | null>(null);
   const toggleFavoriteTeam = React.useCallback((team: NBATeam) => {
     setFavoriteTeamIds((prev) => {
       const exists = prev.includes(team.TEAM_ID);
@@ -2823,21 +2803,16 @@ const sortedTeams = useMemo(() => {
 const fetchData = async () => {
   try {
     setLoading(true);
-    console.log('Fetching NBA data...');
     
     // Fetch team data with cache-busting timestamp
     const teamResponse = await fetch('/data/espn_NBA_team_stats.json?' + Date.now());
-    console.log('Team response:', teamResponse.ok);
     if (!teamResponse.ok) throw new Error('Failed to fetch team data');
     const teamData = await teamResponse.json();
-    console.log('Team data loaded:', teamData.length);
     
     // Fetch player data
     const playerResponse = await fetch('/data/espn_NBA_player_stats.json?' + Date.now());
-    console.log('Player response:', playerResponse.ok);
     if (!playerResponse.ok) throw new Error('Failed to fetch player data');
     const playerData = await playerResponse.json();
-    console.log('Player data loaded:', Object.keys(playerData).length);
     
     // Map team data with conference + division
     const teamsWithConference = teamData.map((team: NBATeam) => ({
@@ -2864,7 +2839,6 @@ const fetchData = async () => {
     }
     setLastUpdate(new Date());
     setLoading(false);
-    console.log('Data loaded successfully!');
   } catch (error) {
     console.error('Error fetching NBA data:', error);
     setLoading(false);
@@ -2873,7 +2847,6 @@ const fetchData = async () => {
 };
 
 
-  // Map team data with conference + division
   // Initial load
 useEffect(() => {
   fetchData();
@@ -2930,8 +2903,7 @@ useEffect(() => {
 }, [autoRefresh]);
 
 
-  // Compute league averages
-// Compute league averages
+// Compute league averages for ALL team stats
 const leagueAverages = React.useMemo<LeagueAverageMap>(() => {
   if (nbaTeams.length === 0) return createLeagueAverageSeed();
   const totals = nbaTeams.reduce<LeagueAverageMap>(
@@ -3004,7 +2976,6 @@ const leagueAverages = React.useMemo<LeagueAverageMap>(() => {
 }, [nbaTeams]);
 
 
-// Compute league averages for player stats (PTS, REB, AST, FG%, 3P%, FT%)
 // Compute league averages for ALL player stats
 type PlayerAverages = {
   PTS: number; REB: number; AST: number; STL: number; BLK: number;
@@ -3141,28 +3112,6 @@ const getPlayerHighlight = (player: Player, key: keyof Player) => {
   return diff > 0 ? 'high' : 'low';
 };
 
-const getLeagueHighlight = (
-  player: Player,
-  key: keyof Player,
-  leagueAverages: LeagueAverageMap | null
-) => {
-  if (!leagueAverages || !(key in leagueAverages)) return 'neutral';
-
-  const playerValue = Number((player as any)[key]);
-  const avgValue = Number((leagueAverages as any)[key]);
-  if (isNaN(playerValue) || isNaN(avgValue)) return 'neutral';
-
-  const diff = playerValue - avgValue;
-  if (Math.abs(diff) < 0.01) return 'neutral';
-
-  const lowerIsBetter = new Set(['TOV']);
-  if (lowerIsBetter.has(key)) {
-    return diff < 0 ? 'high' : 'low';
-  }
-
-  return diff > 0 ? 'high' : 'low';
-};
-
 
 
 
@@ -3243,50 +3192,19 @@ const sortedTopPlayers = React.useMemo(() => {
         getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField)
     )
     .slice(0, 50);
-}, [nbaPlayerData, playerSortField]); // ✅ added nbaPlayerData
-
-// Memoize player value scores to avoid recalculating
-const playerValueScores = React.useMemo(() => {
-  const scores = new Map<number, number>();
-  sortedTopPlayers.forEach((player) => {
-    scores.set(player.PLAYER_ID, getPlayerValueScore(player));
-  });
-  return scores;
-}, [sortedTopPlayers]);
+}, [nbaPlayerData, playerSortField]);
 
 
 
 
 
-  // Sort by win %
-  // Sort dynamically based on selected field and order
-const sortTeams = (teams: NBATeam[]) => {
-  const sorted = [...teams].sort((a, b) => {
-    const field = sortField;
-
-    // Primary sort by the selected stat
-    let diff = a[field] - b[field];
-
-    // If it's a tie (e.g., same WIN_PCT), then sort by number of wins
-    if (Math.abs(diff) < 1e-6 && field === 'WIN_PCT') {
-      diff = a.W - b.W;
-    }
-
-    // Apply ascending or descending order
-    return sortOrder === 'asc' ? diff : -diff;
-  });
-
-  return sorted;
-};
 
 
-  // Filter teams by conference
-  const getFilteredTeams = () =>
-    selectedConference === 'all' ? nbaTeams : nbaTeams.filter((t) => t.conference === selectedConference);
 
-  // Get teams per division
-  const getDivisionTeams = (division: string) =>
-    getFilteredTeams().filter((t) => t.division === division).sort((a, b) => b.WIN_PCT - a.WIN_PCT);
+
+
+
+
 
   const dashboardTeamList = React.useMemo(() => {
     return [...nbaTeams].sort((a, b) => {
@@ -3359,11 +3277,12 @@ useEffect(() => {
         className="w-full"
         onValueChange={(v) => {
           setActiveTab(v);
-          if (v === 'all' || v === 'Eastern' || v === 'Western') {
-            setSelectedConference(v as any);
-          }
         }}
       >
+  {/* ========================
+      Navigation Tab Bar
+      Tabs: Scoreboard | Standings | Team Stats | Top Players
+  ======================== */}
   <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
   <TabsTrigger value="standings">Standings</TabsTrigger>
@@ -3371,207 +3290,19 @@ useEffect(() => {
   <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
 </TabsList>
 
-<TabsContent value="dashboard">
-  {/* === Outer Container - Vertical Stack === */}
-  <div className="flex flex-col h-[calc(100vh-135px)] overflow-hidden -mt-0">
-    
-    {/* === TOP SECTION (Conference Leaders) === */}
-    <div className="w-full h-[35%]">
-      <Card className="bg-transparent border-0 w-full h-full flex flex-col overflow-hidden">
-        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">          
-          <div className="grid grid-cols-2 gap-4 flex-1">
-            {/* Western Conference Leader */}
-            {(() => {
-              const westLeader = nbaTeams
-                .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
-                .sort((a, b) => b.W - a.W)[0];
-              
-              if (!westLeader) return null;
-              
-              const teamAbbr = teamAbbreviations[westLeader.TEAM_NAME] || 'UNK';
-              const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
-              const secondaryColor = teamColors[teamAbbr]?.secondary || '#dc2626';
-              
-              return (
-                <div>
-                  <div
-                    className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
-                    onClick={() => setSelectedTeam(westLeader)}
-                    style={{
-                      backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
-                    }}
-                  >
-                    <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
-                      {westLeader.LOGO_URL && (
-                        <img
-                          src={westLeader.LOGO_URL}
-                          alt={`${westLeader.TEAM_NAME} logo`}
-                          className="h-40 w-40 object-contain"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="flex flex-col items-end justify-between h-16">
-                        <div className="text-lg font-black text-white" style={{ lineHeight: '1' }}>
-                          #1
-                        </div>
-                        <div className="text-4xl font-bold text-white" style={{ lineHeight: '1' }}>
-                          {westLeader.W} - {westLeader.L}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-            
-            {/* Eastern Conference Leader */}
-            {(() => {
-              const eastLeader = nbaTeams
-                .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')
-                .sort((a, b) => b.W - a.W)[0];
-              
-              if (!eastLeader) return null;
-              
-              const teamAbbr = teamAbbreviations[eastLeader.TEAM_NAME] || 'UNK';
-              const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
-              const secondaryColor = teamColors[teamAbbr]?.secondary || '#dc2626';
-              
-              return (
-                <div>
-                  <div
-                    className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-200"
-                    onClick={() => setSelectedTeam(eastLeader)}
-                    style={{
-                      backgroundImage: `linear-gradient(90deg, ${primaryColor}33 0%, ${primaryColor}33 60%, ${secondaryColor}33 100%)`,
-                    }}
-                  >
-                    <div className="relative z-10 flex items-center justify-between px-3 py-3 h-20">
-                      {eastLeader.LOGO_URL && (
-                        <img
-                          src={eastLeader.LOGO_URL}
-                          alt={`${eastLeader.TEAM_NAME} logo`}
-                          className="h-40 w-40 object-contain"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="flex flex-col items-end justify-between h-16">
-                        <div className="text-lg font-black text-white" style={{ lineHeight: '1' }}>
-                          #1
-                        </div>
-                        <div className="text-4xl font-bold text-white" style={{ lineHeight: '1' }}>
-                          {eastLeader.W} - {eastLeader.L}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-
-    {/* === STAT LEADERS SECTION === */}
-    <div className="w-full px-4 pb-4">
-      <div className="grid grid-cols-2 gap-4">
-        {(() => {
-          const allPlayers = Object.values(nbaPlayerData).flat();
-          
-          // Find leaders for each stat
-          const statLeaders = {
-            PTS: [...allPlayers].sort((a, b) => b.PTS - a.PTS)[0],
-            REB: [...allPlayers].sort((a, b) => b.REB - a.REB)[0],
-            AST: [...allPlayers].sort((a, b) => b.AST - a.AST)[0],
-            BLK: [...allPlayers].sort((a, b) => b.BLK - a.BLK)[0],
-            FGA: [...allPlayers].sort((a, b) => b.FGA - a.FGA)[0],
-            FG3A: [...allPlayers].sort((a, b) => b.FG3A - a.FG3A)[0],
-            FTA: [...allPlayers].sort((a, b) => b.FTA - a.FTA)[0],
-          };
-
-          // Group stats by player
-          const playerStats: Record<number, { player: Player; stats: Array<{ label: string; value: number }> }> = {};
-          
-          Object.entries(statLeaders).forEach(([stat, player]) => {
-            if (!player) return;
-            if (!playerStats[player.PLAYER_ID]) {
-              playerStats[player.PLAYER_ID] = { player, stats: [] };
-            }
-            const label = stat === 'PTS' ? 'PPG' : stat === 'FG3A' ? '3PA' : stat;
-            const value = player[stat as keyof Player] as number;
-            playerStats[player.PLAYER_ID].stats.push({ label, value });
-          });
-
-          // Render combined cards
-          return Object.values(playerStats).map(({ player, stats }) => (
-            <div
-              key={player.PLAYER_ID}
-              className="relative rounded-xl overflow-hidden"
-              style={{
-                backgroundImage: `linear-gradient(300deg, ${
-                  teamColors[player.TEAM_ABBREVIATION]?.primary || '#f0f0f0'
-                }, ${teamColors[player.TEAM_ABBREVIATION]?.secondary || '#dc2626'})`,
-                padding: '3px',
-              }}
-            >
-              <div
-                className="absolute inset-1 rounded-xl"
-                style={{ backgroundColor: '#1f1f1fff', opacity: 1 }}
-                aria-hidden
-              />
-              <div className="relative z-10 p-3 text-white">
-                <div className="flex items-center gap-2">
-                  {abbrToLogo[player.TEAM_ABBREVIATION] && (
-                    <img
-                      src={abbrToLogo[player.TEAM_ABBREVIATION]}
-                      alt={`${player.TEAM_ABBREVIATION} logo`}
-                      className="w-10 h-10 rounded-sm flex-shrink-0"
-                      loading="lazy"
-                      width={40}
-                      height={40}
-                    />
-                  )}
-                  <h3 className="text-sm font-bold truncate flex-1">{player.PLAYER_NAME}</h3>
-                  <div className="flex gap-4 flex-shrink-0">
-                    {stats.map((stat, idx) => (
-                      <div key={idx} className="text-right">
-                        <div className="text-xs text-gray-400 leading-none">{stat.label}</div>
-                        <div className="text-lg font-bold text-yellow-400 leading-tight">{stat.value.toFixed(1)}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ));
-        })()}
-      </div>
-    </div>
-    
-    {/* === BOTTOM SECTION (Schedule) === */}
-    <div className="w-full flex-1 min-h-0">
-      <Card className="bg-transparent border-0 w-full h-full flex flex-col overflow-hidden">
-        <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 px-3">
-          <DashboardTodaySchedule
-            scheduleData={scheduleData}
-            logoMap={abbrToLogo}
-            recordMap={abbrToRecord}
-            onTeamFocus={handleDashboardTeamFocus}
-            favoriteTeamIds={favoriteTeamIds}
-            abbrToTeamMap={abbrToTeamMap}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  </div>
-</TabsContent>
 
 
 
         {/* === Sort Controls === */}
+{/* ========================
+    PAGE: Team Stats
+    - Sort controls: stat dropdown + asc/desc toggle
+    - Left sidebar: team logo grid (click to select)
+    - Right pane: selected team card + W/L doughnut + radar chart + player roster cards
+======================== */}
 <TabsContent value="all">
 
- {/* === Sort Controls (All Teams view) === */}
+ {/* === Sort Controls (stat dropdown + asc/desc toggle) === */}
 <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
   {/* === Sort Dropdown === */}
   <div className="flex items-center gap-3">
@@ -3648,7 +3379,7 @@ useEffect(() => {
 </div>
 
 
-  {/* === Teams Sidebar + Detail Pane === */}
+  {/* === Team Logo Sidebar + Team Detail Pane === */}
   {(() => {
     const teams = filteredTeams;
     if (teams.length === 0) {
@@ -3714,7 +3445,7 @@ useEffect(() => {
 
     return (
     <div className="flex flex-row gap-4 h-[85vh] overflow-hidden">
-        {/* Left: logos as rounded-square buttons */}
+        {/* Left: scrollable grid of team logo buttons — click to select a team */}
         <div
           ref={logosScrollRef}
           className="w-20 md:w-40 xl:w-64 md:xl:w-72 lg:xl:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
@@ -3757,12 +3488,12 @@ useEffect(() => {
 
         </div>
 
-        {/* Right: wide team card + players; entire section scrolls together */}
-        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-24">
+        {/* Right: selected team card, W/L doughnut chart, radar chart, then player roster cards */}
+        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-4">
           {currentTeam && (() => {
             const teamAbbr = teamAbbreviations[currentTeam.TEAM_NAME] || 'UNK';
-            const primaryColor = teamColors[teamAbbr]?.primary || '#4f46e5';
-            const secondaryColor = teamColors[teamAbbr]?.secondary || '#4f46e5';
+            const primaryColor = teamGradientColors[teamAbbr]?.start || '#4f46e5';
+            const secondaryColor = teamGradientColors[teamAbbr]?.end || '#4f46e5';
             const doughnutData = {
               labels: [],
               datasets: [
@@ -3813,10 +3544,8 @@ useEffect(() => {
               { label: '3PM', key: 'threes', value: Number(currentTeam.FG3M || 0) },
               { label: 'FTM', key: 'ftm', value: Number(currentTeam.FTM || 0) },
               { label: 'BLK', key: 'blk', value: Number(currentTeam.BLK || 0) },
-              { label: 'BPI', key: 'bpi', value: Number((currentTeam as any).bpi || 0) },
               { label: 'OFF', key: 'off', value: Number((currentTeam as any).off || 0) },
               { label: 'DEF', key: 'def', value: Number((currentTeam as any).def || 0) },
-              { label: 'PBPI', key: 'pbpi', value: Number((currentTeam as any).pbpi || 0) },
             ] as { label: string; key: RadarMetricKey; value: number }[];
             const normalizeMetric = (value: number, key: RadarMetricKey) => {
               const maxVal = teamMaxima.max[key];
@@ -3864,7 +3593,7 @@ useEffect(() => {
                   suggestedMax: 100,
                   angleLines: { color: 'rgba(255,255,255,0.1)' },
                   grid: { color: 'rgba(255,255,255,0.1)' },
-                  pointLabels: { color: 'currentColor', font: { size: 10 } },
+                  pointLabels: { color: 'currentColor', font: { size: 10, weight: 'bold' } },
                   ticks: { display: false },
                 },
               },
@@ -3909,13 +3638,13 @@ useEffect(() => {
           <div className="flex-1 flex flex-col">
             {topTeamPlayers.length ? (
               <div
-                className="snap-y snap-mandatory pt-0 pb-24"
+                className="snap-y snap-mandatory pt-0 pb-4"
                 style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
               >
                 <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
                   {topTeamPlayers.map((p) => {
-                    const primary = teamColors[p.TEAM_ABBREVIATION]?.primary || '#1e40af';
-                    const secondary = teamColors[p.TEAM_ABBREVIATION]?.secondary || '#dc2626';
+                    const primary = teamGradientColors[p.TEAM_ABBREVIATION]?.start || '#1e40af';
+                    const secondary = teamGradientColors[p.TEAM_ABBREVIATION]?.end || '#dc2626';
                     return (
                       <div
                         key={p.PLAYER_ID}
@@ -3944,20 +3673,20 @@ useEffect(() => {
                           {/* Key stats (match previous fields) */}
                           <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
                             <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground">PPG</div>
-                              <div className={`${getTeammateHighlight(p,'PTS')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'PTS')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{p.PTS.toFixed(1)}</div>
+                              <div className="text-muted-foreground font-bold">PPG</div>
+                              <div className={`font-bold ${getTeammateHighlight(p,'PTS')==='high' ? 'text-green-400' : getTeammateHighlight(p,'PTS')==='low' ? 'text-red-400' : ''}`}>{p.PTS.toFixed(1)}</div>
                             </div>
                             <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground">RPG</div>
-                              <div className={`${getTeammateHighlight(p,'REB')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'REB')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{p.REB.toFixed(1)}</div>
+                              <div className="text-muted-foreground font-bold">RPG</div>
+                              <div className={`font-bold ${getTeammateHighlight(p,'REB')==='high' ? 'text-green-400' : getTeammateHighlight(p,'REB')==='low' ? 'text-red-400' : ''}`}>{p.REB.toFixed(1)}</div>
                             </div>
                             <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground">APG</div>
-                              <div className={`${getTeammateHighlight(p,'AST')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'AST')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{p.AST.toFixed(1)}</div>
+                              <div className="text-muted-foreground font-bold">APG</div>
+                              <div className={`font-bold ${getTeammateHighlight(p,'AST')==='high' ? 'text-green-400' : getTeammateHighlight(p,'AST')==='low' ? 'text-red-400' : ''}`}>{p.AST.toFixed(1)}</div>
                             </div>
                             <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground">FG%</div>
-                              <div className={`${getTeammateHighlight(p,'FG_PCT')==='high' ? 'text-green-400 font-semibold' : getTeammateHighlight(p,'FG_PCT')==='low' ? 'text-red-400 font-semibold' : 'font-semibold'}`}>{(p.FG_PCT * 100).toFixed(1)}</div>
+                              <div className="text-muted-foreground font-bold">FG%</div>
+                              <div className={`font-bold ${getTeammateHighlight(p,'FG_PCT')==='high' ? 'text-green-400' : getTeammateHighlight(p,'FG_PCT')==='low' ? 'text-red-400' : ''}`}>{(p.FG_PCT * 100).toFixed(1)}</div>
                             </div>
                           </div>
                         </div>
@@ -3977,12 +3706,23 @@ useEffect(() => {
 </TabsContent>
 
 
-{/* === Schedule === */}
+{/* ========================
+    PAGE: Scoreboard
+    - Date navigation (prev/next arrows)
+    - Game cards grid: away team logo | score or tip-off time | home team logo
+    - Live game dot indicator, TV provider badges
+    - Click a game card to open ESPN box score in an iframe modal
+======================== */}
 <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} onGameClick={(gameId) => setEspnGameId(gameId)} />
 </TabsContent>
 
-{/* === Standings === */}
+{/* ========================
+    PAGE: Standings
+    - Two-column layout: Western Conference (left) | Eastern Conference (right)
+    - Teams ranked by wins, showing rank number, record, and team logo
+    - Click a team card to open the PlayerModal (full stats + roster + schedule)
+======================== */}
 <TabsContent value="standings" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-32 pr-2">
   <div className="grid grid-cols-2 gap-4">
     {/* Western Conference */}
@@ -4105,7 +3845,13 @@ useEffect(() => {
   </div>
 </TabsContent>
 
-{/* === Top Players === */}
+{/* ========================
+    PAGE: Top Players
+    - Rank-by dropdown (Value Score, PTS, REB, AST, STL, BLK, etc.)
+    - Grid of top 50 player cards (4 per row on large screens)
+    - Each card: team logo, player name, ranked stat badge, full per-game stats (left/right columns)
+    - Stats color-coded green (above league avg), red (below), gold (league leader)
+======================== */}
 <TabsContent value="top-scorers" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-12 pr-2">
 
   {/* === Filter Controls === */}
@@ -4148,7 +3894,7 @@ useEffect(() => {
         </SelectContent>
       </Select>
 
-      {/* ✅ Tooltip only shows when Value Score is selected */}
+      {/* Tooltip only shows when Value Score is selected */}
       {playerSortField === 'VALUE_SCORE' && (
         <TooltipProvider>
           <Tooltip delayDuration={150}>
@@ -4233,24 +3979,24 @@ useEffect(() => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Left column */}
                 <div className="space-y-2">
-                  <StatRow label="GP" value={player.GP.toFixed(0)} />
-                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getPlayerHighlight(player, 'MIN')} />
-                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getPlayerHighlight(player, 'PTS')} />
-                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getPlayerHighlight(player, 'REB')} />
-                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getPlayerHighlight(player, 'AST')} />
-                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getPlayerHighlight(player, 'STL')} />
-                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getPlayerHighlight(player, 'BLK')} />
+                  <StatRow label="GP" value={player.GP.toFixed(0)} bold />
+                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getPlayerHighlight(player, 'MIN')} bold />
+                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getPlayerHighlight(player, 'PTS')} bold />
+                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getPlayerHighlight(player, 'REB')} bold />
+                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getPlayerHighlight(player, 'AST')} bold />
+                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getPlayerHighlight(player, 'STL')} bold />
+                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getPlayerHighlight(player, 'BLK')} bold />
                 </div>
 
                 {/* Right column */}
                 <div className="space-y-2">
-                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getPlayerHighlight(player, 'TOV')} />
-                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getPlayerHighlight(player, 'FGA')} />
-                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG_PCT')} />
-                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getPlayerHighlight(player, 'FG3A')} />
-                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG3_PCT')} />
-                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getPlayerHighlight(player, 'FTA')} />
-                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FT_PCT')} />
+                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getPlayerHighlight(player, 'TOV')} bold />
+                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getPlayerHighlight(player, 'FGA')} bold />
+                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG_PCT')} bold />
+                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getPlayerHighlight(player, 'FG3A')} bold />
+                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG3_PCT')} bold />
+                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getPlayerHighlight(player, 'FTA')} bold />
+                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FT_PCT')} bold />
                 </div>
               </div>
             </CardContent>
@@ -4264,11 +4010,11 @@ useEffect(() => {
 
       </Tabs>
 
-      {/* Player Modal */}
+      {/* Player Modal — opened when a team card is clicked from Standings, Team Stats, or Dashboard */}
 {selectedTeam && (
   <PlayerModal
     team={selectedTeam}
-    nbaPlayerData={nbaPlayerData} // ✅ pass player data
+    nbaPlayerData={nbaPlayerData}
     scheduleData={scheduleData}
     logoMap={abbrToLogo}
     leagueAverages={leagueAverages}
@@ -4277,17 +4023,13 @@ useEffect(() => {
   />
 )}
 
-{/* ESPN Game Iframe Modal */}
+{/* ESPN Game Iframe Modal — opened when a game card is clicked on the Scoreboard tab */}
 {espnGameId && (
   <div 
     className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
-    onClick={() => {
-      console.log('Overlay clicked, closing modal');
-      setEspnGameId(null);
-    }}
+    onClick={() => setEspnGameId(null)}
     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
   >
-    {console.log('ESPN Modal rendering with game ID:', espnGameId)}
     <div 
       className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
       onClick={(e) => e.stopPropagation()}
@@ -4307,10 +4049,7 @@ useEffect(() => {
         
           {/* Close button */}
           <button
-            onClick={() => {
-              console.log('Close button clicked');
-              setEspnGameId(null);
-            }}
+            onClick={() => setEspnGameId(null)}
             className="bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 transition-colors"
             title="Close"
           >

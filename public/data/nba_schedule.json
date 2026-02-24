@@ -12237,13 +12237,12 @@
     "location": "Smoothie King Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game?gameId=401810667",
-    "home_score": "57",
-    "away_score": "65",
+    "home_score": "126",
+    "away_score": "111",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "live",
-    "period": 2,
-    "clock": "0.0"
+    "status": "final",
+    "winner": "New Orleans Pelicans"
   },
   {
     "game_id": "401810668",
@@ -12253,13 +12252,12 @@
     "location": "AmericanAirlines Are",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game?gameId=401810668",
-    "home_score": "16",
-    "away_score": "11",
+    "home_score": "136",
+    "away_score": "120",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "live",
-    "period": 1,
-    "clock": "7:43"
+    "status": "final",
+    "winner": "Miami Heat"
   },
   {
     "game_id": "401810669",
@@ -12269,13 +12267,12 @@
     "location": "United Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game?gameId=401810669",
-    "home_score": "15",
-    "away_score": "15",
+    "home_score": "110",
+    "away_score": "126",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "live",
-    "period": 1,
-    "clock": "7:01"
+    "status": "final",
+    "winner": "Detroit Pistons"
   },
   {
     "game_id": "401810670",
@@ -12285,13 +12282,12 @@
     "location": "Moody Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game?gameId=401810670",
-    "home_score": "22",
-    "away_score": "10",
+    "home_score": "139",
+    "away_score": "122",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "live",
-    "period": 1,
-    "clock": "5:37"
+    "status": "final",
+    "winner": "San Antonio Spurs"
   },
   {
     "game_id": "401810671",
@@ -12303,11 +12299,12 @@
       "ABC"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810671/rockets-knicks",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "108",
+    "away_score": "106",
     "is_nba_cup": false,
     "tournament": null,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "New York Knicks"
   },
   {
     "game_id": "401810672",
@@ -12319,11 +12316,12 @@
       "ABC"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810672/cavaliers-thunder",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Oklahoma City Thunder",
+    "home_score": "121",
+    "away_score": "113",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810673",
@@ -12333,11 +12331,12 @@
     "location": "State Farm Arena",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810673/nets-hawks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Atlanta Hawks",
+    "home_score": "115",
+    "away_score": "104",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810674",
@@ -12347,11 +12346,12 @@
     "location": "Fiserv Forum",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810674/raptors-bucks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Toronto Raptors",
+    "home_score": "94",
+    "away_score": "122",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810675",
@@ -12363,11 +12363,12 @@
       "ABC"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810675/nuggets-warriors",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Golden State Warriors",
+    "home_score": "128",
+    "away_score": "117",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810676",
@@ -12377,11 +12378,12 @@
     "location": "Bankers Life Fieldhouse",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810676/mavericks-pacers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Dallas Mavericks",
+    "home_score": "130",
+    "away_score": "134",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810677",
@@ -12391,11 +12393,12 @@
     "location": "Capital One Arena",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810677/hornets-wizards",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Charlotte Hornets",
+    "home_score": "112",
+    "away_score": "129",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810678",
@@ -12407,11 +12410,12 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810678/celtics-lakers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Boston Celtics",
+    "home_score": "89",
+    "away_score": "111",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810679",
@@ -12421,11 +12425,12 @@
     "location": "Target Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810679/76ers-timberwolves",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Philadelphia 76ers",
+    "home_score": "108",
+    "away_score": "135",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810680",
@@ -12435,11 +12440,12 @@
     "location": "United Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810680/knicks-bulls",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "New York Knicks",
+    "home_score": "99",
+    "away_score": "105",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810681",
@@ -12449,11 +12455,12 @@
     "location": "Talking Stick Resort Arena",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810681/trail-blazers-suns",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Portland Trail Blazers",
+    "home_score": "77",
+    "away_score": "92",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810682",
@@ -12463,11 +12470,12 @@
     "location": "Intuit Dome",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810682/magic-clippers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "winner": "Orlando Magic",
+    "home_score": "109",
+    "away_score": "111",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final"
   },
   {
     "game_id": "401810683",
@@ -12479,11 +12487,13 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810683/spurs-pistons",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "45",
+    "away_score": "47",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "live",
+    "period": 2,
+    "clock": "3:21"
   },
   {
     "game_id": "401810684",
@@ -12493,11 +12503,11 @@
     "location": "FedExForum",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810684/kings-grizzlies",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810685",
@@ -12509,11 +12519,11 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810685/jazz-rockets",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810686",
