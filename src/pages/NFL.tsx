@@ -790,13 +790,21 @@ const TeamCard = ({
  * MAIN NFL COMPONENT
  * ============================================================================ */
 
+// ── Module-level data cache ──────────────────────────────────────────────────
+// Persists across tab switches (component unmount/remount) so the page renders
+// instantly with stale data while the background refresh completes silently.
+let _cachedTeams: NFLTeam[] | null = null;
+let _cachedSchedule: NFLScheduleData | null = null;
+let _cachedRoster: Record<string, any[]> | null = null;
+// ────────────────────────────────────────────────────────────────────────────
+
 const NFL = () => {
-  const [teams, setTeams] = useState<NFLTeam[]>([]);
-  const [scheduleData, setScheduleData] = useState<NFLScheduleData | null>(null);
+  const [teams, setTeams] = useState<NFLTeam[]>(() => _cachedTeams ?? []);
+  const [scheduleData, setScheduleData] = useState<NFLScheduleData | null>(() => _cachedSchedule);
   const [sortField, setSortField] = useState<SortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTeamAll, setSelectedTeamAll] = useState<NFLTeam | null>(null);
-  const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>({});
+  const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>(() => _cachedRoster ?? {});
   const [espnGameId, setEspnGameId] = useState<string | null>(null);
 
   const radarExtrema = useMemo(() => {
@@ -864,7 +872,10 @@ const NFL = () => {
         const res = await fetch(`/data/nfl_site_nfl_standings.json${bust()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        if (alive && Array.isArray(data)) setTeams(data as NFLTeam[]);
+        if (alive && Array.isArray(data)) {
+          _cachedTeams = data as NFLTeam[];
+          setTeams(data as NFLTeam[]);
+        }
       } catch {}
     };
     load();
@@ -885,7 +896,9 @@ const NFL = () => {
         try { next = JSON.parse(text) as NFLScheduleData; } catch { return; }
         setScheduleData((prev) => {
           const prevText = JSON.stringify(prev ?? null);
-          return prevText === text ? prev : next;
+          if (prevText === text) return prev;
+          _cachedSchedule = next;
+          return next;
         });
       } catch {}
     };
@@ -904,7 +917,10 @@ const NFL = () => {
         const res = await fetch(`/data/nfl_roster.json${bust()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json();
-        if (alive && json && typeof json === 'object') setRosterByTeam(json as Record<string, any[]>);
+        if (alive && json && typeof json === 'object') {
+          _cachedRoster = json as Record<string, any[]>;
+          setRosterByTeam(json as Record<string, any[]>);
+        }
       } catch {}
     };
     load();
@@ -1123,25 +1139,19 @@ const NFL = () => {
   }, [teams]);
 
   const [activeTab, setActiveTab] = useState<string>('schedule');
-  const [scheduleOnly, setScheduleOnly] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 900;
-  });
-
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640 && window.innerHeight > window.innerWidth
+  );
   useEffect(() => {
-    const handleResize = () => {
-      setScheduleOnly(window.innerWidth < 900);
+    const check = () => setIsMobile(window.innerWidth < 640 && window.innerHeight > window.innerWidth);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
     };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (scheduleOnly) {
-      setActiveTab('schedule');
-    }
-  }, [scheduleOnly]);
 
   return (
     <PageLayout theme="nfl">
@@ -1150,11 +1160,11 @@ const NFL = () => {
 
       <Tabs
         theme="nfl"
-        value={activeTab}
+        value={isMobile ? 'schedule' : activeTab}
         className="w-full min-h-0"
-        onValueChange={(v) => setActiveTab(v)}
+        onValueChange={(v) => { if (!isMobile) setActiveTab(v); }}
       >
-        {!scheduleOnly && (
+        {!isMobile && (
   <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
             <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
             <TabsTrigger value="all">Team Stats</TabsTrigger>
@@ -1163,7 +1173,7 @@ const NFL = () => {
           </TabsList>
         )}
 
-        {!scheduleOnly && (
+        {!isMobile && (
         <TabsContent value="dashboard">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
             <div className="lg:col-span-7 flex flex-col gap-4 h-full overflow-hidden">
@@ -1226,7 +1236,7 @@ const NFL = () => {
         </TabsContent>
         )}
 
-        {!scheduleOnly && (
+        {!isMobile && (
         <TabsContent value="all">
           <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
   {/* === Sort Dropdown === */}
@@ -1471,7 +1481,7 @@ const NFL = () => {
         </TabsContent>
         )}
 
-        {!scheduleOnly && ['AFC', 'NFC'].map((conference) => {
+        {!isMobile && ['AFC', 'NFC'].map((conference) => {
           const conferenceTeams = teams
             .filter((team) => team.conference === conference)
             .sort((a, b) => b.wins - a.wins);
@@ -1520,13 +1530,14 @@ const NFL = () => {
         {/* Schedule Tab */}
         <TabsContent
           value="schedule"
-          className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
+          className={isMobile ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
         >
           <ScheduleNFLViewV2
             scheduleData={scheduleData}
             logoMap={abbrToLogo}
             recordMap={abbrToRecord}
             onGameClick={(gameId) => setEspnGameId(gameId)}
+            isMobile={isMobile}
           />
         </TabsContent>
       </Tabs>
@@ -1969,11 +1980,13 @@ const ScheduleNFLViewV2 = ({
   logoMap,
   recordMap = {},
   onGameClick,
+  isMobile = false,
 }: {
   scheduleData: NFLScheduleData | null;
   logoMap: Record<string, string>;
   recordMap?: Record<string, string>;
   onGameClick?: (gameId: string) => void;
+  isMobile?: boolean;
 }) => {
   const gamesByDate = useMemo(() => {
     const map: Record<string, NFLScheduleGame[]> = {};
@@ -2026,14 +2039,59 @@ const ScheduleNFLViewV2 = ({
   const [index, setIndex] = React.useState<number>(initialIndex);
   useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
 
+  const calendarRef = React.useRef<HTMLDivElement>(null);
+  const [showCalendar, setShowCalendar] = React.useState(false);
+  const [calendarMonth, setCalendarMonth] = React.useState<{ year: number; month: number } | null>(null);
+  const gameDateSet = useMemo(() => new Set(dateKeys), [dateKeys]);
+
+  useEffect(() => {
+    if (!showCalendar) return;
+    const handler = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showCalendar]);
+
   if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
   const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
   const currentKey = dateKeys[clamp(index)];
   const games = gamesByDate[currentKey] || [];
 
+  const openCalendar = () => {
+    const [y, m] = currentKey.split('-').map(Number);
+    setCalendarMonth({ year: y, month: m });
+    setShowCalendar(true);
+  };
+
+  const buildCalendarGrid = (year: number, month: number) => {
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const cells: (string | null)[] = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    }
+    return cells;
+  };
+
+  const handleCalendarDayClick = (key: string) => {
+    if (!gameDateSet.has(key)) return;
+    const idx = dateKeys.indexOf(key);
+    if (idx >= 0) setIndex(idx);
+    setShowCalendar(false);
+  };
+
+  const calGrid = calendarMonth ? buildCalendarGrid(calendarMonth.year, calendarMonth.month) : [];
+  const calMonthLabel = calendarMonth
+    ? new Date(calendarMonth.year, calendarMonth.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    : '';
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-center gap-3">
+      <div className={`relative flex items-center gap-3 ${isMobile ? 'justify-start pl-20 pt-3' : 'justify-center'}`}>
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -2041,6 +2099,56 @@ const ScheduleNFLViewV2 = ({
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full">
           <ChevronRight className="w-5 h-5" />
         </Button>
+
+        {/* Calendar picker */}
+        <div className="absolute right-0" ref={calendarRef}>
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-transparent" onClick={openCalendar} aria-label="Pick a date">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </Button>
+          {showCalendar && calendarMonth && (
+            <div className="absolute top-11 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72" style={{ backgroundColor: '#1a1a1a' }}>
+              <div className="flex items-center justify-between mb-3">
+                <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                  onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m - 2, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+                <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                  onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 mb-1">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
+                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-y-1">
+                {calGrid.map((key, i) => {
+                  if (!key) return <div key={`empty-${i}`} />;
+                  const hasGames = gameDateSet.has(key);
+                  const isSelected = key === currentKey;
+                  const isToday = key === todayKey;
+                  const dayNum = parseInt(key.split('-')[2], 10);
+                  return (
+                    <button key={key} onClick={() => handleCalendarDayClick(key)} disabled={!hasGames}
+                      className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
+                        ${isSelected ? 'bg-white text-black shadow-lg' : hasGames ? 'text-white hover:bg-white/15 cursor-pointer' : 'text-white/20 cursor-default'}`}>
+                      {dayNum}
+                      {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />}
+                      {isToday && isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {games.length === 0 ? (
@@ -2048,7 +2156,7 @@ const ScheduleNFLViewV2 = ({
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full pb-16">
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
           {games.map((g) => {
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
@@ -2086,28 +2194,30 @@ const ScheduleNFLViewV2 = ({
             const awayColor = awayTeamName && teamColors[awayTeamName]?.primary || '#1e40af';
             const homeColor = homeTeamName && teamColors[homeTeamName]?.primary || '#dc2626';
 
+            const logoSize = isMobile ? '13cqi' : undefined;
+            const scoreFontSize = isMobile ? 'clamp(1.5rem, 7cqi, 2.2rem)' : 'clamp(1.125rem, 4cqi, 1.75rem)';
+            const timeFontSize = isMobile ? 'clamp(0.85rem, 5cqi, 1.6rem)' : 'clamp(0.875rem, 3.2cqi, 1.3rem)';
+            const recordFontSize = isMobile ? 'clamp(0.65rem, 2.5cqi, 0.8rem)' : 'clamp(0.6rem, 2.2cqi, 0.75rem)';
+            const liveFontSize = isMobile ? 'clamp(0.75rem, 3cqi, 0.95rem)' : 'clamp(0.5rem, 1.8cqi, 0.65rem)';
+
             return (
-              <Card 
-                key={g.game_id} 
+              <Card
+                key={g.game_id}
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
                 onClick={() => {
                   if (g.game_id && onGameClick) onGameClick(g.game_id);
                   else if (g.game_link) window.open(g.game_link, '_blank', 'noopener,noreferrer');
                 }}
               >
-                {/* Live pulse dot */}
                 {isLiveGame && (
                   <>
                     <style>{`@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } }`}</style>
                     <div className="absolute top-2 left-2 z-10 sched-live-dot" style={{ borderRadius: '50%', backgroundColor: '#ffffff', boxShadow: '0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(255,255,255,0.4)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                   </>
                 )}
-                
-                {/* Team color gradient background */}
                 <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)` }} />
                 <div className="absolute inset-0 bg-black/40" />
 
-                {/* TV Badges */}
                 {providers.length > 0 && (
                   <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px] z-10">
                     {providers.map((p) => {
@@ -2130,20 +2240,18 @@ const ScheduleNFLViewV2 = ({
                 <CardContent className="relative z-10 py-0 flex flex-col h-full">
                   <div className="flex-1 flex items-center py-1">
                     <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
+
                       {/* Away team */}
                       <div className="flex flex-col items-center justify-center gap-0.5">
                         {awayLogo && (
-                          <img
-                            src={awayLogo}
-                            alt={awayAbbr || 'Away'}
-                            className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                            style={{ objectFit: 'contain', ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {}) }}
+                          <img src={awayLogo} alt={awayAbbr || 'Away'}
+                            className={`rounded-sm ${isMobile ? '' : 'sched-logo'} ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{ objectFit: 'contain', ...(logoSize ? { width: logoSize, height: logoSize } : {}), ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {}) }}
                             loading="lazy"
                           />
                         )}
-                        {/* Record under away logo */}
                         {awayRecord && (
-                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: "clamp(0.6rem, 2.2cqi, 0.75rem)" }}>
+                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: recordFontSize }}>
                             ({awayRecord.replace(/-/g, ' - ')})
                           </span>
                         )}
@@ -2155,7 +2263,7 @@ const ScheduleNFLViewV2 = ({
                           const s = String(g.status || '').toLowerCase();
                           if (s === 'final') {
                             return (
-                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
+                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: scoreFontSize }}>
                                 <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                                 <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                                 <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
@@ -2166,9 +2274,8 @@ const ScheduleNFLViewV2 = ({
                             return (
                               <div className="flex flex-col items-center gap-0.5">
                                 <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>
-                                {/* Quarter + clock */}
                                 {(period || clock) && (
-                                  <span className="text-white/90 font-bold" style={{ fontSize: "clamp(0.5rem, 1.8cqi, 0.65rem)" }}>
+                                  <span className="text-white/90 font-bold" style={{ fontSize: liveFontSize }}>
                                     {period ? `Q${period}` : ''}{period && clock ? ' · ' : ''}{clock || ''}
                                   </span>
                                 )}
@@ -2176,7 +2283,7 @@ const ScheduleNFLViewV2 = ({
                             );
                           }
                           return (
-                            <div className="font-bold text-white" style={{ fontSize: "clamp(0.875rem, 3.2cqi, 1.3rem)" }}>
+                            <div className="font-bold text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
                               {g.time || 'TBA'}
                             </div>
                           );
@@ -2189,21 +2296,19 @@ const ScheduleNFLViewV2 = ({
                       {/* Home team */}
                       <div className="flex flex-col items-center justify-center gap-0.5">
                         {homeLogo && (
-                          <img
-                            src={homeLogo}
-                            alt={homeAbbr || 'Home'}
-                            className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                            style={{ objectFit: 'contain', ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {}) }}
+                          <img src={homeLogo} alt={homeAbbr || 'Home'}
+                            className={`rounded-sm ${isMobile ? '' : 'sched-logo'} ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{ objectFit: 'contain', ...(logoSize ? { width: logoSize, height: logoSize } : {}), ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {}) }}
                             loading="lazy"
                           />
                         )}
-                        {/* Record under home logo */}
                         {homeRecord && (
-                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: "clamp(0.6rem, 2.2cqi, 0.75rem)" }}>
+                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: recordFontSize }}>
                             ({homeRecord.replace(/-/g, ' - ')})
                           </span>
                         )}
                       </div>
+
                     </div>
                   </div>
                 </CardContent>

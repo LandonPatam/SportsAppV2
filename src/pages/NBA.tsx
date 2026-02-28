@@ -207,6 +207,14 @@ type StatLeaderMap = Partial<Record<keyof Player, { value: number; playerIds: nu
 // Cache of the latest full team list for cross-component best-stat checks
 let ALL_TEAMS_CACHE: NBATeam[] = [];
 
+// ── Module-level data cache ──────────────────────────────────────────────────
+// Persists across tab switches (component unmount/remount) so the page renders
+// instantly with stale data while the background refresh completes silently.
+let _cachedTeams: NBATeam[] | null = null;
+let _cachedPlayers: Record<string, Player[]> | null = null;
+let _cachedSchedule: NBAScheduleData | null = null;
+// ────────────────────────────────────────────────────────────────────────────
+
 // ============================
 // Schedule Types (support multiple shapes)
 // ============================
@@ -428,13 +436,13 @@ const teamAbbreviations: Record<string, string> = {
 
 const teamGradientColors: Record<string, { start: string; end: string }> = {
   'ATL': { start: '#E03A3E', end: '#C1D32F' },
-  'BOS': { start: '#ffffff', end: '#007A33' },
+  'BOS': { start: '#007A33', end: '#ffffff' },
   'BKN': { start: '#000000', end: '#FFFFFF' },
   'CHA': { start: '#1D1160', end: '#00788C' },
   'CHI': { start: '#CE1141', end: '#000000' },
   'CLE': { start: '#860038', end: '#FDBB30' },
   'DAL': { start: '#00538C', end: '#002B5E' },
-  'DEN': { start: '#FEC524', end: '#0E2240' },
+  'DEN': { start: '#0E2240', end: '#FEC524' },
   'DET': { start: '#C8102E', end: '#1D42BA' },
   'GSW': { start: '#1D428A', end: '#FFC72C' },
   'HOU': { start: '#CE1141', end: '#000000' },
@@ -1096,7 +1104,7 @@ const StatRow = ({
 // ============================
 
 // Compact, arrow-controlled view
-const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, onGameClick?: (gameId: string) => void }) => {
+const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, isMobile = false }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, onGameClick?: (gameId: string) => void, isMobile?: boolean }) => {
   // Build games grouped by date from the provided schedule
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
@@ -1206,7 +1214,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
 
   return (
     <div className="space-y-4">
-      <div className="relative flex items-center justify-center gap-3">
+      <div className={`relative flex items-center gap-3 ${isMobile ? 'justify-start pl-20 pt-3' : 'justify-center'}`}>
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -1311,7 +1319,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full pb-16">
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
           {games.map((g) => {
             // Derive home/away abbreviations and logos
             let awayAbbr = (g as any).away as string | undefined;
@@ -1361,6 +1369,13 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
             // Determine if we should show team names based on card count
             const showTeamNames = games.length <= 6;
 
+            // Mobile-specific sizing
+            const logoSize = isMobile ? '13cqi' : undefined;
+            const scoreFontSize = isMobile ? 'clamp(1.5rem, 7cqi, 2.2rem)' : 'clamp(1.125rem, 4cqi, 1.75rem)';
+            const timeFontSize = isMobile ? 'clamp(0.85rem, 5cqi, 1.6rem)' : 'clamp(0.875rem, 3.2cqi, 1.3rem)';
+            const recordFontSize = isMobile ? 'clamp(0.65rem, 2.5cqi, 0.8rem)' : 'clamp(0.6rem, 2.2cqi, 0.75rem)';
+            const liveFontSize = isMobile ? 'clamp(0.75rem, 3cqi, 0.95rem)' : 'clamp(0.65rem, 2.5cqi, 0.85rem)';
+
             return (
               <Card 
                 key={g.game_id} 
@@ -1400,14 +1415,13 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
                     />
                   </>
                 )}
-                {/* Vertical gradient from away team color to home team color - tighter blend in center */}
+                {/* Gradient background */}
                 <div 
                   className="absolute inset-0" 
                   style={{
                     background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)`
                   }}
                 />
-                {/* Semi-transparent overlay for better text readability */}
                 <div className="absolute inset-0 bg-black/40" />
                 
                 {/* TV Badges top-right */}
@@ -1436,7 +1450,6 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
 
                 <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } }`}</style>
                 <CardContent className="relative z-10 py-0 flex flex-col h-full">
-                  {/* Main content - vertically centered */}
                   <div className="flex-1 flex items-center py-1">
                     <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
                       {/* Away side */}
@@ -1446,16 +1459,17 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
                             <img
                               src={awayLogo}
                               alt={awayAbbr || 'Away'}
-                              className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                              className={`rounded-sm ${isMobile ? '' : 'sched-logo'} ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
                               style={{
                                 objectFit: 'contain',
+                                ...(logoSize ? { width: logoSize, height: logoSize } : {}),
                                 ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
                               }}
                               loading="lazy"
                             />
                             {awayAbbr && recordMap[awayAbbr] && (
-                              <div className="text-white/80 font-bold text-center" style={{ fontSize: "clamp(0.6rem, 2.2cqi, 0.75rem)" }}>
-                                ({recordMap[awayAbbr]})
+                              <div className="text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                                ({recordMap[awayAbbr].replace(/-/g, ' - ')})
                               </div>
                             )}
                           </>
@@ -1466,41 +1480,34 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
                       <div className="flex items-center justify-center relative">
                         {hasScores ? (
                           <>
-                            <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
+                            <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: scoreFontSize }}>
                               <span className={awayScoreClass}>{aScore}</span>
                               <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                               <span className={homeScoreClass}>{hScore}</span>
                             </div>
-                            {/* Show quarter and time for live games - positioned absolutely below score */}
                             {isLiveGame && (g.period || g.clock) && (
-                              <div className="absolute top-full text-white/90 font-semibold text-center whitespace-nowrap" style={{ fontSize: "clamp(0.65rem, 2.5cqi, 0.85rem)", marginTop: "0.2cqi" }}>
+                              <div className="absolute top-full text-white/90 font-semibold text-center whitespace-nowrap" style={{ fontSize: liveFontSize, marginTop: "0.2cqi" }}>
                                 {(() => {
                                   const parts: string[] = [];
-                                  
-                                  // Format period/quarter
                                   if (g.period) {
                                     const period = Number(g.period);
                                     if (period <= 4) {
                                       parts.push(`Q${period}`);
                                     } else {
-                                      // Overtime
                                       const otNum = period - 4;
                                       parts.push(otNum === 1 ? 'OT' : `${otNum}OT`);
                                     }
                                   }
-                                  
-                                  // Add clock time
                                   if (g.clock) {
                                     parts.push(String(g.clock));
                                   }
-                                  
                                   return parts.length > 0 ? parts.join(' • ') : 'LIVE';
                                 })()}
                               </div>
                             )}
                           </>
                         ) : (
-                          <div className="font-bold text-white" style={{ fontSize: "clamp(0.875rem, 3.2cqi, 1.3rem)" }}>
+                          <div className="font-bold text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
                             {g.time || 'TBA'}
                           </div>
                         )}
@@ -1513,16 +1520,17 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick }: 
                             <img
                               src={homeLogo}
                               alt={homeAbbr || 'Home'}
-                              className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                              className={`rounded-sm ${isMobile ? '' : 'sched-logo'} ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
                               style={{
                                 objectFit: 'contain',
+                                ...(logoSize ? { width: logoSize, height: logoSize } : {}),
                                 ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
                               }}
                               loading="lazy"
                             />
                             {homeAbbr && recordMap[homeAbbr] && (
-                              <div className="text-white/80 font-bold text-center" style={{ fontSize: "clamp(0.6rem, 2.2cqi, 0.75rem)" }}>
-                                ({recordMap[homeAbbr]})
+                              <div className="text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                                ({recordMap[homeAbbr].replace(/-/g, ' - ')})
                               </div>
                             )}
                           </>
@@ -2657,12 +2665,27 @@ const DarkModeToggle = () => {
 
 
 const NBA = () => {
-  const [nbaPlayerData, setNbaPlayerData] = useState<Record<string, Player[]>>({});
-  const [loading, setLoading] = useState(true);
+  const [nbaPlayerData, setNbaPlayerData] = useState<Record<string, Player[]>>(() => _cachedPlayers ?? {});
+  const [loading, setLoading] = useState(() => _cachedTeams === null); // only show loading spinner on true first load
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [nbaTeams, setNbaTeams] = useState<NBATeam[]>([]);
+  const [nbaTeams, setNbaTeams] = useState<NBATeam[]>(() => _cachedTeams ?? []);
   const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'top-scorers', or 'schedule'
+
+  // Portrait mobile detection — only affects mobile layout, never touches desktop
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640 && window.innerHeight > window.innerWidth
+  );
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640 && window.innerHeight > window.innerWidth);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
+    };
+  }, []);
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
@@ -2682,7 +2705,7 @@ const NBA = () => {
   const [teamFilters, setTeamFilters] = useState<Record<TeamFilterKey, string>>(() => getInitialTeamFilters());
   const [sortField, setSortField] = useState<TeamSortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(null);
+  const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(() => _cachedSchedule);
   const logosScrollRef = useRef<HTMLDivElement | null>(null);
   const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2829,19 +2852,22 @@ const fetchData = async () => {
         conference: teamConferences[team.TEAM_NAME]?.conference || 'Unknown',
         division: teamConferences[team.TEAM_NAME]?.division || 'Unknown',
       }));
-      setNbaTeams(teamsWithConference);
+      _cachedTeams = teamsWithConference;
       ALL_TEAMS_CACHE = teamsWithConference;
+      setNbaTeams(teamsWithConference);
     }
 
     if (playerData) {
+      _cachedPlayers = playerData;
       setNbaPlayerData(playerData);
     }
 
-    // Fetch schedule on initial load only
+    // Fetch schedule
     try {
       const text = await fetch('/data/nba_schedule.json', { cache: 'no-cache' }).then(r => r.ok ? r.text() : null);
       if (text) {
         const schedJson = JSON.parse(text) as NBAScheduleData;
+        _cachedSchedule = schedJson;
         setScheduleData(schedJson);
       }
     } catch {
@@ -2895,7 +2921,9 @@ useEffect(() => {
       }
       setScheduleData((prev) => {
         const prevText = JSON.stringify(prev ?? null);
-        return prevText === text ? prev : next;
+        if (prevText === text) return prev;
+        _cachedSchedule = next;
+        return next;
       });
     } catch {}
   };
@@ -3309,22 +3337,23 @@ useEffect(() => {
       {/* Tabs for Dashboard / All / East / West / Scorers / Schedule */}
       <Tabs
         theme="nba"
-        value={activeTab}
+        value={isMobile ? 'schedule' : activeTab}
         className="w-full"
         onValueChange={(v) => {
-          setActiveTab(v);
+          if (!isMobile) setActiveTab(v);
         }}
       >
   {/* ========================
-      Navigation Tab Bar
-      Tabs: Scoreboard | Standings | Team Stats | Top Players
+      Navigation Tab Bar — hidden on mobile (scoreboard-only on mobile)
   ======================== */}
+  {!isMobile && (
   <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
     <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
-  <TabsTrigger value="standings">Standings</TabsTrigger>
-  <TabsTrigger value="all">Team Stats</TabsTrigger>
-  <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
-</TabsList>
+    <TabsTrigger value="standings">Standings</TabsTrigger>
+    <TabsTrigger value="all">Team Stats</TabsTrigger>
+    <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
+  </TabsList>
+  )}
 
 
 
@@ -3750,7 +3779,7 @@ useEffect(() => {
     - Click a game card to open ESPN box score in an iframe modal
 ======================== */}
 <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
-  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} onGameClick={(gameId) => setEspnGameId(gameId)} />
+  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
 </TabsContent>
 
 {/* ========================
