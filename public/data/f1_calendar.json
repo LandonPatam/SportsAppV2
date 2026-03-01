@@ -1,0 +1,338 @@
+[
+    {
+        "race_number": 1,
+        "race_name": "Qatar Airways Australian GP",
+        "circuit": "Melbourne Grand Prix Circuit",
+        "date": "March 5 - 7",
+        "start_time_west": "March 07 at 8:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/241.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057427",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057427",
+            "results": "https://www.espn.com/f1/results/_/id/600057427"
+        }
+    },
+    {
+        "race_number": 2,
+        "race_name": "Heineken Chinese GP",
+        "circuit": "Shanghai International Circuit",
+        "date": "March 13 - 15",
+        "start_time_west": "March 15 at 12:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/244.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057428",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057428",
+            "results": "https://www.espn.com/f1/results/_/id/600057428"
+        }
+    },
+    {
+        "race_number": 3,
+        "race_name": "Aramco Japanese GP",
+        "circuit": "Suzuka International Racing Course",
+        "date": "March 25 - 27",
+        "start_time_west": "March 27 at 10:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/235.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057429",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057429",
+            "results": "https://www.espn.com/f1/results/_/id/600057429"
+        }
+    },
+    {
+        "race_number": 4,
+        "race_name": "Gulf Air Bahrain GP",
+        "circuit": "Bahrain International Circuit",
+        "date": "April 10 - 12",
+        "start_time_west": "April 12 at 8:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/243.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057430",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057430",
+            "results": "https://www.espn.com/f1/results/_/id/600057430"
+        }
+    },
+    {
+        "race_number": 5,
+        "race_name": "STC Saudi Arabian GP",
+        "circuit": "Jeddah Street Circuit",
+        "date": "April 17 - 19",
+        "start_time_west": "April 19 at 10:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/7104.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057431",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057431",
+            "results": "https://www.espn.com/f1/results/_/id/600057431"
+        }
+    },
+    {
+        "race_number": 6,
+        "race_name": "Crypto.com Miami GP",
+        "circuit": "Miami International Autodrome",
+        "date": "May 1 - 3",
+        "start_time_west": "May 03 at 1:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/7105.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057432",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057432",
+            "results": "https://www.espn.com/f1/results/_/id/600057432"
+        }
+    },
+    {
+        "race_number": 7,
+        "race_name": "Lenovo Canadian GP",
+        "circuit": "Circuit Gilles-Villeneuve",
+        "date": "May 22 - 24",
+        "start_time_west": "May 24 at 1:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/51.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057433",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057433",
+            "results": "https://www.espn.com/f1/results/_/id/600057433"
+        }
+    },
+    {
+        "race_number": 8,
+        "race_name": "Monaco GP",
+        "circuit": "Circuit de Monaco",
+        "date": "June 5 - 7",
+        "start_time_west": "June 07 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/255.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057434",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057434",
+            "results": "https://www.espn.com/f1/results/_/id/600057434"
+        }
+    },
+    {
+        "race_number": 9,
+        "race_name": "MSC Cruises Barcelona-Catalunya GP",
+        "circuit": "Circuit de Catalunya",
+        "date": "June 12 - 14",
+        "start_time_west": "June 14 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/238.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057435",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057435",
+            "results": "https://www.espn.com/f1/results/_/id/600057435"
+        }
+    },
+    {
+        "race_number": 10,
+        "race_name": "Lenovo Austrian GP",
+        "circuit": "Red Bull Ring",
+        "date": "June 26 - 28",
+        "start_time_west": "June 28 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/275.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057436",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057436",
+            "results": "https://www.espn.com/f1/results/_/id/600057436"
+        }
+    },
+    {
+        "race_number": 11,
+        "race_name": "Pirelli British GP",
+        "circuit": "Silverstone Circuit",
+        "date": "July 3 - 5",
+        "start_time_west": "July 05 at 7:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/254.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057437",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057437",
+            "results": "https://www.espn.com/f1/results/_/id/600057437"
+        }
+    },
+    {
+        "race_number": 12,
+        "race_name": "Belgian GP",
+        "circuit": "Circuit de Spa-Francorchamps",
+        "date": "July 17 - 19",
+        "start_time_west": "July 19 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/257.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057439",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057439",
+            "results": "https://www.espn.com/f1/results/_/id/600057439"
+        }
+    },
+    {
+        "race_number": 13,
+        "race_name": "AWS Hungarian GP",
+        "circuit": "Hungaroring",
+        "date": "July 24 - 26",
+        "start_time_west": "July 26 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/234.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057440",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057440",
+            "results": "https://www.espn.com/f1/results/_/id/600057440"
+        }
+    },
+    {
+        "race_number": 14,
+        "race_name": "Heineken Dutch GP",
+        "circuit": "Circuit Park Zandvoort",
+        "date": "August 21 - 23",
+        "start_time_west": "August 23 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/404.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057441",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057441",
+            "results": "https://www.espn.com/f1/results/_/id/600057441"
+        }
+    },
+    {
+        "race_number": 15,
+        "race_name": "Pirelli Italian GP",
+        "circuit": "Autodromo Nazionale Monza",
+        "date": "September 4 - 6",
+        "start_time_west": "September 06 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/259.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057442",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057442",
+            "results": "https://www.espn.com/f1/results/_/id/600057442"
+        }
+    },
+    {
+        "race_number": 16,
+        "race_name": "Tag Heuer Spanish GP",
+        "circuit": "Madring",
+        "date": "September 11 - 13",
+        "start_time_west": "September 13 at 6:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "Not Found",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057443",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057443",
+            "results": "https://www.espn.com/f1/results/_/id/600057443"
+        }
+    },
+    {
+        "race_number": 17,
+        "race_name": "Qatar Airways Azerbaijan GP",
+        "circuit": "Baku City Circuit",
+        "date": "September 24 - 26",
+        "start_time_west": "September 26 at 4:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/402.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057444",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057444",
+            "results": "https://www.espn.com/f1/results/_/id/600057444"
+        }
+    },
+    {
+        "race_number": 18,
+        "race_name": "Singapore Airlines Singapore GP",
+        "circuit": "Marina Bay Street Circuit",
+        "date": "October 9 - 11",
+        "start_time_west": "October 11 at 5:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/247.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057445",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057445",
+            "results": "https://www.espn.com/f1/results/_/id/600057445"
+        }
+    },
+    {
+        "race_number": 19,
+        "race_name": "MSC Cruises United States GP",
+        "circuit": "Circuit of the Americas",
+        "date": "October 23 - 25",
+        "start_time_west": "October 25 at 1:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/253.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057446",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057446",
+            "results": "https://www.espn.com/f1/results/_/id/600057446"
+        }
+    },
+    {
+        "race_number": 20,
+        "race_name": "Mexico City GP",
+        "circuit": "Autodromo Hermanos Rodriguez",
+        "date": "November -1 - 1",
+        "start_time_west": "November 01 at 12:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/50.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057447",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057447",
+            "results": "https://www.espn.com/f1/results/_/id/600057447"
+        }
+    },
+    {
+        "race_number": 21,
+        "race_name": "MSC Cruises S\u00e3o Paulo GP",
+        "circuit": "Autodromo Jose Carlos Pace",
+        "date": "November 6 - 8",
+        "start_time_west": "November 08 at 9:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/278.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057448",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057448",
+            "results": "https://www.espn.com/f1/results/_/id/600057448"
+        }
+    },
+    {
+        "race_number": 22,
+        "race_name": "Heineken Las Vegas GP",
+        "circuit": "Las Vegas Street Circuit",
+        "date": "November 19 - 21",
+        "start_time_west": "November 21 at 8:00 pm PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/7109.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057449",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057449",
+            "results": "https://www.espn.com/f1/results/_/id/600057449"
+        }
+    },
+    {
+        "race_number": 23,
+        "race_name": "Qatar Airways Qatar GP",
+        "circuit": "Losail International Circuit",
+        "date": "November 27 - 29",
+        "start_time_west": "November 29 at 8:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/408.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057450",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057450",
+            "results": "https://www.espn.com/f1/results/_/id/600057450"
+        }
+    },
+    {
+        "race_number": 24,
+        "race_name": "Etihad Airways Abu Dhabi GP",
+        "circuit": "Yas Marina Circuit",
+        "date": "December 4 - 6",
+        "start_time_west": "December 06 at 5:00 am PST",
+        "tv_provider": "Apple TV",
+        "track_svg": "https://a.espncdn.com/i/venues/f1/day/248.svg",
+        "urls": {
+            "race_page": "https://www.espn.com/f1/race/_/id/600057451",
+            "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057451",
+            "results": "https://www.espn.com/f1/results/_/id/600057451"
+        }
+    }
+]

@@ -23,12 +23,13 @@ type IconProps = {
   active?: boolean;
 };
 
-type SidebarTheme = 'default' | 'nfl' | 'nba';
+type SidebarTheme = 'default' | 'nfl' | 'nba' | 'f1';
 
 const gradientMap: Record<SidebarTheme, { from: string; to: string }> = {
   default: { from: "rgb(139, 251, 94)", to: "#ffc342ff" },
   nfl: { from: "rgb(16, 237, 64)", to: "#ffc342ff" },
   nba: { from: "rgb(255, 242, 0)", to: "#cc00ffff" },
+  f1: { from: "#e10600", to: "#ff6b35" },
 };
 
 /* ============================================================================
@@ -94,6 +95,44 @@ const NBAIcon = ({ className, active = false }: IconProps) => (
     </g>
   </svg>
 );
+// 🏎️ F1 — racing car / checkered flag icon
+const F1Icon = ({ className, active = false }: IconProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 100 100"
+    className={cn('h-10 w-10', className)}
+    fill="none"
+    strokeWidth={3}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {/* Car body */}
+    <g stroke={active ? '#ff4444' : '#6b7280'} style={active ? neonGlowStyles.red : undefined}>
+      <path d="M15 55 C15 55 20 42 35 40 L55 38 L70 40 C80 42 85 48 85 48 L88 55 L85 58 L15 58 Z" />
+      <path d="M25 58 L25 65 L35 65 L35 58" />
+      <path d="M65 58 L65 65 L75 65 L75 58" />
+      {/* Cockpit */}
+      <path d="M42 40 L42 34 C42 32 45 30 50 30 C55 30 58 32 58 34 L58 40" />
+      {/* Front wing */}
+      <path d="M80 56 L95 54 L95 60 L80 60" />
+      {/* Rear wing */}
+      <path d="M18 50 L8 48 L8 54 L18 54" />
+    </g>
+    {/* Wheels */}
+    <g stroke={active ? '#ffffff' : '#9ca3af'} style={active ? neonGlowStyles.white : undefined}>
+      <circle cx="30" cy="65" r="8" />
+      <circle cx="70" cy="65" r="8" />
+      <circle cx="30" cy="65" r="3" />
+      <circle cx="70" cy="65" r="3" />
+    </g>
+    {/* F1 text */}
+    <g stroke={active ? '#ffffffff' : '#9ca3af'} style={active ? neonGlowStyles.white : undefined} strokeWidth={2}>
+      <path d="M38 46 L38 52 M38 46 L43 46 M38 49 L42 49" />
+      <path d="M50 46 L47 49 L50 52 L53 49 L50 46" />
+    </g>
+  </svg>
+);
+
 /* ============================================================================
  * SIDEBAR COMPONENT
  * ============================================================================ */
@@ -127,8 +166,9 @@ export function Sidebar({ className, theme = 'default', onHoverChange }: Sidebar
   const gradient = gradientMap[theme] || gradientMap.default;
 
   const navItems: NavItem[] = [
-    { title: '', icon: FootballIcon, href: '/nfl', offsetY: 100, offsetX: 20 },
-    { title: '', icon: NBAIcon, href: '/nba', offsetY: 160, offsetX: 7 },
+    { title: '', icon: FootballIcon, href: '/nfl', offsetY: 80, offsetX: 20 },
+    { title: '', icon: NBAIcon, href: '/nba', offsetY: 100, offsetX: 7 },
+    { title: '', icon: F1Icon, href: '/f1', offsetY: 120, offsetX: 20 },
   ];
 
   const totalItems = navItems.length;
