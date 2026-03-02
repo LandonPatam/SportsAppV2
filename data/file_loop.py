@@ -179,7 +179,9 @@ def main():
     last_nfl_schedule_run = 0
     last_data_run         = 0
     last_f1_data_run      = 0
-    last_f1_calendar_run  = 0
+    # Only run F1 calendar immediately if the file doesn't exist yet;
+    # otherwise wait the full 24h interval before running again.
+    last_f1_calendar_run  = 0 if not F1_CALENDAR_PATH.exists() else time.time()
 
     while True:
         now = time.time()
