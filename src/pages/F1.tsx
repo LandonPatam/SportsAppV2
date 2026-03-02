@@ -441,14 +441,183 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
 
 
 // ============================
+// 🏎️ DriversTab Component
+// ============================
+
+const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
+  const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState(true);
+  const [numCols, setNumCols] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
+
+  useEffect(() => {
+    const update = () => setNumCols(window.innerWidth >= 1024 ? 4 : 2);
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const drivers = teamsData.flatMap((team) =>
+    (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff', teamLogo: team.logo_url }))
+  ).sort((a: any, b: any) => b.points - a.points);
+
+  const cols: any[][] = Array.from({ length: numCols }, () => []);
+  drivers.forEach((d, i) => cols[i % numCols].push({ ...d, globalIndex: i }));
+
+  const renderCard = (driver: any) => {
+    const accent = driver.teamColour;
+    const raceEntries = Object.entries(driver.race_points ?? {}) as [string, number | null][];
+    const isExpanded = expandAll || expandedDriver === driver.name;
+    return (
+      <div
+        key={driver.name}
+        className="relative rounded-xl cursor-pointer mb-4"
+        style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px', animation: `slideUp 0.4s ease-out ${driver.globalIndex * 0.04}s both` }}
+        onClick={() => setExpandedDriver(isExpanded && !expandAll ? null : driver.name)}
+      >
+        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+        <div className="relative z-10 p-4 text-white">
+          <div className="flex items-center gap-2">
+            {driver.teamLogo && <img src={driver.teamLogo} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />}
+            <span className="text-m font-black text-white">#{driver.globalIndex + 1}</span>
+            <span className="text-base font-bold text-white">{driver.name}</span>
+            <span className="ml-auto text-3xl font-black text-white leading-none">
+              {driver.points}<span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
+            </span>
+          </div>
+          <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
+              <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+                {raceEntries.map(([race, pts]) => (
+                  <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
+                    <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
+                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{pts != null ? pts : '—'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => { setExpandAll(!expandAll); setExpandedDriver(null); }}
+          className="px-5 py-2 text-xs font-bold rounded-full transition-all duration-200"
+          style={{ backgroundColor: '#ffffff', color: '#000000' }}
+        >
+          {expandAll ? 'Compact View' : 'Expand View'}
+        </button>
+      </div>
+      <div className="flex gap-4 pb-4 items-start">
+        {cols.map((col, ci) => (
+          <div key={ci} className="flex flex-col flex-1 min-w-0">
+            {col.map(renderCard)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ============================
+// 🏆 ConstructorsTab Component
+// ============================
+
+const ConstructorsTab = ({ teamsData }: { teamsData: F1Team[] }) => {
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState(true);
+  const [numCols, setNumCols] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
+
+  useEffect(() => {
+    const update = () => setNumCols(window.innerWidth >= 1024 ? 4 : 2);
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const sortedTeams = [...teamsData].sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0));
+  const cols: any[][] = Array.from({ length: numCols }, () => []);
+  sortedTeams.forEach((t, i) => cols[i % numCols].push({ ...t, globalIndex: i }));
+
+  const renderCard = (team: any) => {
+    const accent = team.colour ?? '#ffffff';
+    const raceEntries = Object.entries(team.team_race_points ?? {}) as [string, number | null][];
+    const isExpanded = expandAll || expandedTeam === team.name;
+    return (
+      <div
+        key={team.name}
+        className="relative rounded-xl cursor-pointer mb-4"
+        style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px', animation: `slideUp 0.4s ease-out ${team.globalIndex * 0.04}s both` }}
+        onClick={() => setExpandedTeam(isExpanded && !expandAll ? null : team.name)}
+      >
+        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+        <div className="relative z-10 p-4 text-white">
+          <div className="flex items-center gap-2">
+            {team.logo_url && <img src={team.logo_url} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />}
+            <span className="text-m font-black text-white">#{team.globalIndex + 1}</span>
+            <span className="text-base font-bold text-white">{team.name}</span>
+            <span className="ml-auto text-3xl font-black text-white leading-none">
+              {team.team_points ?? 0}<span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
+            </span>
+          </div>
+          <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
+              <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+                {raceEntries.map(([race, pts]) => (
+                  <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
+                    <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
+                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{pts != null ? pts : '—'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => { setExpandAll(!expandAll); setExpandedTeam(null); }}
+          className="px-5 py-2 text-xs font-bold rounded-full transition-all duration-200"
+          style={{ backgroundColor: '#ffffff', color: '#000000' }}
+        >
+          {expandAll ? 'Compact View' : 'Expand View'}
+        </button>
+      </div>
+      <div className="flex gap-4 pb-4 items-start">
+        {cols.map((col, ci) => (
+          <div key={ci} className="flex flex-col flex-1 min-w-0">
+            {col.map(renderCard)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+// ============================
 // 🏎️ Main F1 Component
 // ============================
 
+// ── Module-level data cache ──────────────────────────────────────────────────
+// Persists across tab switches so the page renders instantly with stale data
+// while a background refresh completes silently.
+let _cachedCalendar: F1Race[] | null = null;
+let _cachedTeams: F1Team[] | null = null;
+// ────────────────────────────────────────────────────────────────────────────
+
 const F1 = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [calendarData, setCalendarData] = useState<F1Race[]>([]);
-  const [teamsData, setTeamsData] = useState<F1Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [calendarData, setCalendarData] = useState<F1Race[]>(() => _cachedCalendar ?? []);
+  const [teamsData, setTeamsData] = useState<F1Team[]>(() => _cachedTeams ?? []);
+  const [loading, setLoading] = useState(() => _cachedCalendar === null);
   const [raceModal, setRaceModal] = useState<F1Race | null>(null);
 
   const [isMobile, setIsMobile] = useState(() =>
@@ -467,27 +636,73 @@ const F1 = () => {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const safeFetchJson = async (url: string) => {
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) return null;
+      const text = await resp.text();
+      try { return { data: JSON.parse(text), text }; } catch {
+        console.warn(`Skipping corrupt JSON from ${url} — will retry next cycle`);
+        return null;
+      }
+    };
+
     const loadData = async () => {
       try {
-        const [calendarRes, teamsRes] = await Promise.all([
-          fetch('/data/f1_calendar.json'),
-          fetch('/data/f1_teams.json'),
+        const [calResult, teamsResult] = await Promise.all([
+          safeFetchJson('/data/f1_calendar.json?_=' + Date.now()),
+          safeFetchJson('/data/f1_teams.json?_=' + Date.now()),
         ]);
-        if (calendarRes.ok) {
-          const calJson = await calendarRes.json();
-          setCalendarData(Array.isArray(calJson) ? calJson : []);
+        if (cancelled) return;
+        if (calResult && Array.isArray(calResult.data)) {
+          setCalendarData(prev => {
+            const prevText = JSON.stringify(prev);
+            if (prevText === calResult.text) return prev;
+            _cachedCalendar = calResult.data;
+            return calResult.data;
+          });
         }
-        if (teamsRes.ok) {
-          const teamsJson = await teamsRes.json();
-          setTeamsData(Array.isArray(teamsJson) ? teamsJson : []);
+        if (teamsResult && Array.isArray(teamsResult.data)) {
+          setTeamsData(prev => {
+            const prevText = JSON.stringify(prev);
+            if (prevText === teamsResult.text) return prev;
+            _cachedTeams = teamsResult.data;
+            return teamsResult.data;
+          });
         }
       } catch (err) {
         console.error('Failed to load F1 data:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
+    // Initial load
     loadData();
+
+    // Poll every 30s — only re-renders if JSON content actually changed
+    let id: ReturnType<typeof setInterval>;
+    const start = () => {
+      id = setInterval(() => {
+        if (cancelled) return;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        loadData();
+      }, 30_000);
+    };
+    start();
+
+    // Re-fetch immediately when tab becomes visible again
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   useEffect(() => {
@@ -566,7 +781,10 @@ const F1 = () => {
                           >
                             <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
                             <div className="relative z-10 flex items-center justify-between px-3 h-14">
-                              <span className="text-base font-black text-white uppercase tracking-wide">{lastName}</span>
+                              <div className="flex flex-col">
+                                <span className="text-[12px] font-black text-white/40">#{index + 1}</span>
+                                <span className="text-base font-black text-white uppercase tracking-wide">{lastName}</span>
+                              </div>
                               <span className="text-2xl font-black text-white leading-none">
                                 {driver.points}
                                 <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
@@ -586,7 +804,7 @@ const F1 = () => {
             <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
               {[...teamsData]
                 .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
-                .slice(0, 10)
+                .slice(0, 11)
                 .map((team, index) => {
                   const accent = team.colour ?? '#ffffff';
                   const pts = team.team_points ?? 0;
@@ -603,7 +821,7 @@ const F1 = () => {
                     >
                       <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
                       <div className="relative z-10 flex items-center justify-between px-3 h-full">
-                        <div className="flex flex-col items-start justify-center gap-0.5">
+                        <div className="flex flex-col items-start justify-center gap-0">
                           {team.logo_url && (
                             <img
                               src={team.logo_url}
@@ -612,7 +830,7 @@ const F1 = () => {
                               loading="lazy"
                             />
                           )}
-                          <span className="text-sm font-bold text-white/80 leading-none">{team.name}</span>
+                          <span className="text-sm font-bold text-white leading-none">{team.name}</span>
                         </div>
                         <span className="text-3xl font-black text-white leading-none">
                           {pts}
@@ -631,122 +849,14 @@ const F1 = () => {
             TAB: Drivers
         ======================== */}
         <TabsContent value="drivers" className="mt-0">
-          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
-              {teamsData.flatMap((team) =>
-                (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff', teamLogo: team.logo_url }))
-              )
-                .sort((a: any, b: any) => b.points - a.points)
-                .map((driver: any, index: number) => {
-                  const accent = driver.teamColour;
-                  const raceEntries = Object.entries(driver.race_points ?? {}) as [string, number | null][];
-                  const raceChunks: [string, number | null][][] = [];
-                  for (let i = 0; i < raceEntries.length; i += 3) raceChunks.push(raceEntries.slice(i, i + 3));
-
-                  return (
-                    <div
-                      key={driver.name}
-                      className="relative rounded-xl overflow-hidden"
-                      style={{
-                        backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
-                        padding: '3px',
-                        animation: `slideUp 0.4s ease-out ${index * 0.04}s both`,
-                      }}
-                    >
-                      <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
-
-                      <div className="relative z-10 p-4 text-white">
-                        {/* Header */}
-                        <div className="flex items-center gap-2 mb-4">
-                          {driver.teamLogo && (
-                            <img src={driver.teamLogo} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />
-                          )}
-                          <span className="text-sm font-black text-white">#{index + 1}</span>
-                          <span className="text-base font-bold text-white">{driver.name}</span>
-                          <span className="ml-auto text-3xl font-black text-white leading-none">
-                            {driver.points}
-                            <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
-                          </span>
-                        </div>
-
-                        {/* Inner stats card */}
-                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0000004c' }}>
-                          <div className="grid grid-cols-3 gap-x-2 gap-y-1">
-                            {raceEntries.map(([race, pts]) => (
-                              <div key={race} className="flex items-center gap-1.5 py-0.5 border-b border-white/5">
-                                <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
-                                <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>
-                                  {pts != null ? pts : '—'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
+          <DriversTab teamsData={teamsData} />
         </TabsContent>
 
         {/* ========================
             TAB: Constructors
         ======================== */}
         <TabsContent value="constructors" className="mt-0">
-          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
-              {[...teamsData]
-                .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
-                .map((team, index) => {
-                  const accent = team.colour ?? '#ffffff';
-                  const raceEntries = Object.entries(team.team_race_points ?? {}) as [string, number | null][];
-
-                  return (
-                    <div
-                      key={team.name}
-                      className="relative rounded-xl overflow-hidden"
-                      style={{
-                        backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
-                        padding: '3px',
-                        animation: `slideUp 0.4s ease-out ${index * 0.04}s both`,
-                      }}
-                    >
-                      <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
-
-                      <div className="relative z-10 p-4 text-white">
-                        {/* Header */}
-                        <div className="flex items-center gap-2 mb-4">
-                          {team.logo_url && (
-                            <img src={team.logo_url} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />
-                          )}
-                          <span className="text-sm font-black text-white">#{index + 1}</span>
-                          <span className="text-base font-bold text-white">{team.name}</span>
-                          <span className="ml-auto text-3xl font-black text-white leading-none">
-                            {team.team_points ?? 0}
-                            <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
-                          </span>
-                        </div>
-
-                        {/* Race results grid */}
-                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0000004c' }}>
-                          <div className="grid grid-cols-3 gap-x-2 gap-y-1">
-                            {raceEntries.map(([race, pts]) => (
-                              <div key={race} className="flex items-center gap-3.5 py-0.5 border-b border-white/5">
-                                <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
-                                <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>
-                                  {pts != null ? pts : '—'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
+          <ConstructorsTab teamsData={teamsData} />
         </TabsContent>
 
         {/* ========================
@@ -758,7 +868,7 @@ const F1 = () => {
               {[...calendarData]
                 .sort((a, b) => parseRaceEndDate(a.date).localeCompare(parseRaceEndDate(b.date)))
                 .map((race, index) => {
-                  const todayKey = new Date().toISOString().slice(0, 10);
+                  const todayKey = new Date().toISOString().slice(0, 11);
                   const raceKey = parseRaceEndDate(race.date);
                   const isUpcoming = raceKey >= todayKey;
                   return (
@@ -863,6 +973,8 @@ const F1 = () => {
       )}
       <style>{`
         @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .drivers-columns { columns: 2; column-fill: auto; }
+        @media (min-width: 1024px) { .drivers-columns { columns: 4; column-fill: auto; } }
       `}</style>
     </PageLayout>
   );
