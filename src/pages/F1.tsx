@@ -401,7 +401,7 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
         {/* Text — top of card */}
         <div className="relative z-10 p-4 pb-2 flex-shrink-0">
           <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: '#e10600' }}>
-            Round {race.race_number}
+            Race {race.race_number}
           </span>
 
           <div className="flex items-start gap-2 mt-0.5">
@@ -449,6 +449,7 @@ const F1 = () => {
   const [calendarData, setCalendarData] = useState<F1Race[]>([]);
   const [teamsData, setTeamsData] = useState<F1Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [raceModal, setRaceModal] = useState<F1Race | null>(null);
 
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.innerWidth < 640 && window.innerHeight > window.innerWidth
@@ -629,25 +630,237 @@ const F1 = () => {
         {/* ========================
             TAB: Drivers
         ======================== */}
-        <TabsContent value="drivers">
-          {/* Coming soon */}
+        <TabsContent value="drivers" className="mt-0">
+          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
+              {teamsData.flatMap((team) =>
+                (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff', teamLogo: team.logo_url }))
+              )
+                .sort((a: any, b: any) => b.points - a.points)
+                .map((driver: any, index: number) => {
+                  const accent = driver.teamColour;
+                  const raceEntries = Object.entries(driver.race_points ?? {}) as [string, number | null][];
+                  const raceChunks: [string, number | null][][] = [];
+                  for (let i = 0; i < raceEntries.length; i += 3) raceChunks.push(raceEntries.slice(i, i + 3));
+
+                  return (
+                    <div
+                      key={driver.name}
+                      className="relative rounded-xl overflow-hidden"
+                      style={{
+                        backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
+                        padding: '3px',
+                        animation: `slideUp 0.4s ease-out ${index * 0.04}s both`,
+                      }}
+                    >
+                      <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+
+                      <div className="relative z-10 p-4 text-white">
+                        {/* Header */}
+                        <div className="flex items-center gap-2 mb-4">
+                          {driver.teamLogo && (
+                            <img src={driver.teamLogo} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />
+                          )}
+                          <span className="text-sm font-black text-white">#{index + 1}</span>
+                          <span className="text-base font-bold text-white">{driver.name}</span>
+                          <span className="ml-auto text-3xl font-black text-white leading-none">
+                            {driver.points}
+                            <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
+                          </span>
+                        </div>
+
+                        {/* Inner stats card */}
+                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0000004c' }}>
+                          <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+                            {raceEntries.map(([race, pts]) => (
+                              <div key={race} className="flex items-center gap-1.5 py-0.5 border-b border-white/5">
+                                <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
+                                <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>
+                                  {pts != null ? pts : '—'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
         </TabsContent>
 
         {/* ========================
             TAB: Constructors
         ======================== */}
-        <TabsContent value="constructors">
-          {/* Coming soon */}
+        <TabsContent value="constructors" className="mt-0">
+          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
+              {[...teamsData]
+                .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
+                .map((team, index) => {
+                  const accent = team.colour ?? '#ffffff';
+                  const raceEntries = Object.entries(team.team_race_points ?? {}) as [string, number | null][];
+
+                  return (
+                    <div
+                      key={team.name}
+                      className="relative rounded-xl overflow-hidden"
+                      style={{
+                        backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
+                        padding: '3px',
+                        animation: `slideUp 0.4s ease-out ${index * 0.04}s both`,
+                      }}
+                    >
+                      <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+
+                      <div className="relative z-10 p-4 text-white">
+                        {/* Header */}
+                        <div className="flex items-center gap-2 mb-4">
+                          {team.logo_url && (
+                            <img src={team.logo_url} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />
+                          )}
+                          <span className="text-sm font-black text-white">#{index + 1}</span>
+                          <span className="text-base font-bold text-white">{team.name}</span>
+                          <span className="ml-auto text-3xl font-black text-white leading-none">
+                            {team.team_points ?? 0}
+                            <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
+                          </span>
+                        </div>
+
+                        {/* Race results grid */}
+                        <div className="rounded-xl p-3" style={{ backgroundColor: '#0000004c' }}>
+                          <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+                            {raceEntries.map(([race, pts]) => (
+                              <div key={race} className="flex items-center gap-3.5 py-0.5 border-b border-white/5">
+                                <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
+                                <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>
+                                  {pts != null ? pts : '—'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
         </TabsContent>
 
         {/* ========================
             TAB: Races
         ======================== */}
-        <TabsContent value="races">
-          {/* Coming soon */}
+        <TabsContent value="races" className="mt-0">
+          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+            <div className="grid grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+              {[...calendarData]
+                .sort((a, b) => parseRaceEndDate(a.date).localeCompare(parseRaceEndDate(b.date)))
+                .map((race, index) => {
+                  const todayKey = new Date().toISOString().slice(0, 10);
+                  const raceKey = parseRaceEndDate(race.date);
+                  const isUpcoming = raceKey >= todayKey;
+                  return (
+                    <div
+                      key={race.race_number}
+                      className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 flex flex-col"
+                      style={{
+                        background: '#141414',
+                        height: '280px',
+                        animation: `slideUp 0.35s ease-out ${index * 0.03}s both`,
+                      }}
+                      onClick={() => setRaceModal(race)}
+                    >
+                      {/* TV Provider — top right */}
+                      {race.tv_provider && (
+                        <div className="absolute top-3 right-3 z-10">
+                          <Badge className="text-[10px] font-bold px-2 py-0.5" style={getTvStyle(race.tv_provider)}>
+                            {race.tv_provider}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {/* Text */}
+                      <div className="relative z-10 p-4 pb-2 flex-shrink-0">
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: '#e10600' }}>
+                          Race {race.race_number}
+                        </span>
+                        <div className="flex items-start gap-2 mt-0.5">
+                          <h2 className="text-lg font-extrabold text-white leading-tight flex-1">
+                            {race.race_name}
+                          </h2>
+                          <Badge
+                            className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 mt-0.5"
+                            style={isUpcoming ? { backgroundColor: '#e10600', color: '#ffffff' } : { backgroundColor: '#2a2a2a', color: '#888' }}
+                          >
+                            {isUpcoming ? 'Upcoming' : 'Completed'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-white/50 mt-0.5">{race.circuit}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[11px] font-semibold text-white/60">{race.date}</span>
+                          <span className="text-white/20 text-xs">·</span>
+                          <span className="text-[11px] font-semibold text-white/60">{race.start_time_west}</span>
+                        </div>
+                      </div>
+
+                      {/* Track SVG */}
+                      <style>{`.f1-races-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
+                      <div className="f1-races-svg-wrap absolute z-10" style={{ top: '45%', left: '5%', right: '5%', bottom: '-10%' }}>
+                        <InlineSvg url={race.track_svg} className="w-full h-full" />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
         </TabsContent>
 
       </Tabs>
+
+      {/* Race Modal */}
+      {raceModal && (
+        <div
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onClick={() => setRaceModal(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div
+            className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 border-b border-white/10">
+              <span className="text-white font-bold text-sm">{raceModal.race_name} — Results</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(raceModal.urls.results, '_blank', 'noopener,noreferrer')}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Open on F1.com
+                </button>
+                <button
+                  onClick={() => setRaceModal(null)}
+                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg p-2 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 rotate-[-90deg]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Iframe */}
+            <div className="flex-1 overflow-hidden bg-white rounded-b-2xl">
+              <iframe
+                src={raceModal.urls.results}
+                className="w-full h-full border-0"
+                title={`${raceModal.race_name} Results`}
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
