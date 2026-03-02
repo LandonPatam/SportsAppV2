@@ -17,7 +17,7 @@ NBA_DATA_SCRIPT = Path("data/data_NBAV2.py")
 NFL_DATA_SCRIPT = Path("data/data_NFLV2.py")
 
 # Run intervals (in seconds)
-ACTIVE_INTERVAL = 15         # when games are active (live or upcoming today)
+ACTIVE_INTERVAL = 10         # when games are active (live or upcoming today)
 IDLE_INTERVAL = 600          # when no games today (10 minutes)
 DATA_INTERVAL = 150          # 2.5 minutes for data scripts
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -118,6 +118,8 @@ interface NFLScheduleGame {
   status?: string;    // scheduled | live | final
   home_score?: number;
   away_score?: number;
+  period?: number;    // quarter (1-4, or 5 for OT)
+  clock?: string;     // e.g. "2:35"
   ts_utc?: number;    // kickoff timestamp (UTC) for reliable sorting
 }
 
@@ -190,6 +192,42 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   'Seattle Seahawks': { primary: '#69BE28', secondary: '#002244' },
 };
 
+// Gradient color pairs for border effect (start = primary-ish, end = secondary-ish)
+const teamGradientColors: Record<string, { start: string; end: string }> = {
+  'Buffalo Bills': { start: '#00276a', end: '#ea002f' },
+  'Miami Dolphins': { start: '#008E97', end: '#FC4C02' },
+  'New England Patriots': { start: '#002244', end: '#C60C30' },
+  'New York Jets': { start: '#125740', end: '#FFFFFF' },
+  'Baltimore Ravens': { start: '#241773', end: '#9E7C0C' },
+  'Cincinnati Bengals': { start: '#FB4F14', end: '#000000' },
+  'Cleveland Browns': { start: '#311D00', end: '#FF3C00' },
+  'Pittsburgh Steelers': { start: '#FFB612', end: '#101820' },
+  'Houston Texans': { start: '#03202F', end: '#A71930' },
+  'Indianapolis Colts': { start: '#002C5F', end: '#A2AAAD' },
+  'Jacksonville Jaguars': { start: '#006778', end: '#D7A22A' },
+  'Tennessee Titans': { start: '#4B92DB', end: '#C8102E' },
+  'Denver Broncos': { start: '#FB4F14', end: '#002244' },
+  'Kansas City Chiefs': { start: '#E31837', end: '#ffffff' },
+  'Las Vegas Raiders': { start: '#000000', end: '#A5ACAF' },
+  'Los Angeles Chargers': { start: '#005ed0', end: '#FFC20E' },
+  'Dallas Cowboys': { start: '#041E42', end: '#869397' },
+  'New York Giants': { start: '#0B2265', end: '#A71930' },
+  'Philadelphia Eagles': { start: '#004C54', end: '#A5ACAF' },
+  'Washington Commanders': { start: '#5A1414', end: '#FFB612' },
+  'Chicago Bears': { start: '#0B162A', end: '#C83803' },
+  'Detroit Lions': { start: '#0076B6', end: '#B0B7BC' },
+  'Green Bay Packers': { start: '#203731', end: '#FFB612' },
+  'Minnesota Vikings': { start: '#4F2683', end: '#FFC62F' },
+  'Atlanta Falcons': { start: '#A71930', end: '#000000' },
+  'Carolina Panthers': { start: '#0085CA', end: '#101820' },
+  'New Orleans Saints': { start: '#D3BC8D', end: '#101820' },
+  'Tampa Bay Buccaneers': { start: '#D50A0A', end: '#FF7900' },
+  'Arizona Cardinals': { start: '#97233F', end: '#000000' },
+  'Los Angeles Rams': { start: '#003594', end: '#FFA300' },
+  'San Francisco 49ers': { start: '#AA0000', end: '#B3995D' },
+  'Seattle Seahawks': { start: '#69BE28', end: '#002244' },
+};
+
 // Utility: convert hex color to rgba string with given alpha
 const toRGBA = (hex: string, alpha: number) => {
   try {
@@ -205,7 +243,6 @@ const toRGBA = (hex: string, alpha: number) => {
       r = parseInt(clean.substring(0, 2), 16);
       g = parseInt(clean.substring(2, 4), 16);
       b = parseInt(clean.substring(4, 6), 16);
-      // ignore existing alpha in 8-digit hex; we use provided alpha
     } else {
       return hex;
     }
@@ -218,7 +255,6 @@ const toRGBA = (hex: string, alpha: number) => {
 
 /* ============================================================================
  * TEAM ABBREVIATIONS
- * Mapping of full team names to their standard abbreviations
  * ============================================================================ */
 
 const teamAbbreviations: Record<string, string> = {
@@ -276,13 +312,11 @@ const useAbbrToLogo = (teams: NFLTeam[]) => {
 
 /* ============================================================================
  * DARK MODE TOGGLE COMPONENT
- * Allows users to switch between light and dark themes
  * ============================================================================ */
 
 const DarkModeToggle = () => {
   const [darkMode, setDarkMode] = useState(false);
 
-  // Initialize theme from localStorage or system preference
   useEffect(() => {
     const stored = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -291,7 +325,6 @@ const DarkModeToggle = () => {
     document.documentElement.classList.toggle('dark', isDark);
   }, []);
 
-  // Toggle theme and persist to localStorage
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -317,19 +350,14 @@ const DarkModeToggle = () => {
 
 // Small helper for labeled stats with hover tooltips
 const statDescriptions: Record<string, string> = {
-  // Core
   'Win %': 'Team win percentage',
   PF: 'Points For',
   PA: 'Points Against',
   PD: 'Point Differential',
   PPG: 'Points Per Game',
-
-  // Records
   D: 'Record within divisional games',
   C: 'Record within conference games',
   Streak: 'Current win/loss streak ',
-
-  // Analytics
   FPI: 'ESPN Football Power Index',
   'OFF': 'Offensive Contribution',
   'DEF': 'Defensive Contribution',
@@ -383,10 +411,12 @@ const StatRow = ({
   label,
   value,
   highlight,
+  bold = false,
 }: {
   label: string;
   value: string | number;
   highlight?: 'high' | 'low' | 'neutral' | 'best';
+  bold?: boolean;
 }) => {
   const colorClass =
     highlight === 'best'
@@ -402,8 +432,8 @@ const StatRow = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex justify-left gap-3 text-sm cursor-help whitespace-nowrap">
-            <span className="text-muted-foreground">{label}</span>
-            <span className={colorClass}>{value}</span>
+            <span className={`text-muted-foreground ${bold ? 'font-bold' : ''}`}>{label}</span>
+            <span className={`${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" align="center">
@@ -416,8 +446,7 @@ const StatRow = ({
 
 
 /* ============================================================================
- * TEAM CARD COMPONENT
- * Displays individual NFL team statistics and record
+ * TEAM CARD COMPONENT — NBA-style gradient border + dark fill
  * ============================================================================ */
 
 
@@ -436,7 +465,7 @@ const TeamCard = ({
 }) => {
   const totalGames = team.wins + team.losses + team.ties;
   const teamColor = teamColors[team.name] || { primary: '#1e40af', secondary: '#dc2626' };
-  const teamAbbr = teamAbbreviations[team.name] || '';
+  const gradientColors = teamGradientColors[team.name] || { start: teamColor.primary, end: teamColor.secondary };
 
   const bestMetricMap = React.useMemo<Record<BestMetricKey, { value: number; lowerBetter?: boolean }>>(() => {
     const base: Record<BestMetricKey, { value: number; lowerBetter?: boolean }> = {
@@ -491,7 +520,6 @@ const TeamCard = ({
     [bestMetricMap],
   );
 
-  // Compare stat vs league average to determine highlight
   const getHighlight = (
     key:
       | 'WIN_PCT' | 'PF' | 'PA' | 'PD' | 'PPG'
@@ -528,13 +556,11 @@ const TeamCard = ({
     const diff = teamValue - leagueValue;
     if (Math.abs(diff) < 0.01) return 'neutral';
 
-    // Keys where lower is better
     const lowerBetter = new Set<string>(['PA', 'PASS_INT', 'PASS_SACKS']);
     if (lowerBetter.has(key)) return diff < 0 ? 'high' : 'low';
     return diff > 0 ? 'high' : 'low';
   };
 
-  // Helpers to parse record strings like "3-2" or "3-1-1"
   const parseRecordPct = (rec?: string | null) => {
     if (!rec) return null;
     const parts = rec.split('-').map((n) => parseInt(n, 10));
@@ -546,7 +572,7 @@ const TeamCard = ({
     if (total === 0) return null;
     return (wins + 0.5 * ties) / total;
   };
-  // Conference-based highlights for Division, Conference, Last5 (compare within same conference)
+
   const getConfHighlight = (key: 'DIV' | 'CONF' | 'LAST5') => {
     const conf = team.conference;
     const confAvg = conferenceAverages?.[conf];
@@ -571,25 +597,22 @@ const TeamCard = ({
     return diff > 0 ? 'high' : 'low';
   };
 
-  const getColorWithOpacity = (color: string, opacity: string = '90') => {
-    // Remove existing alpha channel if present (last 2 chars if 8-char hex)
-    const cleanColor = color.length === 9 && color.startsWith('#') 
-      ? color.substring(0, 7) 
-      : color;
-    return `${cleanColor}${opacity}`;
-  };
-
-  return (
-    <div
-      className="relative rounded-xl overflow-hidden backdrop-blur-md bg-/20"
-      style={{
-        backgroundImage: `linear-gradient(300deg, ${getColorWithOpacity(teamColor.secondary)}, ${getColorWithOpacity(teamColor.primary)})`,
-      }}
-    >
-      {/* === Foreground content === */}
-      <div className={`relative z-10 text-white ${compact ? 'p-2' : 'p-4'}`}>
-        {compact ? (
-          // Compact layout: logo, name on left, rank and record stacked vertically on right
+  // ── Compact variant (used in AFC/NFC division tabs) ──
+  if (compact) {
+    return (
+      <div
+        className="relative rounded-xl overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(300deg, ${gradientColors.start}, ${gradientColors.end})`,
+          padding: '3px',
+        }}
+      >
+        <div
+          className="absolute inset-1 rounded-xl"
+          style={{ backgroundColor: '#141414' }}
+          aria-hidden
+        />
+        <div className="relative z-10 text-white p-2">
           <div className="flex items-center gap-2">
             {team.logo && (
               <img
@@ -608,48 +631,113 @@ const TeamCard = ({
               </div>
             </div>
           </div>
-        ) : (
-          // Full layout: original structure
-          <>
-            {/* === Ranking in top right corner === */}
-            <div className="absolute top-4 right-4 text-2xl font-bold text-white">
-              #{(team as any).rank || '—'}
-            </div>
 
-            {/* === Team header === */}
-            <div className="flex items-center gap-2 mb-3 relative">
-              {team.logo && (
-                <img
-                  src={team.logo}
-                  alt={`${team.name} logo`}
-                  className="w-16 h-16 rounded-sm"
-                />
-              )}
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <h3 className="text-2xl font-bold truncate">{team.name}</h3>
-              </div>
-              {/* === Record in bottom right of header === */}
-              <div className="absolute bottom-0 right-0 text-3xl font-bold text-white">
-                {team.wins}-{team.losses}
-                {team.ties > 0 ? `-${team.ties}` : ''}
-              </div>
-            </div>
-          </>
-        )}
+          <Card
+            className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
+            style={{
+            backgroundColor: '#0000004c',
+            opacity: 1,
+          }}
+          >
+            <CardHeader className="pb-0">
+            </CardHeader>
 
-        {/* === White stats card === */}
+            <CardContent>
+              {(() => {
+                const fpi = Number((team as any).fpi ?? NaN);
+                const epaOff = Number((team as any).epa_offense ?? NaN);
+                const epaDef = Number((team as any).epa_defense ?? NaN);
+                const epaST = Number((team as any).epa_special ?? NaN);
+                const ppg = totalGames > 0 ? (team.points_for / totalGames) : 0;
+                const streakVal = parseStreakValue(team.Strk);
+                const fpiRank = Number((team as any).fpirank);
+                const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' | 'best' }[] = [
+                  { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
+                  { label: 'PPG', value: ppg.toFixed(1), highlight: getHighlight('PPG') },
+                  { label: 'FPI', value: Number.isFinite(fpi) ? fpi.toFixed(1) : '-', highlight: getHighlight('FPI') },
+                  {
+                    label: 'Streak',
+                    value: team.Strk || '-',
+                    highlight: streakVal && streakVal > 0 ? leagueBestHighlight('STREAK', streakVal) : undefined,
+                  },
+                  { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
+                  { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
+                  { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
+                  { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
+                  { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
+                  { label: 'C', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
+                  {
+                    label: 'FPI Rank',
+                    value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
+                    highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
+                  },
+                  { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
+                ];
+
+                return (
+                  <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+                    {items.map((it) => (
+                      <StatRow key={it.label} label={it.label} value={it.value} highlight={it.highlight as any} bold />
+                    ))}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Full variant (used in Team Stats tab) — NBA style ──
+  return (
+    <div
+      className="relative rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(300deg, ${gradientColors.start}, ${gradientColors.end})`,
+        padding: '3px',
+      }}
+    >
+      {/* Dark inner fill — creates the gradient border illusion */}
+      <div
+        className="absolute inset-1 rounded-xl"
+        style={{ backgroundColor: '#141414' }}
+        aria-hidden
+      />
+
+      {/* Foreground content */}
+      <div className="relative z-10 p-4 text-white">
+        {/* Rank badge top-right */}
+        <div className="absolute top-4 right-4 text-2xl font-bold text-white">
+          #{(team as any).rank || '—'}
+        </div>
+
+        {/* Team header */}
+        <div className="flex items-center gap-2 mb-3 relative">
+          {team.logo && (
+            <img
+              src={team.logo}
+              alt={`${team.name} logo`}
+              className="w-16 h-16 rounded-sm"
+            />
+          )}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h3 className="text-2xl font-bold truncate">{team.name}</h3>
+          </div>
+          <div className="absolute bottom-0 right-0 text-3xl font-bold text-white">
+            {team.wins}-{team.losses}
+            {team.ties > 0 ? `-${team.ties}` : ''}
+          </div>
+        </div>
+
+        {/* Stats inner card — dark semi-transparent like NBA */}
         <Card
           className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
-          style={{
-          backgroundColor: '#000000d2',
-          opacity: 1,
-        }}
+          style={{ backgroundColor: '#0000004c', opacity: 1 }}
         >
-          <CardHeader className="pb-0">
-          </CardHeader>
+          <CardHeader className="pb-0" />
 
           <CardContent>
-            {/* Team statistics grid (4 columns of StatRow like NBA style) */}
             {(() => {
               const fpi = Number((team as any).fpi ?? NaN);
               const epaOff = Number((team as any).epa_offense ?? NaN);
@@ -658,16 +746,11 @@ const TeamCard = ({
               const ppg = totalGames > 0 ? (team.points_for / totalGames) : 0;
               const streakVal = parseStreakValue(team.Strk);
 
-              // Arrange 4 rows, 3 columns. Third column shows EPA Def, EPA ST, and Streak.
               const fpiRank = Number((team as any).fpirank);
               const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' | 'best' }[] = [
-
-                // Row 1
                 { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
                 { label: 'PPG', value: ppg.toFixed(1), highlight: getHighlight('PPG') },
                 { label: 'FPI', value: Number.isFinite(fpi) ? fpi.toFixed(1) : '-', highlight: getHighlight('FPI') },
-
-                // Row 2
                 {
                   label: 'Streak',
                   value: team.Strk || '-',
@@ -675,31 +758,22 @@ const TeamCard = ({
                 },
                 { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
                 { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
-
-                // Row 3 
                 { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
                 { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
                 { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
-
-
-                //Row 4
                 { label: 'C', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
-
                 {
                   label: 'FPI Rank',
                   value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
                   highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
                 },
                 { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
-
-
-                // Leave last cell empty implicitly (grid will just not render a 12th item)
               ];
 
               return (
                 <div className="grid grid-cols-3 gap-x-6 gap-y-3">
                   {items.map((it) => (
-                    <StatRow key={it.label} label={it.label} value={it.value} highlight={it.highlight as any} />
+                    <StatRow key={it.label} label={it.label} value={it.value} highlight={it.highlight as any} bold />
                   ))}
                 </div>
               );
@@ -716,16 +790,23 @@ const TeamCard = ({
  * MAIN NFL COMPONENT
  * ============================================================================ */
 
+// ── Module-level data cache ──────────────────────────────────────────────────
+// Persists across tab switches (component unmount/remount) so the page renders
+// instantly with stale data while the background refresh completes silently.
+let _cachedTeams: NFLTeam[] | null = null;
+let _cachedSchedule: NFLScheduleData | null = null;
+let _cachedRoster: Record<string, any[]> | null = null;
+// ────────────────────────────────────────────────────────────────────────────
+
 const NFL = () => {
-  const [teams, setTeams] = useState<NFLTeam[]>([]);
-  const [scheduleData, setScheduleData] = useState<NFLScheduleData | null>(null);
+  const [teams, setTeams] = useState<NFLTeam[]>(() => _cachedTeams ?? []);
+  const [scheduleData, setScheduleData] = useState<NFLScheduleData | null>(() => _cachedSchedule);
   const [sortField, setSortField] = useState<SortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTeamAll, setSelectedTeamAll] = useState<NFLTeam | null>(null);
-  const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>({});
+  const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>(() => _cachedRoster ?? {});
   const [espnGameId, setEspnGameId] = useState<string | null>(null);
 
-  // League-wide extrema for radar normalization (Win%, PF, PA, PPG, FPI, EPA Off/Def/ST)
   const radarExtrema = useMemo(() => {
     const init = {
       winPct: { min: Infinity, max: -Infinity },
@@ -757,7 +838,6 @@ const NFL = () => {
         acc[k].max = Math.max(acc[k].max, v);
       }
     }
-    // Fallbacks if empty
     for (const k of Object.keys(acc)) {
       if (!Number.isFinite(acc[k].min) || !Number.isFinite(acc[k].max) || acc[k].max <= acc[k].min) {
         acc[k].min = 0;
@@ -776,7 +856,6 @@ const NFL = () => {
     };
   }, [teams]);
 
-  // Disable page scrolling while on NFL page; restore on unmount
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -785,7 +864,6 @@ const NFL = () => {
     };
   }, []);
 
-  // Load from public/data and refresh periodically
   useEffect(() => {
     let alive = true;
     const bust = () => `?_=${Date.now()}`;
@@ -794,7 +872,10 @@ const NFL = () => {
         const res = await fetch(`/data/nfl_site_nfl_standings.json${bust()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        if (alive && Array.isArray(data)) setTeams(data as NFLTeam[]);
+        if (alive && Array.isArray(data)) {
+          _cachedTeams = data as NFLTeam[];
+          setTeams(data as NFLTeam[]);
+        }
       } catch {}
     };
     load();
@@ -802,7 +883,6 @@ const NFL = () => {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // Load schedule JSON (poll lightly when page visible)
   useEffect(() => {
     let alive = true;
     const bust = () => `?_=${Date.now()}`;
@@ -812,22 +892,23 @@ const NFL = () => {
         if (!res.ok) return;
         const text = await res.text();
         if (!alive) return;
-        const next = JSON.parse(text) as NFLScheduleData;
+        let next: NFLScheduleData;
+        try { next = JSON.parse(text) as NFLScheduleData; } catch { return; }
         setScheduleData((prev) => {
           const prevText = JSON.stringify(prev ?? null);
-          return prevText === text ? prev : next;
+          if (prevText === text) return prev;
+          _cachedSchedule = next;
+          return next;
         });
       } catch {}
     };
     load();
     const id = setInterval(load, 30000);
-    // refresh on visibility
     const vis = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', vis);
     return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', vis); };
   }, []);
 
-  // Load roster by team name from public/data/nfl_roster.json
   useEffect(() => {
     let alive = true;
     const bust = () => `?_=${Date.now()}`;
@@ -836,7 +917,10 @@ const NFL = () => {
         const res = await fetch(`/data/nfl_roster.json${bust()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json();
-        if (alive && json && typeof json === 'object') setRosterByTeam(json as Record<string, any[]>);
+        if (alive && json && typeof json === 'object') {
+          _cachedRoster = json as Record<string, any[]>;
+          setRosterByTeam(json as Record<string, any[]>);
+        }
       } catch {}
     };
     load();
@@ -844,69 +928,56 @@ const NFL = () => {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // Extract numeric stat for sorting
-const getTeamStat = (t: NFLTeam, field: SortField) => {
-  const total = t.wins + t.losses + t.ties;
-  switch (field) {
-    case 'WIN_PCT':
-      return t.win_pct;
-    case 'PF':
-      return t.points_for;
-    case 'PA':
-      return t.points_against;
-    case 'PD':
-      return t.point_diff;
-    case 'PPG':
-      return total > 0 ? t.points_for / total : 0;
-    case 'EPA_OFF':
-      return Number((t as any).epa_offense) || 0;
-    case 'EPA_DEF':
-      return Number((t as any).epa_defense) || 0;
-    case 'EPA_ST':
-      return Number((t as any).epa_special) || 0;
-    case 'FPI':
-      return Number((t as any).fpi) || 0;
-    case 'FPI_RANK': {
-      const rank = Number((t as any).fpirank);
-      return Number.isFinite(rank) ? -rank : Number.NEGATIVE_INFINITY;
+  const getTeamStat = (t: NFLTeam, field: SortField) => {
+    const total = t.wins + t.losses + t.ties;
+    switch (field) {
+      case 'WIN_PCT': return t.win_pct;
+      case 'PF': return t.points_for;
+      case 'PA': return t.points_against;
+      case 'PD': return t.point_diff;
+      case 'PPG': return total > 0 ? t.points_for / total : 0;
+      case 'EPA_OFF': return Number((t as any).epa_offense) || 0;
+      case 'EPA_DEF': return Number((t as any).epa_defense) || 0;
+      case 'EPA_ST': return Number((t as any).epa_special) || 0;
+      case 'FPI': return Number((t as any).fpi) || 0;
+      case 'FPI_RANK': {
+        const rank = Number((t as any).fpirank);
+        return Number.isFinite(rank) ? -rank : Number.NEGATIVE_INFINITY;
+      }
+      case 'STREAK': {
+        const val = parseStreakValue(t.Strk);
+        return typeof val === 'number' && Number.isFinite(val) ? val : 0;
+      }
+      default: return 0;
     }
-    case 'STREAK': {
-      const val = parseStreakValue(t.Strk);
-      return typeof val === 'number' && Number.isFinite(val) ? val : 0;
-    }
-    default:
-      return 0;
-  }
-};
+  };
 
-  // Dynamic sorter using selected field and order
   const sortTeamsDynamic = (list: NFLTeam[]) => {
     const sorted = [...list].sort((a, b) => getTeamStat(b, sortField) - getTeamStat(a, sortField));
     return sortOrder === 'asc' ? sorted.reverse() : sorted;
   };
 
-const orderedTeams = useMemo(() => sortTeamsDynamic(teams), [teams, sortField, sortOrder]);
-const selectionSignature = useMemo(
-  () => JSON.stringify({ sortField, sortOrder }),
-  [sortField, sortOrder],
-);
-const lastSelectionSignatureRef = useRef(selectionSignature);
+  const orderedTeams = useMemo(() => sortTeamsDynamic(teams), [teams, sortField, sortOrder]);
+  const selectionSignature = useMemo(
+    () => JSON.stringify({ sortField, sortOrder }),
+    [sortField, sortOrder],
+  );
+  const lastSelectionSignatureRef = useRef(selectionSignature);
 
-useEffect(() => {
-  const signatureChanged = selectionSignature !== lastSelectionSignatureRef.current;
-  if (!orderedTeams.length) {
-    if (selectedTeamAll) setSelectedTeamAll(null);
-  } else if (
-    signatureChanged ||
-    !selectedTeamAll ||
-    !orderedTeams.some((t) => t.name === selectedTeamAll.name)
-  ) {
-    setSelectedTeamAll(orderedTeams[0]);
-  }
-  lastSelectionSignatureRef.current = selectionSignature;
-}, [orderedTeams, selectionSignature, selectedTeamAll]);
+  useEffect(() => {
+    const signatureChanged = selectionSignature !== lastSelectionSignatureRef.current;
+    if (!orderedTeams.length) {
+      if (selectedTeamAll) setSelectedTeamAll(null);
+    } else if (
+      signatureChanged ||
+      !selectedTeamAll ||
+      !orderedTeams.some((t) => t.name === selectedTeamAll.name)
+    ) {
+      setSelectedTeamAll(orderedTeams[0]);
+    }
+    lastSelectionSignatureRef.current = selectionSignature;
+  }, [orderedTeams, selectionSignature, selectedTeamAll]);
 
-  // League averages for highlighting
   const leagueAverages = React.useMemo(() => {
     if (teams.length === 0) return null as null | Record<string, number>;
     const totals = teams.reduce(
@@ -917,7 +988,6 @@ useEffect(() => {
         acc.PA += t.points_against;
         acc.PD += t.point_diff;
         acc.PPG_SUM += games > 0 ? t.points_for / games : 0;
-        // passing metrics (if present)
         const add = (keySum: string, keyCnt: string, v: any) => {
           const n = Number(v);
           if (Number.isFinite(n)) { acc[keySum] += n; acc[keyCnt] += 1; }
@@ -930,7 +1000,6 @@ useEffect(() => {
         add('PASS_YPA_SUM', 'PASS_YPA_CNT', t.pass_yds_per_att);
         add('PASS_1ST_SUM', 'PASS_1ST_CNT', t.pass_first_downs);
         add('PASS_SACKS_SUM', 'PASS_SACKS_CNT', t.pass_sacks);
-        // new metrics
         add('FPI_SUM', 'FPI_CNT', t.fpi);
         add('EPA_OFF_SUM', 'EPA_OFF_CNT', t.epa_offense);
         add('EPA_DEF_SUM', 'EPA_DEF_CNT', t.epa_defense);
@@ -1012,7 +1081,6 @@ useEffect(() => {
       .map((entry) => entry.team);
   }, [teams]);
 
-  // Conference-level averages for Division, Conference, Last 5 (within conference)
   const conferenceAverages = React.useMemo(() => {
     const buckets: Record<string, { divPctSum: number; confPctSum: number; last5PctSum: number; countDiv: number; countConf: number; countL5: number }> = {};
     const parseRecordPct = (rec?: string | null) => {
@@ -1033,20 +1101,11 @@ useEffect(() => {
         buckets[key] = { divPctSum: 0, confPctSum: 0, last5PctSum: 0, countDiv: 0, countConf: 0, countL5: 0 };
       }
       const divPct = parseRecordPct(t.Div ?? (t as any).DivPct);
-      if (divPct != null) {
-        buckets[key].divPctSum += divPct;
-        buckets[key].countDiv++;
-      }
+      if (divPct != null) { buckets[key].divPctSum += divPct; buckets[key].countDiv++; }
       const confPct = parseRecordPct(t.Conf ?? (t as any).ConfPct);
-      if (confPct != null) {
-        buckets[key].confPctSum += confPct;
-        buckets[key].countConf++;
-      }
+      if (confPct != null) { buckets[key].confPctSum += confPct; buckets[key].countConf++; }
       const last5Pct = parseRecordPct(t.Last5);
-      if (last5Pct != null) {
-        buckets[key].last5PctSum += last5Pct;
-        buckets[key].countL5++;
-      }
+      if (last5Pct != null) { buckets[key].last5PctSum += last5Pct; buckets[key].countL5++; }
     });
 
     const result: Record<string, { divPct: number; confPct: number; last5Pct: number }> = {};
@@ -1079,40 +1138,33 @@ useEffect(() => {
     return map;
   }, [teams]);
 
-  const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'AFC', 'NFC', or 'schedule'
-  const [scheduleOnly, setScheduleOnly] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 900;
-  });
-
+  const [activeTab, setActiveTab] = useState<string>('schedule');
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640 && window.innerHeight > window.innerWidth
+  );
   useEffect(() => {
-    const handleResize = () => {
-      setScheduleOnly(window.innerWidth < 900);
+    const check = () => setIsMobile(window.innerWidth < 640 && window.innerHeight > window.innerWidth);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
     };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (scheduleOnly) {
-      setActiveTab('schedule');
-    }
-  }, [scheduleOnly]);
 
   return (
     <PageLayout theme="nfl">
-      {/* Dark mode toggle */}
       <div className="flex justify-end">
       </div>
 
       <Tabs
         theme="nfl"
-        value={activeTab}
+        value={isMobile ? 'schedule' : activeTab}
         className="w-full min-h-0"
-        onValueChange={(v) => setActiveTab(v)}
+        onValueChange={(v) => { if (!isMobile) setActiveTab(v); }}
       >
-        {!scheduleOnly && (
+        {!isMobile && (
   <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
             <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
             <TabsTrigger value="all">Team Stats</TabsTrigger>
@@ -1121,11 +1173,9 @@ useEffect(() => {
           </TabsList>
         )}
 
-        {/* Dashboard: Win% & FPI stacks + schedule */}
-        {!scheduleOnly && (
+        {!isMobile && (
         <TabsContent value="dashboard">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(103vh-135px)] overflow-hidden -mt-0">
-            {/* Left column: ranked team stacks similar to NBA layout */}
             <div className="lg:col-span-7 flex flex-col gap-4 h-full overflow-hidden">
               <Card className="bg-card border w-full flex-1 min-h-0 flex flex-col overflow-hidden">
                 <CardHeader className="px-4 py-3">
@@ -1167,7 +1217,6 @@ useEffect(() => {
               </Card>
             </div>
 
-            {/* Right column: today's schedule + strength chart */}
     <div className="lg:col-span-5 h-full overflow-hidden">
       <Card className="bg-card border w-full h-full flex flex-col overflow-hidden">
                 <CardHeader className="p-0" />
@@ -1187,65 +1236,63 @@ useEffect(() => {
         </TabsContent>
         )}
 
-        {/* All Teams Tab with Sort Controls + Sidebar layout (like NBA) */}
-        {!scheduleOnly && (
-        <TabsContent
-          value="all"
-          className=" overflow-hidden pr-4 pb-6"
-        >
+        {!isMobile && (
+        <TabsContent value="all">
           <div className="flex flex-wrap items-center justify-between mb-6 gap-3 px-2">
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-semibold text-white/80">Sort by:</label>
-              <Select onValueChange={(v) => setSortField(v as typeof sortField)} value={sortField}>
-                <SelectTrigger
-                  className="
-                    w-[180px]
-                    rounded-full px-4 py-2 text-sm font-semibold text-black
-                    bg-white
-                    shadow-md shadow-black/40
-                    hover:scale-[1.05]
-                    transition-all duration-300
-                    focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
-                  "
-                >
-                  <SelectValue placeholder="Select stat" />
-                </SelectTrigger>
-                <SelectContent
-                  className="
-                    rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
-                    text-white shadow-lg
-                  "
-                >
-                  <div className="grid grid-cols-3 gap-1 max-h-[240px] overflow-y-auto pr-1">
-                    {TEAM_SORT_OPTIONS.map(({ value, label }) => (
-                      <SelectItem
-                        key={value}
-                        value={value}
-                        className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
+  {/* === Sort Dropdown === */}
+  <div className="flex items-center gap-3">
+    <label className="text-sm font-semibold text-white/80">Sort by:</label>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-              className={`
-  rounded-full px-4 py-2 text-sm font-semibold text-black
-  bg-white
-  shadow-md shadow-black/40
-  hover:bg-white hover:text-black hover:scale-[1.05]
-  focus-visible:ring-0 focus-visible:ring-offset-0
-  transition-all duration-300
-`}
-              >
-              {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-            </Button>
+    <Select onValueChange={(v) => setSortField(v as typeof sortField)} value={sortField}>
+      <SelectTrigger
+        className="
+          w-[150px] rounded-full px-4 py-2 text-sm font-semibold text-black
+          bg-white
+          hover:scale-[1.05]
+          transition-all duration-300
+          focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
+          focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:ring-0 data-[state=open]:ring-offset-0
+        "
+      >
+        <SelectValue placeholder="Select stat" />
+      </SelectTrigger>
+
+      <SelectContent
+        className="
+          rounded-xl border-0 backdrop-blur-lg bg-[#1c1c1cff]/90
+          text-white"
+      >
+        <div className="grid grid-cols-3 gap-1 max-h-[260px] overflow-y-auto pr-1">
+          {TEAM_SORT_OPTIONS.map(({ value, label }) => (
+            <SelectItem
+              key={value}
+              value={value}
+              className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
+            >
+              {label}
+            </SelectItem>
+          ))}
+        </div>
+      </SelectContent>
+    </Select>
+  </div>
+
+  {/* === Ascending / Descending Button === */}
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+    className={`
+      rounded-full px-4 py-2 text-sm font-semibold text-black
+      bg-white
+      hover:bg-white hover:text-black
+      hover:scale-[1.05]
+      transition-all duration-300
+      focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0
+    `}
+  >
+    {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
+  </Button>
           </div>
 
           <div className="flex-1 min-h-0">
@@ -1253,7 +1300,6 @@ useEffect(() => {
               const currentTeam = selectedTeamAll || orderedTeams[0];
               return (
                 <div className="flex flex-row gap-4 h-[85vh] overflow-hidden">
-                {/* Left: team logos grid - MATCHING NBA EXACTLY */}
                 <div
                   className="w-20 md:w-40 xl:w-64 md:xl:w-72 lg:xl:w-80 shrink-0 overflow-y-auto no-scrollbar max-h-[85vh] pr-1 pt-0 pb-7 snap-y snap-mandatory"
                   style={{ scrollPaddingTop: '24px', scrollPaddingBottom: '24px' }}
@@ -1294,11 +1340,9 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Right: wide team card + roster - entire section scrolls together */}
                 <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-24">
                   {currentTeam && (
                     <div className="w-full flex flex-wrap gap-4 items-start">
-                      {/* Team card - fixed width, no shrinking - MATCHING NBA */}
                       <div className="w-full min-w-[550px] max-w-[800px] shrink-0">
                         <TeamCard
                           key={currentTeam.name}
@@ -1308,7 +1352,6 @@ useEffect(() => {
                           allTeams={teams}
                         />
                       </div>
-                      {/* Doughnut chart - flexible width, smaller min - MATCHING NBA */}
                       <div className="flex-1 min-w-[280px] max-w-[405px]">
                         <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
                           <CardHeader className="py-2 px-3">
@@ -1335,31 +1378,9 @@ useEffect(() => {
                                 maintainAspectRatio: false,
                                 cutout: '55%',
                                 responsiveAnimationDuration: 0,
-                                animation: {
-                                  animateRotate: true,
-                                  animateScale: false,
-                                  duration: 180,
-                                  easing: 'easeOutQuart',
-                                },
-                                transitions: {
-                                  show: {
-                                    animations: {
-                                      circumference: { duration: 180, easing: 'easeOutQuart' },
-                                      rotation: { duration: 180, easing: 'easeOutQuart' },
-                                    },
-                                  },
-                                  hide: {
-                                    animations: {
-                                      circumference: { duration: 120, easing: 'easeInCubic' },
-                                      rotation: { duration: 120, easing: 'easeInCubic' },
-                                    },
-                                  },
-                                },
+                                animation: { animateRotate: true, animateScale: false, duration: 180, easing: 'easeOutQuart' },
                                 plugins: {
-                                  legend: {
-                                    position: 'bottom',
-                                    labels: { color: 'currentColor', boxWidth: 10 },
-                                  },
+                                  legend: { position: 'bottom', labels: { color: 'currentColor', boxWidth: 10 } },
                                   tooltip: { enabled: true },
                                 },
                               }}
@@ -1367,7 +1388,6 @@ useEffect(() => {
                           </CardContent>
                         </Card>
                       </div>
-                      {/* Radar chart - flexible width - MATCHING NBA */}
                       <div className="flex-1 min-w-[280px] max-w-[342px]">
                         <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
                           <CardContent className="h-[220px] p-1">
@@ -1394,7 +1414,6 @@ useEffect(() => {
                                 };
                                 const vals = raw.map((v, i) => norm(v, mins[i], maxs[i]));
                                 const colors = teamColors[currentTeam.name] || { primary: '#3b82f6', secondary: '#64748b' };
-                                // Always add transparency to background
                                 const cleanSecondary = colors.secondary.length === 9 && colors.secondary.startsWith('#') 
                                   ? colors.secondary.substring(0, 7) 
                                   : colors.secondary;
@@ -1420,12 +1439,6 @@ useEffect(() => {
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 animation: { duration: 200, easing: 'easeOutQuart' },
-                                animations: {
-                                  numbers: { type: 'number', duration: 200, easing: 'easeOutQuart' },
-                                  x: { duration: 200, easing: 'easeOutQuart' },
-                                  y: { duration: 200, easing: 'easeOutQuart' },
-                                },
-                                transitions: { active: { animation: { duration: 200, easing: 'easeOutQuart' } } },
                                 plugins: { legend: { display: false }, tooltip: { enabled: true } },
                                 elements: { line: { tension: 0 } },
                                 scales: {
@@ -1448,7 +1461,6 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Roster list (no independent scroll, uses parent scroll) */}
                   <div className="flex-1 flex flex-col">
                     {currentTeam && (
                       <div
@@ -1469,9 +1481,7 @@ useEffect(() => {
         </TabsContent>
         )}
 
-        {/* AFC and NFC Conference Tabs */}
-        {!scheduleOnly && ['AFC', 'NFC'].map((conference) => {
-          // Calculate conference-wide rankings
+        {!isMobile && ['AFC', 'NFC'].map((conference) => {
           const conferenceTeams = teams
             .filter((team) => team.conference === conference)
             .sort((a, b) => b.wins - a.wins);
@@ -1482,8 +1492,6 @@ useEffect(() => {
             value={conference}
             className="space-y-4 min-h-0 max-h-[calc(100vh-90px)] overflow-y-auto pr-1 pb-8 no-scrollbar"
           >
-            
-            {/* Render each division within the conference */}
             {['East', 'North', 'South', 'West'].map((division) => {
               const divisionTeams = teams
                 .filter((team) => team.conference === conference)
@@ -1499,7 +1507,6 @@ useEffect(() => {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {divisionTeams.map((team) => {
-                      // Find conference-wide rank
                       const conferenceRank = conferenceTeams.findIndex((t) => t.name === team.name) + 1;
                       return (
                         <TeamCard
@@ -1523,74 +1530,57 @@ useEffect(() => {
         {/* Schedule Tab */}
         <TabsContent
           value="schedule"
-          className={scheduleOnly ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
+          className={isMobile ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
         >
-          <ScheduleNFLViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} onGameClick={(gameId) => setEspnGameId(gameId)} />
+          <ScheduleNFLViewV2
+            scheduleData={scheduleData}
+            logoMap={abbrToLogo}
+            recordMap={abbrToRecord}
+            onGameClick={(gameId) => setEspnGameId(gameId)}
+            isMobile={isMobile}
+          />
         </TabsContent>
       </Tabs>
 
-{/* ESPN Game Iframe Modal */}
 {espnGameId && (
   <div 
     className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
-    onClick={() => {
-      console.log('Overlay clicked, closing modal');
-      setEspnGameId(null);
-    }}
+    onClick={() => setEspnGameId(null)}
     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
   >
-    {console.log('ESPN Modal rendering with game ID:', espnGameId)}
     <div 
       className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Header Bar */}
       <div className="flex items-center justify-end p-3 border-b border-white/10 bg-transparent">
-        {/* Controls */}
         <div className="flex items-center gap-2">
-          {/* Open in new tab button */}
           <button
             onClick={() => window.open(`https://www.espn.com/nfl/boxscore/_/gameId/${espnGameId}`, '_blank', 'noopener,noreferrer')}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-            title="Open in new tab"
           >
             Open in ESPN
           </button>
-        
-          {/* Close button */}
           <button
-            onClick={() => {
-              console.log('Close button clicked');
-              setEspnGameId(null);
-            }}
+            onClick={() => setEspnGameId(null)}
             className="bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 transition-colors"
-            title="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
       </div>
       
-      {/* Iframe Container */}
       <div className="flex-1 overflow-hidden bg-white rounded-b-2xl">
         <iframe
           ref={(iframe) => {
             if (iframe) {
               iframe.onload = () => {
                 try {
-                  // Wait a bit for content to load, then scroll
                   setTimeout(() => {
                     if (iframe.contentWindow) {
-                      // Scroll down 500 pixels (adjust this number as needed)
-                      iframe.contentWindow.scrollTo({
-                        top: 500,
-                        behavior: 'smooth'
-                      });
+                      iframe.contentWindow.scrollTo({ top: 500, behavior: 'smooth' });
                     }
-                  }, 1000); // Wait 1 second after load
-                } catch (e) {
-                  console.log('Could not scroll iframe (cross-origin restriction):', e);
-                }
+                  }, 1000);
+                } catch (e) {}
               };
             }
           }}
@@ -1598,9 +1588,7 @@ useEffect(() => {
           className="w-full h-full border-0"
           title="ESPN Game Details"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"
-          style={{
-            backgroundColor: 'white'
-          }}
+          style={{ backgroundColor: 'white' }}
         />
       </div>
     </div>
@@ -1613,7 +1601,7 @@ useEffect(() => {
 
 export default NFL;
 
-/* Compact roster list for All Teams panel (like NBA) */
+/* Compact roster list for All Teams panel */
 const NFLRosterList = ({ teamName, rosterByTeam }: { teamName: string; rosterByTeam: Record<string, any[]> }) => {
   const players = useMemo(() => {
     const arr = ((rosterByTeam?.[teamName] || []) as any[]) || [];
@@ -1704,8 +1692,7 @@ const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; in
 
 
 /* ============================================================================
- * NFL Schedule View V2 (arrow-controlled, single day)
- * Matches NBA Schedule tab behavior
+ * NFL Schedule View V2 — with team records + live quarter/clock
  * ============================================================================ */
 const NFLTeamMiniCard = ({
   team,
@@ -1766,7 +1753,7 @@ const NFLTeamMiniCard = ({
   );
 };
 
-/* Compact today-only schedule list for dashboard (mirrors NBA dashboard style) */
+/* Dashboard today schedule */
 const DashboardTodayScheduleNFL = ({
   scheduleData,
   logoMap,
@@ -1800,23 +1787,14 @@ const DashboardTodayScheduleNFL = ({
     });
     const keys = Object.keys(byDate).sort();
     const todayGames = byDate[todayKey];
-    if (todayGames?.length) {
-      return { games: todayGames, effectiveDateKey: todayKey };
-    }
+    if (todayGames?.length) return { games: todayGames, effectiveDateKey: todayKey };
     const futureKey = keys.find((key) => key > todayKey && byDate[key]?.length);
-    if (futureKey) {
-      return { games: byDate[futureKey], effectiveDateKey: futureKey };
-    }
+    if (futureKey) return { games: byDate[futureKey], effectiveDateKey: futureKey };
     return { games: [] as NFLScheduleGame[], effectiveDateKey: null as string | null };
   }, [scheduleData, todayKey]);
 
   const shellRef = React.useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = React.useState(() => ({
-    gap: 12,
-    cardHeight: 120,
-    scale: 1,
-    ready: false,
-  }));
+  const [layout, setLayout] = React.useState(() => ({ gap: 12, cardHeight: 120, scale: 1, ready: false }));
 
   const recomputeLayout = React.useCallback(() => {
     const shell = shellRef.current;
@@ -1825,51 +1803,31 @@ const DashboardTodayScheduleNFL = ({
     const available = rect.height;
     if (!available || !Number.isFinite(available)) return;
     const totalGames = Math.max(1, games.length);
-
     let gap = Math.max(2, Math.min(8, (available / (totalGames + 0.25)) * 0.25));
     const gapBudget = gap * (totalGames + 1);
     const maxGapBudget = available * 0.2;
-    if (gapBudget > maxGapBudget && maxGapBudget > 0) {
-      gap = maxGapBudget / (totalGames + 1);
-    }
-
+    if (gapBudget > maxGapBudget && maxGapBudget > 0) gap = maxGapBudget / (totalGames + 1);
     const usable = Math.max(0, available - gap * (totalGames + 1));
     const perCard = totalGames > 0 ? usable / totalGames : available;
     const BASE_CARD = 105;
     const scale = Math.max(0.6, Math.min(1.4, perCard / BASE_CARD));
-
     setLayout((prev) => {
       const next = { gap, cardHeight: perCard, scale, ready: true };
-      if (
-        Math.abs(prev.gap - next.gap) < 0.25 &&
-        Math.abs(prev.cardHeight - next.cardHeight) < 0.5 &&
-        Math.abs(prev.scale - next.scale) < 0.01 &&
-        prev.ready === next.ready
-      ) {
-        return prev;
-      }
+      if (Math.abs(prev.gap - next.gap) < 0.25 && Math.abs(prev.cardHeight - next.cardHeight) < 0.5 && Math.abs(prev.scale - next.scale) < 0.01 && prev.ready === next.ready) return prev;
       return next;
     });
   }, [games.length]);
 
   React.useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
-    const handleResize = () => recomputeLayout();
     recomputeLayout();
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize as any);
-
+    window.addEventListener('resize', recomputeLayout);
     let observer: ResizeObserver | null = null;
     if ('ResizeObserver' in window && shellRef.current) {
       observer = new ResizeObserver(() => recomputeLayout());
       observer.observe(shellRef.current);
     }
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize as any);
-      observer?.disconnect();
-    };
+    return () => { window.removeEventListener('resize', recomputeLayout); observer?.disconnect(); };
   }, [recomputeLayout]);
 
   const formatRecord = React.useCallback((value?: string) => {
@@ -1885,17 +1843,7 @@ const DashboardTodayScheduleNFL = ({
 
   return (
     <div ref={shellRef} className="flex-1 min-h-0 w-full h-full overflow-hidden">
-      <div
-        className="grid grid-cols-1 h-full items-start content-start"
-        style={{
-          rowGap: gap,
-          paddingTop: gap,
-          paddingBottom: gap,
-          height: '100%',
-          opacity: layout.ready ? 1 : 0,
-          transition: 'opacity 140ms ease-out',
-        }}
-      >
+      <div className="grid grid-cols-1 h-full items-start content-start" style={{ rowGap: gap, paddingTop: gap, paddingBottom: gap, height: '100%', opacity: layout.ready ? 1 : 0, transition: 'opacity 140ms ease-out' }}>
         {games.map((g) => {
           let awayAbbr = (g as any).away as string | undefined;
           let homeAbbr = (g as any).home as string | undefined;
@@ -1910,19 +1858,14 @@ const DashboardTodayScheduleNFL = ({
             if (a) awayAbbr = a;
             if (h) homeAbbr = h;
           }
-
           const normalizedAwayAbbr = (awayAbbr || '').toUpperCase();
           const normalizedHomeAbbr = (homeAbbr || '').toUpperCase();
-          const normalizedAwayName =
-            awayName || (normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr]?.name || abbreviationToTeamName[normalizedAwayAbbr] : undefined);
-          const normalizedHomeName =
-            homeName || (normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr]?.name || abbreviationToTeamName[normalizedHomeAbbr] : undefined);
-
+          const normalizedAwayName = awayName || (normalizedAwayAbbr ? abbrToTeamMap[normalizedAwayAbbr]?.name || abbreviationToTeamName[normalizedAwayAbbr] : undefined);
+          const normalizedHomeName = homeName || (normalizedHomeAbbr ? abbrToTeamMap[normalizedHomeAbbr]?.name || abbreviationToTeamName[normalizedHomeAbbr] : undefined);
           const awayLogo = normalizedAwayAbbr ? logoMap[normalizedAwayAbbr] : undefined;
           const homeLogo = normalizedHomeAbbr ? logoMap[normalizedHomeAbbr] : undefined;
           const awayRecord = normalizedAwayAbbr ? recordMap[normalizedAwayAbbr] : undefined;
           const homeRecord = normalizedHomeAbbr ? recordMap[normalizedHomeAbbr] : undefined;
-
           const aScore = Number(g.away_score);
           const hScore = Number(g.home_score);
           const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
@@ -1932,9 +1875,6 @@ const DashboardTodayScheduleNFL = ({
           const showScore = (hasScores && (aScore !== 0 || hScore !== 0)) || isFinal || isLive;
           const awayWin = showScore ? aScore >= hScore : false;
           const homeWin = showScore ? hScore >= aScore : false;
-
-          const providers: string[] = [];
-
 
           const cardPadding = Math.max(6, Math.round(10 * scale));
           const logoSize = Math.max(30, Math.round(72 * scale));
@@ -1953,46 +1893,20 @@ const DashboardTodayScheduleNFL = ({
             <Card
               key={g.game_id || `${g.matchup}-${g.date}`}
               className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col cursor-pointer hover:ring-2 hover:ring-white/20"
-              style={{
-                padding: cardPadding,
-                height: cardHeight ? `${cardHeight}px` : undefined,
-                minHeight: 0,
-              }}
-              onClick={() => {
-                if (g.game_id && onGameClick) {
-                  onGameClick(g.game_id);
-                }
-              }}
+              style={{ padding: cardPadding, height: cardHeight ? `${cardHeight}px` : undefined, minHeight: 0 }}
+              onClick={() => { if (g.game_id && onGameClick) onGameClick(g.game_id); }}
             >
               <CardContent className="p-0 flex-1 flex flex-col" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
-                <div
-                  className="grid items-center h-full min-h-0"
-                  style={{
-                    gridTemplateColumns: `1fr minmax(${Math.max(140, Math.round(180 * scale))}px, auto) 1fr`,
-                    columnGap: Math.max(18, Math.round(26 * scale)),
-                  }}
-                >
+                <div className="grid items-center h-full min-h-0" style={{ gridTemplateColumns: `1fr minmax(${Math.max(140, Math.round(180 * scale))}px, auto) 1fr`, columnGap: Math.max(18, Math.round(26 * scale)) }}>
                   {/* Away side */}
                   <div className="flex flex-col items-center justify-center">
                     {awayLogo && (
-                      <div
-                        className="rounded-sm relative overflow-visible"
-                        style={{ width: logoSize, height: logoSize }}
-                        title={normalizedAwayName || awayAbbr || 'Away team'}
-                      >
+                      <div className="rounded-sm relative overflow-visible" style={{ width: logoSize, height: logoSize }} title={normalizedAwayName || awayAbbr || 'Away team'}>
                         <img
                           src={awayLogo}
                           alt={awayAbbr || 'Away'}
                           className={`rounded-sm object-contain ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            position: 'relative',
-                            zIndex: 1,
-                            filter: isFinal && awayWin
-                              ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
-                              : undefined,
-                          }}
+                          style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1, filter: isFinal && awayWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))' : undefined }}
                           loading="lazy"
                           width={64}
                           height={64}
@@ -2000,11 +1914,7 @@ const DashboardTodayScheduleNFL = ({
                         {awayRecord && (
                           <span
                             className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-semibold' : 'absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
-                            style={
-                              compactRecordLayout
-                                ? { fontSize: recordFont }
-                                : { fontSize: recordFont, marginLeft: recordOffset }
-                            }
+                            style={compactRecordLayout ? { fontSize: recordFont } : { fontSize: recordFont, marginLeft: recordOffset }}
                           >
                             ({formatRecord(awayRecord)})
                           </span>
@@ -2013,7 +1923,7 @@ const DashboardTodayScheduleNFL = ({
                     )}
                   </div>
 
-                  {/* Center time or score */}
+                  {/* Center */}
                   <div className="text-center">
                     {isLive ? (
                       <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>
@@ -2024,38 +1934,22 @@ const DashboardTodayScheduleNFL = ({
                         <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
                       </div>
                     ) : (
-                      <div className="font-bold" style={{ fontSize: timeFont }}>
-                        {g.time || 'TBA'}
-                      </div>
+                      <div className="font-bold" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
                     )}
                     {g.tv && (
-                      <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>
-                        {String(g.tv)}
-                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>{String(g.tv)}</div>
                     )}
                   </div>
 
                   {/* Home side */}
                   <div className="flex flex-col items-center justify-center">
                     {homeLogo && (
-                      <div
-                        className="rounded-sm relative overflow-visible"
-                        style={{ width: logoSize, height: logoSize }}
-                        title={normalizedHomeName || homeAbbr || 'Home team'}
-                      >
+                      <div className="rounded-sm relative overflow-visible" style={{ width: logoSize, height: logoSize }} title={normalizedHomeName || homeAbbr || 'Home team'}>
                         <img
                           src={homeLogo}
                           alt={homeAbbr || 'Home'}
                           className={`rounded-sm object-contain ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            position: 'relative',
-                            zIndex: 1,
-                            filter: isFinal && homeWin
-                              ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))'
-                              : undefined,
-                          }}
+                          style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1, filter: isFinal && homeWin ? 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255, 255, 255, 0.6))' : undefined }}
                           loading="lazy"
                           width={64}
                           height={64}
@@ -2063,11 +1957,7 @@ const DashboardTodayScheduleNFL = ({
                         {homeRecord && (
                           <span
                             className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-semibold' : 'absolute right-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold text-right'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
-                            style={
-                              compactRecordLayout
-                                ? { fontSize: recordFont }
-                                : { fontSize: recordFont, marginRight: recordOffset }
-                            }
+                            style={compactRecordLayout ? { fontSize: recordFont } : { fontSize: recordFont, marginRight: recordOffset }}
                           >
                             ({formatRecord(homeRecord)})
                           </span>
@@ -2085,7 +1975,19 @@ const DashboardTodayScheduleNFL = ({
   );
 };
 
-const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleData: NFLScheduleData | null; logoMap: Record<string, string>; onGameClick?: (gameId: string) => void }) => {
+const ScheduleNFLViewV2 = ({
+  scheduleData,
+  logoMap,
+  recordMap = {},
+  onGameClick,
+  isMobile = false,
+}: {
+  scheduleData: NFLScheduleData | null;
+  logoMap: Record<string, string>;
+  recordMap?: Record<string, string>;
+  onGameClick?: (gameId: string) => void;
+  isMobile?: boolean;
+}) => {
   const gamesByDate = useMemo(() => {
     const map: Record<string, NFLScheduleGame[]> = {};
     const arr: NFLScheduleGame[] = Array.isArray(scheduleData) ? (scheduleData as NFLScheduleGame[]) : [];
@@ -2137,14 +2039,59 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
   const [index, setIndex] = React.useState<number>(initialIndex);
   useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
 
+  const calendarRef = React.useRef<HTMLDivElement>(null);
+  const [showCalendar, setShowCalendar] = React.useState(false);
+  const [calendarMonth, setCalendarMonth] = React.useState<{ year: number; month: number } | null>(null);
+  const gameDateSet = useMemo(() => new Set(dateKeys), [dateKeys]);
+
+  useEffect(() => {
+    if (!showCalendar) return;
+    const handler = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showCalendar]);
+
   if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
   const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
   const currentKey = dateKeys[clamp(index)];
   const games = gamesByDate[currentKey] || [];
 
+  const openCalendar = () => {
+    const [y, m] = currentKey.split('-').map(Number);
+    setCalendarMonth({ year: y, month: m });
+    setShowCalendar(true);
+  };
+
+  const buildCalendarGrid = (year: number, month: number) => {
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const cells: (string | null)[] = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    }
+    return cells;
+  };
+
+  const handleCalendarDayClick = (key: string) => {
+    if (!gameDateSet.has(key)) return;
+    const idx = dateKeys.indexOf(key);
+    if (idx >= 0) setIndex(idx);
+    setShowCalendar(false);
+  };
+
+  const calGrid = calendarMonth ? buildCalendarGrid(calendarMonth.year, calendarMonth.month) : [];
+  const calMonthLabel = calendarMonth
+    ? new Date(calendarMonth.year, calendarMonth.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    : '';
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-center gap-3">
+      <div className={`relative flex items-center gap-3 ${isMobile ? 'justify-start pl-20 pt-3' : 'justify-center'}`}>
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -2152,6 +2099,56 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full">
           <ChevronRight className="w-5 h-5" />
         </Button>
+
+        {/* Calendar picker */}
+        <div className="absolute right-0" ref={calendarRef}>
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-transparent" onClick={openCalendar} aria-label="Pick a date">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </Button>
+          {showCalendar && calendarMonth && (
+            <div className="absolute top-11 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72" style={{ backgroundColor: '#1a1a1a' }}>
+              <div className="flex items-center justify-between mb-3">
+                <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                  onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m - 2, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+                <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                  onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 mb-1">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
+                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-y-1">
+                {calGrid.map((key, i) => {
+                  if (!key) return <div key={`empty-${i}`} />;
+                  const hasGames = gameDateSet.has(key);
+                  const isSelected = key === currentKey;
+                  const isToday = key === todayKey;
+                  const dayNum = parseInt(key.split('-')[2], 10);
+                  return (
+                    <button key={key} onClick={() => handleCalendarDayClick(key)} disabled={!hasGames}
+                      className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
+                        ${isSelected ? 'bg-white text-black shadow-lg' : hasGames ? 'text-white hover:bg-white/15 cursor-pointer' : 'text-white/20 cursor-default'}`}>
+                      {dayNum}
+                      {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />}
+                      {isToday && isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {games.length === 0 ? (
@@ -2159,7 +2156,7 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr w-full pb-16">
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
           {games.map((g) => {
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
@@ -2174,94 +2171,62 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
             }
             const awayLogo = awayAbbr ? logoMap[awayAbbr] : undefined;
             const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
+            const awayRecord = awayAbbr ? recordMap[awayAbbr] : undefined;
+            const homeRecord = homeAbbr ? recordMap[homeAbbr] : undefined;
             const aScore = Number(g.away_score);
             const hScore = Number(g.home_score);
             const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
             const awayWin = hasScores ? aScore >= hScore : false;
             const homeWin = hasScores ? hScore >= aScore : false;
             const isFinal = String(g.status || '').toLowerCase().includes('final') || Boolean((g as any).winner);
+            const isLiveGame = String(g.status || '').toLowerCase().includes('live');
+            const period = (g as any).period;
+            const clock = (g as any).clock;
+
             const providers: string[] = Array.isArray(g.tv_providers)
               ? (g.tv_providers as string[]).filter(Boolean)
               : g.tv
               ? String(g.tv).split(',').map((s) => s.trim()).filter(Boolean)
               : [];
 
-            // Get team colors for gradient background
             const awayTeamName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
             const homeTeamName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
             const awayColor = awayTeamName && teamColors[awayTeamName]?.primary || '#1e40af';
             const homeColor = homeTeamName && teamColors[homeTeamName]?.primary || '#dc2626';
 
-            // Check if game is live
-            const isLiveGame = String(g.status || '').toLowerCase().includes('live');
+            const logoSize = isMobile ? '13cqi' : undefined;
+            const scoreFontSize = isMobile ? 'clamp(1.5rem, 7cqi, 2.2rem)' : 'clamp(1.125rem, 4cqi, 1.75rem)';
+            const timeFontSize = isMobile ? 'clamp(0.85rem, 5cqi, 1.6rem)' : 'clamp(0.875rem, 3.2cqi, 1.3rem)';
+            const recordFontSize = isMobile ? 'clamp(0.65rem, 2.5cqi, 0.8rem)' : 'clamp(0.6rem, 2.2cqi, 0.75rem)';
+            const liveFontSize = isMobile ? 'clamp(0.75rem, 3cqi, 0.95rem)' : 'clamp(0.5rem, 1.8cqi, 0.65rem)';
 
             return (
-              <Card 
-                key={g.game_id} 
+              <Card
+                key={g.game_id}
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
                 onClick={() => {
-                  if (g.game_id && onGameClick) {
-                    onGameClick(g.game_id);
-                  } else if (g.game_link) {
-                    window.open(g.game_link, '_blank', 'noopener,noreferrer');
-                  }
+                  if (g.game_id && onGameClick) onGameClick(g.game_id);
+                  else if (g.game_link) window.open(g.game_link, '_blank', 'noopener,noreferrer');
                 }}
               >
-                {/* Pulsing white dot for live games */}
                 {isLiveGame && (
                   <>
-                    <style>
-                      {`
-                        @keyframes pulse {
-                          0%, 100% {
-                            opacity: 1;
-                            transform: scale(1);
-                          }
-                          50% {
-                            opacity: 0.6;
-                            transform: scale(1.1);
-                          }
-                        }
-                      `}
-                    </style>
-                    <div 
-                      className="absolute top-2 left-2 z-10 sched-live-dot"
-                      style={{
-                        borderRadius: '50%',
-                        backgroundColor: '#ffffff',
-                        boxShadow: '0 0 6px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4)',
-                        animation: 'pulse 1.5s ease-in-out infinite'
-                      }}
-                    />
+                    <style>{`@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } }`}</style>
+                    <div className="absolute top-2 left-2 z-10 sched-live-dot" style={{ borderRadius: '50%', backgroundColor: '#ffffff', boxShadow: '0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(255,255,255,0.4)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                   </>
                 )}
-                
-                {/* Horizontal gradient from away team color to home team color */}
-                <div 
-                  className="absolute inset-0" 
-                  style={{
-                    background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)`
-                  }}
-                />
-                
-                {/* Semi-transparent overlay for better text readability */}
+                <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)` }} />
                 <div className="absolute inset-0 bg-black/40" />
 
-                {/* TV Badges top-right */}
                 {providers.length > 0 && (
                   <div className="absolute top-1 right-1 flex flex-wrap justify-end gap-1 max-w-[200px] z-10">
                     {providers.map((p) => {
                       const name = String(p).toLowerCase();
                       let style: React.CSSProperties | undefined;
-                      if (name.includes('prime')) {
-                        style = { backgroundColor: '#00A8E1', color: '#ffffff' };
-                      } else if (name.includes('peacock')) {
-                        style = { backgroundColor: '#FFFFFF', color: '#000000' };
-                      } else if (name.includes('espn')) {
-                        style = { backgroundColor: '#C8102E', color: '#ffffff' };
-                      } else if (name.includes('nfl') || name.includes('network')) {
-                        style = { backgroundColor: '#013369', color: '#ffffff' };
-                      }
+                      if (name.includes('prime')) style = { backgroundColor: '#00A8E1', color: '#ffffff' };
+                      else if (name.includes('peacock')) style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                      else if (name.includes('espn')) style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                      else if (name.includes('nfl') || name.includes('network')) style = { backgroundColor: '#013369', color: '#ffffff' };
                       return (
                         <Badge key={p} className="font-semibold" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
                           {p}
@@ -2273,32 +2238,32 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
 
                 <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } }`}</style>
                 <CardContent className="relative z-10 py-0 flex flex-col h-full">
-                  {/* Main content - vertically centered */}
                   <div className="flex-1 flex items-center py-1">
                     <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
-                      {/* Away side */}
-                      <div className="flex flex-col items-center justify-center gap-1">
+
+                      {/* Away team */}
+                      <div className="flex flex-col items-center justify-center gap-0.5">
                         {awayLogo && (
-                          <img
-                            src={awayLogo}
-                            alt={awayAbbr || 'Away'}
-                            className={`sched-logo rounded-sm ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                            style={{
-                              objectFit: 'contain',
-                              ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
-                            }}
+                          <img src={awayLogo} alt={awayAbbr || 'Away'}
+                            className={`rounded-sm ${isMobile ? '' : 'sched-logo'} ${isFinal ? (awayWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{ objectFit: 'contain', ...(logoSize ? { width: logoSize, height: logoSize } : {}), ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {}) }}
                             loading="lazy"
                           />
                         )}
+                        {awayRecord && (
+                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: recordFontSize }}>
+                            ({awayRecord.replace(/-/g, ' - ')})
+                          </span>
+                        )}
                       </div>
 
-                      {/* Center status/score */}
+                      {/* Center: score / time / live */}
                       <div className="flex items-center justify-center">
                         {(() => {
                           const s = String(g.status || '').toLowerCase();
                           if (s === 'final') {
                             return (
-                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: "clamp(1.125rem, 4cqi, 1.75rem)" }}>
+                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: scoreFontSize }}>
                                 <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                                 <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                                 <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
@@ -2306,34 +2271,47 @@ const ScheduleNFLViewV2 = ({ scheduleData, logoMap, onGameClick }: { scheduleDat
                             );
                           }
                           if (s.includes('live')) {
-                            return <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>;
+                            return (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>
+                                {(period || clock) && (
+                                  <span className="text-white/90 font-bold" style={{ fontSize: liveFontSize }}>
+                                    {period ? `Q${period}` : ''}{period && clock ? ' · ' : ''}{clock || ''}
+                                  </span>
+                                )}
+                              </div>
+                            );
                           }
-                          return <div className="font-bold text-white" style={{ fontSize: "clamp(0.875rem, 3.2cqi, 1.3rem)" }}>{g.time || 'TBA'}</div>;
+                          return (
+                            <div className="font-bold text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
+                              {g.time || 'TBA'}
+                            </div>
+                          );
                         })()}
                         {g.tv && providers.length === 0 && (
                           <div className="text-white/70 truncate mx-auto max-w-[140px] mt-1" style={{ fontSize: "clamp(0.5rem, 1.5cqi, 0.625rem)" }}>{String(g.tv)}</div>
                         )}
                       </div>
 
-                      {/* Home side */}
-                      <div className="flex flex-col items-center justify-center gap-1">
+                      {/* Home team */}
+                      <div className="flex flex-col items-center justify-center gap-0.5">
                         {homeLogo && (
-                          <img
-                            src={homeLogo}
-                            alt={homeAbbr || 'Home'}
-                            className={`sched-logo rounded-sm ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
-                            style={{
-                              objectFit: 'contain',
-                              ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
-                            }}
+                          <img src={homeLogo} alt={homeAbbr || 'Home'}
+                            className={`rounded-sm ${isMobile ? '' : 'sched-logo'} ${isFinal ? (homeWin ? 'opacity-100' : 'opacity-40') : ''}`}
+                            style={{ objectFit: 'contain', ...(logoSize ? { width: logoSize, height: logoSize } : {}), ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {}) }}
                             loading="lazy"
                           />
                         )}
+                        {homeRecord && (
+                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: recordFontSize }}>
+                            ({homeRecord.replace(/-/g, ' - ')})
+                          </span>
+                        )}
                       </div>
+
                     </div>
                   </div>
-
-              </CardContent>
+                </CardContent>
               </Card>
             );
           })}
