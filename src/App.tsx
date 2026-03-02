@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import NFL from "./pages/NFL";
 import NBA from "./pages/NBA";
+import F1 from "./pages/F1";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             {/* Main app routes */}
             <Route path="/nfl" element={<NFL />} />
             <Route path="/nba" element={<NBA />} />
+            <Route path="/f1" element={<F1 />} />
           </Routes>
         </AppShell>
       </BrowserRouter>

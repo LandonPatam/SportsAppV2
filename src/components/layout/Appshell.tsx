@@ -19,7 +19,7 @@ export function AppShell({ children }: AppShellProps) {
   const backgrounds: Record<Page, string> = {
     '/nfl': 'linear-gradient(to right, #ff7979, #ffca58)',
     '/nba': 'linear-gradient(to right, rgba(98, 0, 164, 0.95), rgba(0, 241, 246, 0.95))',
-    '/f1': 'linear-gradient(to right, #e10600, #ff6b35)',
+    '/f1': 'linear-gradient(to right, #fff700, #f235ff)',
   };
 
   // knob: left=NBA(0), middle=F1(1), right=NFL(2)

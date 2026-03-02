@@ -29,7 +29,7 @@ const gradientMap: Record<SidebarTheme, { from: string; to: string }> = {
   default: { from: "rgb(139, 251, 94)", to: "#ffc342ff" },
   nfl: { from: "rgb(16, 237, 64)", to: "#ffc342ff" },
   nba: { from: "rgb(255, 242, 0)", to: "#cc00ffff" },
-  f1: { from: "#e10600", to: "#ff6b35" },
+  f1: { from: "#e1ce00", to: "#3561ff" },
 };
 
 /* ============================================================================

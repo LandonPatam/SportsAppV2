@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 interface PageLayoutProps {
   children: React.ReactNode;
   title?: string;
-  theme?: 'default' | 'nba' | 'nfl';
+  theme?: 'default' | 'nba' | 'nfl' | 'f1';
 }
 
 export function PageLayout({ title, children, theme = 'default' }: PageLayoutProps) {
