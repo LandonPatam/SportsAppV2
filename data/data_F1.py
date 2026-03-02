@@ -208,5 +208,156 @@ def update_calendar():
         json.dump(calendar, f, indent=4)
 
 
+TEAMS_PATH = "public/data/f1_teams.json"
+
+
+def _normalize(name: str) -> str:
+    """Lowercase + strip accents for fuzzy name matching (e.g. Hülkenberg → hulkenberg)."""
+    import unicodedata
+    return unicodedata.normalize("NFD", name.lower()).encode("ascii", "ignore").decode()
+
+
+def fetch_driver_standings(season: int = None) -> dict:
+    """
+    Scrapes ESPN F1 standings for the given season.
+    Returns a dict:
+      { 'Lando Norris': { 'points': 423, 'race_points': {'AUS': 25, 'CHN': 18, ...} }, ... }
+    Race values are int or None (None = DNS/DNF/not entered, stored as '-' on ESPN).
+    """
+    if season is None:
+        season = datetime.now().year
+
+    url = f"https://www.espn.com/f1/standings/_/season/{season}"
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        if resp.status_code != 200:
+            print(f"ERROR: Failed to fetch standings (HTTP {resp.status_code})")
+            return {}
+        html = resp.text
+    except Exception as e:
+        print(f"ERROR: Could not reach ESPN standings page: {e}")
+        return {}
+
+    # ESPN's standings table splits into two separate <tbody> elements:
+    #   tbody[0] — sticky left side: driver name + total PTS (one cell per row)
+    #   tbody[1] — scrollable right side: per-race points (one cell per race per row)
+    # Both tbodies share the same row order (championship standing), so we zip by index.
+
+    tbodies = re.findall(r'<tbody[^>]*>(.*?)</tbody>', html, re.DOTALL)
+    if len(tbodies) < 2:
+        print("WARNING: Could not find standings table — page structure may have changed.")
+        return {}
+
+    left_rows  = re.findall(r'<tr[^>]*>(.*?)</tr>', tbodies[0], re.DOTALL)
+    right_rows = re.findall(r'<tr[^>]*>(.*?)</tr>', tbodies[1], re.DOTALL)
+
+    # Race column headers from <th> elements with Table__TH class
+    th_pattern = r'<th[^>]*class="[^"]*Table__TH[^"]*"[^>]*>(.*?)</th>'
+    raw_headers = re.findall(th_pattern, html, re.DOTALL)
+    cols = [re.sub(r'<[^>]+>', '', h).strip() for h in raw_headers
+            if re.sub(r'<[^>]+>', '', h).strip()]
+    race_cols = cols[1:]  # drop 'PTS'
+
+    if not race_cols or not left_rows:
+        print("WARNING: Could not find race column headers — page structure may have changed.")
+        return {}
+
+    def parse_val(v):
+        v = v.strip()
+        if v in ('-', '--', ' ', ''):
+            return None
+        try:
+            return int(v)
+        except ValueError:
+            return None
+
+    result = {}
+    for left_row, right_row in zip(left_rows, right_rows):
+        names = re.findall(r'hide-mobile">([^<]+)</span>', left_row)
+        if not names:
+            continue
+        name = names[0].strip()
+        pts_cells  = re.findall(r'stat-cell">([^<]+)', left_row)
+        race_cells = re.findall(r'stat-cell">([^<]+)', right_row)
+        total = parse_val(pts_cells[0]) if pts_cells else 0
+        race_points = {race_cols[j]: parse_val(race_cells[j])
+                       for j in range(min(len(race_cols), len(race_cells)))}
+        result[name] = {'points': total or 0, 'race_points': race_points}
+
+    print(f"Fetched standings for {len(result)} drivers "
+          f"({len(race_cols)} races, season {season}).")
+    return result
+
+
+def update_driver_points():
+    """
+    Fetches current-season driver standings from ESPN and writes into f1_teams.json:
+      driver['points']       — total championship points (int)
+      driver['race_points']  — { 'AUS': 25, 'CHN': 18, 'JPN': None, ... }
+    """
+    if not os.path.exists(TEAMS_PATH):
+        print(f"ERROR: {TEAMS_PATH} not found.")
+        return
+
+    standings = fetch_driver_standings()
+    if not standings:
+        return
+
+    with open(TEAMS_PATH, "r") as f:
+        teams = json.load(f)
+
+    norm_map = {_normalize(k): v for k, v in standings.items()}
+
+    updated = 0
+    unmatched = []
+
+    for team in teams:
+        for driver in team.get("drivers", []):
+            driver_name = driver.get("name", "")
+
+            # Try exact match, then normalised, then last-name partial
+            data = standings.get(driver_name)
+            if data is None:
+                data = norm_map.get(_normalize(driver_name))
+            if data is None:
+                last = _normalize(driver_name.split()[-1]) if driver_name else ""
+                data = next((v for k, v in norm_map.items() if last in k), None)
+
+            if data is not None:
+                driver["points"] = data["points"]
+                driver["race_points"] = data["race_points"]
+                updated += 1
+            else:
+                driver["points"] = 0
+                driver["race_points"] = {}
+                unmatched.append(driver_name)
+
+        # Sum driver points for the team total
+        team["team_points"] = sum(d.get("points", 0) for d in team.get("drivers", []))
+
+        # Sum per-race points across both drivers for team_race_points
+        team_race = {}
+        for driver in team.get("drivers", []):
+            for race, pts in driver.get("race_points", {}).items():
+                if pts is not None:
+                    team_race[race] = (team_race.get(race) or 0) + pts
+                elif race not in team_race:
+                    team_race[race] = None
+        # Preserve column order from standings
+        all_races = next(
+            (list(d["race_points"].keys()) for d in team.get("drivers", []) if d.get("race_points")),
+            []
+        )
+        team["team_race_points"] = {r: team_race.get(r) for r in all_races}
+
+    with open(TEAMS_PATH, "w") as f:
+        json.dump(teams, f, indent=4)
+
+    print(f"Points written for {updated} driver(s) in {TEAMS_PATH}.")
+    if unmatched:
+        print(f"Could not match (set to 0): {', '.join(unmatched)}")
+
+
 if __name__ == "__main__":
     update_calendar()
+    update_driver_points()
