@@ -77,7 +77,7 @@ for slug, block in re.findall(r'href="/en/drivers/([a-z0-9-]+)">(.*?)</a>', raw_
 teams = {}
 seen_teams = set()
 
-for team_url_slug, block in re.findall(r'href="/en/teams/([a-z0-9-]+)">(.*?)</a>', raw_data, re.DOTALL):
+for tag_attrs, team_url_slug, block in re.findall(r'<a([^>]*?href="/en/teams/([a-z0-9-]+)"[^>]*?)>(.*?)</a>', raw_data, re.DOTALL):
     if team_url_slug in seen_teams:
         continue
 
@@ -97,6 +97,10 @@ for team_url_slug, block in re.findall(r'href="/en/teams/([a-z0-9-]+)">(.*?)</a>
 
     team_name = name_match.group(1).strip() if name_match else team_url_slug.title()
 
+    # Team colour from style="--f1-team-colour:#xxxxxx" on the <a> tag itself
+    colour_match = re.search(r'--f1-team-colour:(#[0-9a-fA-F]{3,6})', tag_attrs)
+    team_colour = colour_match.group(1) if colour_match else None
+
     # Map url slug → internal image slug (they differ e.g. haas vs haasf1team)
     logo_url = logo_match.group(1) if logo_match else None
     car_url  = car_match.group(1)  if car_match  else None
@@ -109,12 +113,13 @@ for team_url_slug, block in re.findall(r'href="/en/teams/([a-z0-9-]+)">(.*?)</a>
             internal_slug = m.group(1)
 
     teams[team_url_slug] = {
-        "name":     team_name,
-        "logo_url": logo_url,
-        "car_url":  car_url,
-        "drivers":  drivers_by_team.get(internal_slug, []),
+        "name":       team_name,
+        "colour":     team_colour,
+        "logo_url":   logo_url,
+        "car_url":    car_url,
+        "drivers":    drivers_by_team.get(internal_slug, []),
     }
-    print(f"  Team:   {team_name} ({len(teams[team_url_slug]['drivers'])} drivers)")
+    print(f"  Team:   {team_name} ({len(teams[team_url_slug]['drivers'])} drivers) — {team_colour}")
 
 # Sort teams alphabetically, drivers within each team by last name
 output = []

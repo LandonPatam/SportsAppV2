@@ -521,14 +521,14 @@ const F1 = () => {
         ======================== */}
         <TabsContent value="dashboard" className="mt-0">
           <div
-            className="flex flex-col gap-4"
+            className="flex gap-4"
             style={{ height: 'calc(100vh - 8rem)' }}
           >
-            {/* ── Top row: Left calendar + Right panel ── */}
-            <div className="flex gap-4 min-h-0" style={{ flex: '1 1 0' }}>
+            {/* Left column: Calendar + Driver grid stacked */}
+            <div className="flex flex-col gap-4 flex-shrink-0 min-h-0" style={{ width: '600px' }}>
 
-              {/* Left: Race Calendar — fixed size always */}
-              <div className="flex flex-col min-h-0 overflow-hidden flex-shrink-0" style={{ width: '600px' }}>
+              {/* Calendar */}
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
                   <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                     Loading races…
@@ -538,20 +538,91 @@ const F1 = () => {
                 )}
               </div>
 
-              {/* Right: fills remaining width */}
-              <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center min-w-0">
-                <span className="text-sm text-muted-foreground">Right panel coming soon</span>
+              {/* Bottom: Driver Standings 3x2 */}
+              <div className="flex-shrink-0">
+                {(() => {
+                  const allDrivers = teamsData.flatMap((team) =>
+                    (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff' }))
+                  )
+                    .filter((d: any) => d.points != null)
+                    .sort((a: any, b: any) => b.points - a.points)
+                    .slice(0, 6);
+
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      {allDrivers.map((driver: any, index: number) => {
+                        const accent = driver.teamColour;
+                        const lastName = driver.name.split(' ').slice(1).join(' ') || driver.name;
+                        return (
+                          <div
+                            key={driver.name}
+                            className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.015] transition-all duration-200"
+                            style={{
+                              backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
+                              padding: '3px',
+                              animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
+                            }}
+                          >
+                            <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+                            <div className="relative z-10 flex items-center justify-between px-3 h-14">
+                              <span className="text-base font-black text-white uppercase tracking-wide">{lastName}</span>
+                              <span className="text-2xl font-black text-white leading-none">
+                                {driver.points}
+                                <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
             </div>
 
-            {/* ── Bottom: full-width section ── */}
-            <div
-              className="rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0"
-              style={{ height: '200px' }}
-            >
-              <span className="text-sm text-muted-foreground">Bottom panel coming soon</span>
+            {/* Right: Constructor Standings — full height */}
+            <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
+              {[...teamsData]
+                .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
+                .slice(0, 10)
+                .map((team, index) => {
+                  const accent = team.colour ?? '#ffffff';
+                  const pts = team.team_points ?? 0;
+
+                  return (
+                    <div
+                      key={team.name}
+                      className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.015] transition-all duration-200 flex-1"
+                      style={{
+                        backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
+                        padding: '3px',
+                        animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
+                      }}
+                    >
+                      <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+                      <div className="relative z-10 flex items-center justify-between px-3 h-full">
+                        <div className="flex flex-col items-start justify-center gap-0.5">
+                          {team.logo_url && (
+                            <img
+                              src={team.logo_url}
+                              alt={`${team.name} logo`}
+                              className="h-9 w-auto object-contain opacity-90"
+                              loading="lazy"
+                            />
+                          )}
+                          <span className="text-sm font-bold text-white/80 leading-none">{team.name}</span>
+                        </div>
+                        <span className="text-3xl font-black text-white leading-none">
+                          {pts}
+                          <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
+
           </div>
         </TabsContent>
 
@@ -577,6 +648,9 @@ const F1 = () => {
         </TabsContent>
 
       </Tabs>
+      <style>{`
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </PageLayout>
   );
 };
