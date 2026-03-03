@@ -22,7 +22,7 @@ export function AppShell({ children }: AppShellProps) {
     '/f1': 'linear-gradient(to right, #fff700, #f235ff)',
   };
 
-  // knob: left=NBA(0), middle=F1(1), right=NFL(2)
+  // knob: left=NBA(0), middle=F1(1), right=NFL(2)1
   // w-28 = 112px, knob = 32px, padding = 4px each side → travel = 72px
   const knobLeft = activeIndex === 0 ? '4px' : activeIndex === 1 ? '40px' : '76px';
 
