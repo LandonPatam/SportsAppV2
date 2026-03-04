@@ -85,8 +85,13 @@ def get_sport_status(schedule_path: Path) -> dict:
         if status["has_today_games"]:
             now = datetime.now()
             if status["first_game_time"]:
+                # Activate 30 min before first game starts
                 start_time = status["first_game_time"] - timedelta(minutes=30)
-                if now >= start_time and status["has_live"]:
+                # Keep active until all games are final
+                # Trigger if: past the pre-game window AND games aren't all done yet
+                # This catches the case where a game is past its start time but ESPN
+                # hasn't flipped it to "live" yet — don't wait for the live flag
+                if now >= start_time and not status["all_games_final"]:
                     status["should_run"] = True
             else:
                 if status["has_live"] or not status["all_games_final"]:
