@@ -27,6 +27,7 @@ interface F1Race {
   start_time_west: string;    // e.g. "March 07 at 8:00 pm PST"
   tv_provider: string;
   track_svg: string;
+  session_times?: Record<string, string>; // e.g. { "Race": "March 15 at 12:00 AM PST", ... }
   urls: {
     race_page: string;
     circuit_info: string;
@@ -66,6 +67,90 @@ function formatRaceDateLabel(dateKey: string): string {
   const [y, m, d] = dateKey.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
   return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// Build "Fri, March 13 – Sun, March 15" from session_times
+function getWeekendRange(race: { session_times?: Record<string, string>; date: string }): string {
+  const sessions = race.session_times ?? {};
+  const dates: Date[] = [];
+  const year = new Date().getFullYear();
+
+  // Parse "March 13 at 12:00 AM PDT" -> Date
+  for (const val of Object.values(sessions)) {
+    const m = val.match(/^([A-Za-z]+ \d+) at /);
+    if (!m) continue;
+    try {
+      const d = new Date(`${m[1]} ${year}`);
+      if (!isNaN(d.getTime())) dates.push(d);
+    } catch {}
+  }
+
+  if (dates.length < 2) return race.date; // fallback to raw string
+
+  dates.sort((a, b) => a.getTime() - b.getTime());
+  const first = dates[0];
+  const last  = dates[dates.length - 1];
+
+  const fmt = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
+  return `${fmt(first)} – ${fmt(last)}`;
+}
+
+// Parse "March 15 at 12:00 AM PDT" -> Date object (treated as local time)
+function parseSessionTime(timeStr: string): Date | null {
+  try {
+    // Strip timezone suffix e.g. " PDT", " PST"
+    const clean = timeStr.replace(/\s+P[SD]T$/, '').trim();
+    // clean = "March 15 at 12:00 AM"
+    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+:\d+ [AP]M)$/);
+    if (!m) return null;
+    const year = new Date().getFullYear();
+    const d = new Date(`${m[1]} ${year} ${m[2]}`);
+    return isNaN(d.getTime()) ? null : d;
+  } catch { return null; }
+}
+
+// Given session_times, return the next upcoming session from the card sessions
+// (SQ, SPR, QUAL, RACE only — not practice), or null if all passed
+function getNextCardSession(race: F1Race): { label: string; date: Date } | null {
+  const st = race.session_times ?? {};
+  const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
+  const sessions = hasSprint
+    ? [
+        { label: 'SQ',   time: st['Sprint'] ?? st['Sprint Qualifying'] },
+        { label: 'SPR',  time: st['Sprint Race'] },
+        { label: 'QUAL', time: st['Qualifying'] },
+        { label: 'RACE', time: st['Race'] },
+      ]
+    : [
+        { label: 'QUAL', time: st['Qualifying'] },
+        { label: 'RACE', time: st['Race'] ?? race.start_time_west },
+      ];
+
+  const now = new Date();
+  for (const s of sessions) {
+    if (!s.time) continue;
+    const d = parseSessionTime(s.time);
+    if (d && d > now) return { label: s.label, date: d };
+  }
+  return null;
+}
+
+function useSessionCountdown(race: F1Race) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const next = getNextCardSession(race);
+  if (!next) return null;
+
+  const diff = Math.max(0, next.date.getTime() - Date.now());
+  const totalMins = Math.floor(diff / 60_000);
+  const days  = Math.floor(totalMins / 1440);
+  const hours = Math.floor((totalMins % 1440) / 60);
+  const mins  = totalMins % 60;
+  return { label: next.label, days, hours, mins };
 }
 
 
@@ -179,6 +264,27 @@ function getTvStyle(provider: string): React.CSSProperties {
 }
 
 // ============================
+// ⏱️ SessionCountdown
+// ============================
+const SessionCountdown = ({ race }: { race: F1Race }) => {
+  const cd = useSessionCountdown(race);
+  if (!cd) return null;
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <span className="text-[10px] font-black tracking-wider uppercase" style={{ color: '#e10600' }}>{cd.label}</span>
+      <div className="flex items-baseline gap-1.5">
+        {[{ val: cd.days, unit: 'D' }, { val: cd.hours, unit: 'H' }, { val: cd.mins, unit: 'M' }].map(({ val, unit }) => (
+          <span key={unit} className="text-[13px] font-black text-white tabular-nums">
+            {String(val).padStart(2, '0')}<span className="text-[9px] font-bold text-white/40 ml-0.5">{unit}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+// ============================
 // 🏎️ RaceCalendarNavigator — left panel of Dashboard
 // ============================
 
@@ -279,7 +385,7 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
           <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        <span className="text-lg font-semibold">{formatRaceDateLabel(currentKey)}</span>
+        <span className="text-lg font-semibold">{getWeekendRange(race)}</span>
 
         <Button
           variant="ghost"
@@ -389,14 +495,41 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
         {/* Dark card background */}
         <div className="absolute inset-0" style={{ background: '#141414' }} />
 
-        {/* TV Provider — top right */}
-        {race.tv_provider && (
-          <div className="absolute top-3 right-3 z-10">
-            <Badge className="text-[10px] font-bold px-2 py-0.5" style={getTvStyle(race.tv_provider)}>
-              {race.tv_provider}
-            </Badge>
-          </div>
-        )}
+        {/* Session time badges — top right */}
+        {(() => {
+          const st = race.session_times ?? {};
+          const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
+          const badges = hasSprint
+            ? [
+                { label: 'SQ',   time: st['Sprint'] ?? st['Sprint Qualifying'] },
+                { label: 'SPR',  time: st['Sprint Race'] },
+                { label: 'QUAL', time: st['Qualifying'] },
+                { label: 'RACE', time: st['Race'] },
+              ]
+            : [
+                { label: 'QUAL', time: st['Qualifying'] },
+                { label: 'RACE', time: st['Race'] ?? race.start_time_west },
+              ];
+
+          const visibleBadges = badges.filter(b => b.time);
+          if (!visibleBadges.length) return null;
+
+          return (
+            <div className={`absolute top-3 right-3 z-10 ${hasSprint ? 'grid grid-cols-2 gap-x-4 gap-y-1.5' : 'flex flex-row gap-4'}`}>
+              {visibleBadges.map(({ label, time }) => {
+                const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
+                const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
+                return (
+                  <div key={label} className="flex flex-col">
+                    <span className="text-[13px] font-black tracking-wider leading-tight" style={{ color: '#e10600' }}>{label}</span>
+                    <span className="text-[12px] font-semibold text-white/70 leading-tight">{datePart}</span>
+                    <span className="text-[11px] font-medium text-white/40 leading-tight">{timePart}</span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* Text — top of card */}
         <div className="relative z-10 p-4 pb-2 flex-shrink-0">
@@ -408,21 +541,10 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
             <h2 className="text-lg font-extrabold text-white leading-tight flex-1">
               {race.race_name}
             </h2>
-            <Badge
-              className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 mt-0.5"
-              style={isUpcoming ? { backgroundColor: '#e10600', color: '#ffffff' } : { backgroundColor: '#2a2a2a', color: '#888' }}
-            >
-              {isUpcoming ? 'Upcoming' : 'Completed'}
-            </Badge>
           </div>
 
           <p className="text-xs text-white/50 mt-0.5">{race.circuit}</p>
-
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[11px] font-semibold text-white/60">{race.date}</span>
-            <span className="text-white/20 text-xs">·</span>
-            <span className="text-[11px] font-semibold text-white/60">{race.start_time_west}</span>
-          </div>
+          <SessionCountdown race={race} />
         </div>
 
         {/* SVG — fills from 1/3 down the card to the bottom */}
@@ -443,6 +565,20 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
 // ============================
 // 🏎️ DriversTab Component
 // ============================
+
+// Standard F1 points → finishing position
+// Includes sprint (8/7/6/5/4/3/2/1), fastest lap bonus (1pt), and DNF/DNS (null)
+const PTS_TO_POS: Record<number, string> = {
+  25: '1st', 18: '2nd', 15: '3rd', 12: '4th', 10: '5th',
+   8: '6th',  6: '7th',  4: '8th',  2: '9th',  1: '10th',
+};
+// Sprint points overlap with regular points so we can't distinguish perfectly,
+// but for the main race grid this is accurate for P1-P10, anything else is P11+
+function ptsToPos(pts: number | null): string {
+  if (pts === null) return '—';
+  if (pts === 0) return 'P11+';
+  return PTS_TO_POS[pts] ?? `${pts}pts`; // fallback shows raw pts if unexpected value
+}
 
 const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
   const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
@@ -489,7 +625,7 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
                 {raceEntries.map(([race, pts]) => (
                   <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
                     <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
-                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{pts != null ? pts : '—'}</span>
+                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{ptsToPos(pts)}</span>
                   </div>
                 ))}
               </div>
