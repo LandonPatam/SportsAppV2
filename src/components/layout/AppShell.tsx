@@ -17,10 +17,9 @@ export function AppShell({ children }: AppShellProps) {
   const activeIndex = currentIndex === -1 ? 1 : currentIndex;
 
   const backgrounds: Record<Page, string> = {
-    '/nfl': 'linear-gradient(to right, #ff7979, #ffca58)',
-    '/nba': 'linear-gradient(to right, rgba(98, 0, 164, 0.95), rgba(0, 241, 246, 0.95))',
-    '/f1': 'linear-gradient(to right, #fff700, #f235ff)',
-  };
+    '/nfl': 'linear-gradient(to right, #95f9c3, #0b3866)',
+    '/nba': 'linear-gradient(to right, rgba(98, 0, 164, 0.81), rgba(0, 241, 246, 0.81))',
+    '/f1': 'linear-gradient(to right, #2dd4bf, #fb809f)',  };
 
   // knob: left=NBA(0), middle=F1(1), right=NFL(2)1
   // w-28 = 112px, knob = 32px, padding = 4px each side → travel = 72px

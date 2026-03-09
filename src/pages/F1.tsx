@@ -27,6 +27,7 @@ interface F1Race {
   start_time_west: string;    // e.g. "March 07 at 8:00 pm PST"
   tv_provider: string;
   track_svg: string;
+  track_svg_extracted?: string;
   session_times?: Record<string, string>; // e.g. { "Race": "March 15 at 12:00 AM PST", ... }
   urls: {
     race_page: string;
@@ -138,7 +139,7 @@ function getNextCardSession(race: F1Race): { label: string; date: Date } | null 
 function useSessionCountdown(race: F1Race) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 60_000);
+    const id = setInterval(() => setTick(t => t + 1), 1_000);
     return () => clearInterval(id);
   }, []);
 
@@ -146,11 +147,12 @@ function useSessionCountdown(race: F1Race) {
   if (!next) return null;
 
   const diff = Math.max(0, next.date.getTime() - Date.now());
-  const totalMins = Math.floor(diff / 60_000);
-  const days  = Math.floor(totalMins / 1440);
-  const hours = Math.floor((totalMins % 1440) / 60);
-  const mins  = totalMins % 60;
-  return { label: next.label, days, hours, mins };
+  const totalSecs = Math.floor(diff / 1_000);
+  const days  = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const mins  = Math.floor((totalSecs % 3600) / 60);
+  const secs  = totalSecs % 60;
+  return { label: next.label, days, hours, mins, secs };
 }
 
 
@@ -230,6 +232,57 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
         // Ensure transparent background
         svg.setAttribute('style', (svg.getAttribute('style') || '') + '; background: transparent;');
 
+        // Inject style to make all paths thin, white, and glowing
+        // Scoped to .f1-track-svg to avoid bleeding into other SVGs (e.g. Lucide icons)
+        svg.classList.add('f1-track-svg');
+        const styleEl = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
+        styleEl.textContent = `
+          .f1-track-svg path, .f1-track-svg polyline, .f1-track-svg polygon,
+          .f1-track-svg circle, .f1-track-svg ellipse, .f1-track-svg line, .f1-track-svg rect {
+            fill: none !important;
+            stroke: #ffffff !important;
+            stroke-width: 1.5 !important;
+            filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 10px #ffffff99);
+          }
+          .f1-teal-strip {
+            fill: none !important;
+            stroke: #00e5cc !important;
+            stroke-width: 3 !important;
+            filter: drop-shadow(0 0 5px #00e5cc) drop-shadow(0 0 12px #00e5ccbb) !important;
+          }
+        `;
+        svg.insertBefore(styleEl, svg.firstChild);
+
+        // Find the longest path to use as the motion track
+        const allPaths = Array.from(svg.querySelectorAll('path'));
+        const trackPath = allPaths.reduce((longest, p) =>
+          (p.getTotalLength?.() ?? 0) > (longest.getTotalLength?.() ?? 0) ? p : longest
+        , allPaths[0]);
+
+        if (trackPath) {
+          const totalLen = trackPath.getTotalLength?.() ?? 500;
+          const stripLen = totalLen * 0.08; // strip is ~8% of the track length
+          const gap = totalLen * 10; // huge gap ensures only one strip is ever visible
+
+          // Clone the track path as the teal overlay
+          const strip = trackPath.cloneNode() as SVGPathElement;
+          strip.setAttribute('class', 'f1-teal-strip');
+          strip.setAttribute('stroke-dasharray', `${stripLen} ${gap}`);
+          strip.setAttribute('stroke-dashoffset', '0');
+          strip.removeAttribute('id');
+
+          // Animate the dashoffset to move the strip around the track
+          const anim = doc.createElementNS('http://www.w3.org/2000/svg', 'animate');
+          anim.setAttribute('attributeName', 'stroke-dashoffset');
+          anim.setAttribute('from', '0');
+          anim.setAttribute('to', `-${totalLen}`);
+          anim.setAttribute('dur', '35s');
+          anim.setAttribute('repeatCount', 'indefinite');
+          anim.setAttribute('calcMode', 'linear');
+          strip.appendChild(anim);
+          svg.appendChild(strip);
+        }
+
         if (!cancelled) setSvgContent(svg.outerHTML);
       })
       .catch(() => {});
@@ -241,6 +294,81 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
     <div
       className={className}
       dangerouslySetInnerHTML={{ __html: svgContent }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}
+    />
+  );
+};
+
+// ============================
+// 🗺️ ExtractedSvg — renders pre-extracted SVG string directly (no fetch needed)
+// ============================
+
+const ExtractedSvg = ({ svgString, className }: { svgString: string; className?: string }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const glowStyle = `<style>
+    .f1-track-svg path, .f1-track-svg polyline, .f1-track-svg polygon,
+    .f1-track-svg circle, .f1-track-svg ellipse, .f1-track-svg line, .f1-track-svg rect {
+      fill: none !important;
+      stroke: #ffffff !important;
+      stroke-width: 1.5 !important;
+      filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 10px #ffffff99);
+    }
+    .f1-teal-strip {
+      fill: none !important;
+      stroke: #00e5cc !important;
+      stroke-width: 3 !important;
+      filter: drop-shadow(0 0 5px #00e5cc) drop-shadow(0 0 12px #00e5ccbb) !important;
+    }
+  </style>`;
+
+  const processed = svgString
+    .replace(/(<svg[^>]*)\s+width="[^"]*"/, '$1')
+    .replace(/(<svg[^>]*)\s+height="[^"]*"/, '$1')
+    .replace(/<svg([^>]*)>/, `<svg$1 class="f1-track-svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">${glowStyle}`);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const svg = container.querySelector('svg');
+    if (!svg) return;
+
+    const allPaths = Array.from(svg.querySelectorAll('path'));
+    if (!allPaths.length) return;
+    const trackPath = allPaths.reduce((longest, p) =>
+      (p.getTotalLength?.() ?? 0) > (longest.getTotalLength?.() ?? 0) ? p : longest
+    , allPaths[0]);
+
+    if (!trackPath) return;
+
+    const totalLen = trackPath.getTotalLength?.() ?? 500;
+    const stripLen = totalLen * 0.08;
+    const gap = totalLen * 10; // huge gap ensures only one strip is ever visible
+
+    const strip = trackPath.cloneNode() as SVGPathElement;
+    strip.setAttribute('class', 'f1-teal-strip');
+    strip.setAttribute('stroke-dasharray', `${stripLen} ${gap}`);
+    strip.setAttribute('stroke-dashoffset', '0');
+    strip.removeAttribute('id');
+
+    const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+    anim.setAttribute('attributeName', 'stroke-dashoffset');
+    anim.setAttribute('from', '0');
+    anim.setAttribute('to', `-${totalLen}`);
+    anim.setAttribute('dur', '35s');
+    anim.setAttribute('repeatCount', 'indefinite');
+    anim.setAttribute('calcMode', 'linear');
+    strip.appendChild(anim);
+    svg.appendChild(strip);
+
+    return () => { strip.remove(); };
+  }, [processed]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      dangerouslySetInnerHTML={{ __html: processed }}
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}
     />
   );
@@ -270,15 +398,11 @@ const SessionCountdown = ({ race }: { race: F1Race }) => {
   const cd = useSessionCountdown(race);
   if (!cd) return null;
   return (
-    <div className="flex items-center gap-2 mt-1.5">
-      <span className="text-[10px] font-black tracking-wider uppercase" style={{ color: '#e10600' }}>{cd.label}</span>
-      <div className="flex items-baseline gap-1.5">
-        {[{ val: cd.days, unit: 'D' }, { val: cd.hours, unit: 'H' }, { val: cd.mins, unit: 'M' }].map(({ val, unit }) => (
-          <span key={unit} className="text-[13px] font-black text-white tabular-nums">
-            {String(val).padStart(2, '0')}<span className="text-[9px] font-bold text-white/40 ml-0.5">{unit}</span>
-          </span>
-        ))}
-      </div>
+    <div className="flex items-center gap-2">
+      <span className="text-lg font-semibold" style={{ color: '#2dd4bf' }}>{cd.label === 'QUAL' ? 'Q' : cd.label}</span>
+      <span className="text-lg font-semibold text-white tabular-nums">
+        {String(cd.days).padStart(2, '0')} : {String(cd.hours).padStart(2, '0')} : {String(cd.mins).padStart(2, '0')} : {String(cd.secs).padStart(2, '0')}
+      </span>
     </div>
   );
 };
@@ -374,28 +498,34 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
     <div className="flex flex-col h-full space-y-3">
 
       {/* ── Date navigator header ── */}
-      <div className="relative flex items-center justify-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIndex((i) => clamp(i - 1))}
-          disabled={index <= 0}
-          className="rounded-full"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
+      <div className="relative flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIndex((i) => clamp(i - 1))}
+            disabled={index <= 0}
+            className="rounded-full"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
 
-        <span className="text-lg font-semibold">{getWeekendRange(race)}</span>
+          <span className="text-lg font-semibold">Race {race.race_number}</span>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIndex((i) => clamp(i + 1))}
-          disabled={index >= racesWithKeys.length - 1}
-          className="rounded-full"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIndex((i) => clamp(i + 1))}
+            disabled={index >= racesWithKeys.length - 1}
+            className="rounded-full"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </div>
+
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <SessionCountdown race={race} />
+        </div>
 
         {/* Calendar icon + popup */}
         <div className="absolute right-0" ref={calendarRef}>
@@ -487,76 +617,77 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
         </div>
       </div>
 
-      {/* ── Race Card ── */}
+      {/* ── Top Card (1/4): Race info + session times ── */}
       <Card
-        className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 flex-1 min-h-0 flex flex-col"
+        className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 flex-shrink-0 flex flex-col justify-center"
+        style={{ flex: '1 0 0', maxHeight: '25%' }}
         onClick={() => window.open(race.urls.race_page, '_blank', 'noopener,noreferrer')}
       >
-        {/* Dark card background */}
         <div className="absolute inset-0" style={{ background: '#141414' }} />
+        <div className="relative z-10 px-4 py-3 flex items-center justify-between gap-4 h-full">
 
-        {/* Session time badges — top right */}
-        {(() => {
-          const st = race.session_times ?? {};
-          const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
-          const badges = hasSprint
-            ? [
-                { label: 'SQ',   time: st['Sprint'] ?? st['Sprint Qualifying'] },
-                { label: 'SPR',  time: st['Sprint Race'] },
-                { label: 'QUAL', time: st['Qualifying'] },
-                { label: 'RACE', time: st['Race'] },
-              ]
-            : [
-                { label: 'QUAL', time: st['Qualifying'] },
-                { label: 'RACE', time: st['Race'] ?? race.start_time_west },
-              ];
-
-          const visibleBadges = badges.filter(b => b.time);
-          if (!visibleBadges.length) return null;
-
-          return (
-            <div className={`absolute top-3 right-3 z-10 ${hasSprint ? 'grid grid-cols-2 gap-x-4 gap-y-1.5' : 'flex flex-row gap-4'}`}>
-              {visibleBadges.map(({ label, time }) => {
-                const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
-                const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
-                return (
-                  <div key={label} className="flex flex-col">
-                    <span className="text-[13px] font-black tracking-wider leading-tight" style={{ color: '#e10600' }}>{label}</span>
-                    <span className="text-[12px] font-semibold text-white/70 leading-tight">{datePart}</span>
-                    <span className="text-[11px] font-medium text-white/40 leading-tight">{timePart}</span>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-
-        {/* Text — top of card */}
-        <div className="relative z-10 p-4 pb-2 flex-shrink-0">
-          <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: '#e10600' }}>
-            Race {race.race_number}
-          </span>
-
-          <div className="flex items-start gap-2 mt-0.5">
-            <h2 className="text-lg font-extrabold text-white leading-tight flex-1">
+          {/* Left: race name + circuit + date range */}
+          <div className="flex flex-col justify-start min-w-0 h-full pt-2 gap-1">
+            <h2 className="text-2xl font-extrabold text-white leading-tight truncate">
               {race.race_name}
             </h2>
+            <p className="text-base font-bold text-white/50 leading-tight truncate">{race.circuit}</p>
+            <p className="text-xs font-medium text-white/30 leading-tight">{race.date}</p>
           </div>
 
-          <p className="text-xs text-white/50 mt-0.5">{race.circuit}</p>
-          <SessionCountdown race={race} />
-        </div>
+          {/* Right: session times as inline badges */}
+          {(() => {
+            const st = race.session_times ?? {};
+            const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
+            const badges = hasSprint
+              ? [
+                  { label: 'SQ',   time: st['Sprint'] ?? st['Sprint Qualifying'] },
+                  { label: 'SPR',  time: st['Sprint Race'] },
+                  { label: 'QUAL', time: st['Qualifying'] },
+                  { label: 'RACE', time: st['Race'] },
+                ]
+              : [
+                  { label: 'QUAL', time: st['Qualifying'] },
+                  { label: 'RACE', time: st['Race'] ?? race.start_time_west },
+                ];
 
-        {/* SVG — fills from 1/3 down the card to the bottom */}
-        <style>{`.f1-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
-        <div className="f1-svg-wrap absolute z-10" style={{ top: '28%', left: '-10%', right: '-10%', bottom: '-10%' }}>
-          <InlineSvg
-            url={race.track_svg}
-            className="w-full h-full"
-          />
-        </div>
+            const visibleBadges = badges.filter(b => b.time);
+            if (!visibleBadges.length) return null;
 
+            return (
+              <div className="flex-shrink-0 flex flex-col gap-1.5 items-end">
+                {visibleBadges.map(({ label, time }) => {
+                  const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
+                  const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
+                  return (
+                    <div key={label} className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-black tracking-wider" style={{ color: '#2dd4bf' }}>{label}</span>
+                      <span className="text-[11px] font-semibold text-white">{datePart}</span>
+                      <span className="text-[11px] font-medium text-white">{timePart}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
       </Card>
+
+      {/* ── Bottom Card (3/4): Track SVG ── */}
+      <Card
+        className="relative overflow-hidden rounded-2xl border border-white/10 flex-1 min-h-0"
+        style={{ flex: '3 0 0' }}
+      >
+        <div className="absolute inset-0" style={{ background: '#141414' }} />
+        <style>{`.f1-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
+        <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'scale(1.1) translateY(10%)', transformOrigin: 'center center' }}>
+          {race.track_svg_extracted
+            ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
+            : <InlineSvg url={race.track_svg} className="w-full h-full" />
+          }
+        </div>
+      </Card>
+
     </div>
   );
 };
@@ -940,7 +1071,7 @@ const F1 = () => {
             <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
               {[...teamsData]
                 .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
-                .slice(0, 11)
+                .slice(0, 8)
                 .map((team, index) => {
                   const accent = team.colour ?? '#ffffff';
                   const pts = team.team_points ?? 0;
@@ -955,19 +1086,44 @@ const F1 = () => {
                         animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
                       }}
                     >
+                      {/* Dark base */}
                       <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
-                      <div className="relative z-10 flex items-center justify-between px-3 h-full">
-                        <div className="flex flex-col items-start justify-center gap-0">
-                          {team.logo_url && (
-                            <img
-                              src={team.logo_url}
-                              alt={`${team.name} logo`}
-                              className="h-9 w-auto object-contain opacity-90"
-                              loading="lazy"
-                            />
-                          )}
-                          <span className="text-sm font-bold text-white leading-none">{team.name}</span>
+                      {/* Car image — anchored to bottom, pushed left */}
+                      {team.car_url && (
+                        <div className="absolute inset-[3px] rounded-xl overflow-hidden" aria-hidden>
+                          <img
+                            src={team.car_url}
+                            alt=""
+                            className="f1-team-car absolute object-contain"
+                            style={{ height: '90px', width: 'auto', opacity: 0.95 }}
+                            loading="lazy"
+                          />
+                          {/* Fade car out to the right */}
+                          <div
+                            className="absolute inset-0"
+                            style={{ background: 'linear-gradient(90deg, transparent 30%, #141414 68%)' }}
+                          />
+                          {/* Fade bottom edge */}
+                          <div
+                            className="absolute inset-0"
+                            style={{ background: 'linear-gradient(180deg, transparent 40%, #14141488 100%)' }}
+                          />
                         </div>
+                      )}
+                      {/* Team logo — top left */}
+                      {team.logo_url && (
+                        <div className="absolute top-2 left-2 z-20">
+                          <img
+                            src={team.logo_url}
+                            alt={`${team.name} logo`}
+                            style={{ height: '28px', width: 'auto' }}
+                            className="object-contain opacity-90"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      <div className="relative z-10 flex items-center justify-between px-3 h-full">
+                        <div />
                         <span className="text-3xl font-black text-white leading-none">
                           {pts}
                           <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
@@ -1054,7 +1210,10 @@ const F1 = () => {
                       {/* Track SVG */}
                       <style>{`.f1-races-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
                       <div className="f1-races-svg-wrap absolute z-10" style={{ top: '45%', left: '5%', right: '5%', bottom: '-10%' }}>
-                        <InlineSvg url={race.track_svg} className="w-full h-full" />
+                        {race.track_svg_extracted
+                          ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
+                          : <InlineSvg url={race.track_svg} className="w-full h-full" />
+                        }
                       </div>
                     </div>
                   );
@@ -1111,6 +1270,19 @@ const F1 = () => {
         @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .drivers-columns { columns: 2; column-fill: auto; }
         @media (min-width: 1024px) { .drivers-columns { columns: 4; column-fill: auto; } }
+
+        /* Half screen: car lower and further left */
+        .f1-team-car {
+          bottom: -14px;
+          left: -65px;
+        }
+        /* Full screen / large viewport: car higher and further right */
+        @media (min-width: 1280px) {
+          .f1-team-car {
+            bottom: 0px;
+            left: 50px;
+          }
+        }
       `}</style>
     </PageLayout>
   );

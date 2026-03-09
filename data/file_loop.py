@@ -17,7 +17,7 @@ NFL_SCHEDULE_SCRIPT = Path("data/schedule_NFL.py")
 NBA_DATA_SCRIPT     = Path("data/data_NBAV2.py")
 NFL_DATA_SCRIPT     = Path("data/data_NFLV2.py")
 F1_DATA_SCRIPT      = Path("data/data_F1.py")      # race results + driver standings
-F1_CALENDAR_SCRIPT  = Path("data/F1_calendar.py")  # track/circuit info (slow-changing)
+# F1_CALENDAR_SCRIPT removed — run manually at the start of a new season
 
 # NBA/NFL intervals (seconds)
 ACTIVE_INTERVAL = 15     # when games are live/upcoming today
@@ -25,9 +25,8 @@ IDLE_INTERVAL   = 600    # no games today (10 min)
 DATA_INTERVAL   = 150    # NBA/NFL data scripts (2.5 min)
 
 # F1 intervals (seconds)
-F1_RACE_INTERVAL     = 5  * 60       # 5 min — during race weekend (results change fast)
-F1_IDLE_INTERVAL     = 30 * 60       # 30 min — normal days (standings trickle update)
-F1_CALENDAR_INTERVAL = 24 * 60 * 60  # 24 hours — circuit/track info rarely changes
+F1_RACE_INTERVAL = 5  * 60   # 5 min — during race weekend (results change fast)
+F1_IDLE_INTERVAL = 30 * 60   # 30 min — normal days (standings trickle update)
 
 # ==========================================================
 # 🧠 NBA/NFL HELPERS
@@ -85,12 +84,7 @@ def get_sport_status(schedule_path: Path) -> dict:
         if status["has_today_games"]:
             now = datetime.now()
             if status["first_game_time"]:
-                # Activate 30 min before first game starts
                 start_time = status["first_game_time"] - timedelta(minutes=30)
-                # Keep active until all games are final
-                # Trigger if: past the pre-game window AND games aren't all done yet
-                # This catches the case where a game is past its start time but ESPN
-                # hasn't flipped it to "live" yet — don't wait for the live flag
                 if now >= start_time and not status["all_games_final"]:
                     status["should_run"] = True
             else:
@@ -184,9 +178,6 @@ def main():
     last_nfl_schedule_run = 0
     last_data_run         = 0
     last_f1_data_run      = 0
-    # Only run F1 calendar immediately if the file doesn't exist yet;
-    # otherwise wait the full 24h interval before running again.
-    last_f1_calendar_run  = 0 if not F1_CALENDAR_PATH.exists() else time.time()
 
     while True:
         now = time.time()
@@ -237,18 +228,12 @@ def main():
             run_script(F1_DATA_SCRIPT)
             last_f1_data_run = now
 
-        # ── F1 calendar: circuit/track info (every 24 h) ───────
-        if now - last_f1_calendar_run >= F1_CALENDAR_INTERVAL:
-            run_script(F1_CALENDAR_SCRIPT)
-            last_f1_calendar_run = now
-
         # ── Sleep until the next thing is due ──────────────────
         next_runs = [
-            nba_interval         - (now - last_nba_schedule_run),
-            nfl_interval         - (now - last_nfl_schedule_run),
-            DATA_INTERVAL        - (now - last_data_run),
-            f1_interval          - (now - last_f1_data_run),
-            F1_CALENDAR_INTERVAL - (now - last_f1_calendar_run),
+            nba_interval  - (now - last_nba_schedule_run),
+            nfl_interval  - (now - last_nfl_schedule_run),
+            DATA_INTERVAL - (now - last_data_run),
+            f1_interval   - (now - last_f1_data_run),
         ]
         sleep_time = max(1, min(next_runs))
         print(f"[SLEEP] {sleep_time:.0f}s\n")

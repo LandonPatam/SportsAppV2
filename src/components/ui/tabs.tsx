@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils"
 type TabsTheme = "default" | "nfl" | "nba"
 
 const gradientMap: Record<TabsTheme, { from: string; to: string }> = {
-  default: { from: "#F6EA41", to: "#F048C6" },
-  nfl: { from: "#ff7979", to: "#ffca58" },
-  nba: { from: "rgba(98, 0, 164, 0.95)", to: "rgba(0, 241, 246, 0.95)" },
+  default: { from: "#2dd4bf", to: "#fb809f" },
+  nfl: { from: "#95f9c3", to: "#0b3866" },
+  nba: { from: "rgba(74, 0, 123, 0.81)", to: "rgba(0, 242, 246, 0.81)" },
 }
 
 const TabsGradientContext = React.createContext(gradientMap.default)
