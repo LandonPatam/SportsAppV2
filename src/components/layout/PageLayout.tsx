@@ -28,8 +28,8 @@ export function PageLayout({ title, children, theme = 'default' }: PageLayoutPro
       style={{
         paddingTop: isMobile ? '0' : '1.5rem',
         paddingBottom: '1.5rem',
-        paddingLeft: '1.5rem',
-        paddingRight: '1.5rem',
+        paddingLeft: isMobile ? '0' : '1.5rem',
+        paddingRight: isMobile ? '0' : '1.5rem',
       }}
     >
       {title && <h1 className="text-2xl font-bold mb-6">{title}</h1>}

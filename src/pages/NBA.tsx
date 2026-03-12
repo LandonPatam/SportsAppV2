@@ -1319,8 +1319,8 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
-          {games.map((g) => {
+        <div key={currentKey} className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
+          {games.map((g, index) => {
             // Derive home/away abbreviations and logos
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
@@ -1380,6 +1380,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
               <Card 
                 key={g.game_id} 
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
+                style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (g.game_id && onGameClick) {
@@ -1448,7 +1449,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
                   </div>
                 )}
 
-                <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } }`}</style>
+                <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
                 <CardContent className="relative z-10 py-0 flex flex-col h-full">
                   <div className="flex-1 flex items-center py-1">
                     <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
@@ -3664,9 +3665,9 @@ useEffect(() => {
               },
             };
             return (
-              <div className="w-full flex flex-wrap gap-4 items-start">
-                {/* Team card - fixed width, no shrinking */}
-                <div className="w-full min-w-[550px] max-w-[800px] shrink-0">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '1rem', alignItems: 'start' }}>
+                {/* Team card — fills its grid cell */}
+                <div>
                   <TeamCard
                     key={currentTeam.TEAM_ID}
                     team={{ ...currentTeam, rank: (teams.findIndex((tt) => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
@@ -3677,23 +3678,22 @@ useEffect(() => {
                     onToggleFavorite={toggleFavoriteTeam}
                   />
                 </div>
-                {/* Doughnut chart - flexible width, smaller min to stay with team card */}
-                <div className="flex-1 min-w-[280px] max-w-[405px]">
-                  <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
-                    <CardHeader className="py-2 px-3">
-                    </CardHeader>
-                    <CardContent className="h-[220px] p-1">
-                      <Doughnut data={doughnutData} options={doughnutOptions} />
-                    </CardContent>
-                  </Card>
-                </div>
-                {/* Radar chart - flexible width */}
-                <div className="flex-1 min-w-[280px] max-w-[342px]">
-                  <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
-                    <CardContent className="h-[220px] p-1">
-                      <Radar data={radarData} options={radarOptions} datasetIdKey="id" updateMode="active" />
-                    </CardContent>
-                  </Card>
+                {/* Both charts side-by-side in second cell */}
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
+                      <CardContent className="h-[235px] p-1">
+                        <Doughnut data={doughnutData} options={doughnutOptions} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <div className="flex-1">
+                    <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
+                      <CardContent className="h-[235px] p-1">
+                        <Radar data={radarData} options={radarOptions} datasetIdKey="id" updateMode="active" />
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
             );
@@ -4009,22 +4009,22 @@ useEffect(() => {
 
         <div className="relative z-10 p-4 text-white">
           {/* Header with team logo and player name */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-start gap-2 mb-4">
             {abbrToLogo[player.TEAM_ABBREVIATION] && (
               <img
                 src={abbrToLogo[player.TEAM_ABBREVIATION]}
                 alt={`${player.TEAM_ABBREVIATION} logo`}
-                className="w-8 h-8 rounded-sm"
+                className="w-8 h-8 rounded-sm shrink-0"
                 loading="lazy"
                 width={32}
                 height={32}
               />
             )}
-            <h3 className="text-lg font-bold">#{index + 1} {player.PLAYER_NAME}</h3>
+            <h3 className="text-lg font-bold min-w-0 flex-1">#{index + 1} {player.PLAYER_NAME}</h3>
 
             {/* Stat badge on the right */}
             <Badge
-              className="ml-auto text-xs font-semibold mt-1 bg-white text-black hover:bg-white hover:text-black"
+              className="shrink-0 self-start text-xs font-semibold bg-white text-black hover:bg-white hover:text-black whitespace-nowrap"
               style={{ letterSpacing: '0.3px', padding: '0.25rem 0.5rem' }}
             >
               {playerSortField === 'VALUE_SCORE'

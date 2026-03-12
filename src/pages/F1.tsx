@@ -177,19 +177,15 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
         // Remove all text/tspan and related elements
         svg.querySelectorAll('text, tspan, flowRoot, flowPara, flowDiv, flowSpan, foreignObject').forEach((el) => el.remove());
 
-        // Remove any <g> that contained text (now empty or near-empty after text removal)
+        // Remove any <g> that contained only label background rects (left over after text removal)
         svg.querySelectorAll('g').forEach((g) => {
-          // Remove groups that are now empty
           if (g.children.length === 0) { g.remove(); return; }
-          // Remove groups whose only remaining children are rect/path with no fill or white fill
-          // (these are label backgrounds left over after text was stripped)
           const children = Array.from(g.children);
-          const allBackground = children.every((c) => {
-            const tag = c.tagName.toLowerCase();
-            const fill = c.getAttribute('fill') || '';
-            return (tag === 'rect' || tag === 'path') && /^(#fff|#ffffff|white|none|transparent)$/i.test(fill.trim());
-          });
-          if (allBackground) g.remove();
+          // Only remove groups whose children are ALL rects (label boxes), not paths (track geometry)
+          const allLabelRects = children.every((c) =>
+            c.tagName.toLowerCase() === 'rect'
+          );
+          if (allLabelRects) g.remove();
         });
 
         // Remove groups positioned in top-right via transform (ESPN label groups often use translate)
@@ -232,6 +228,15 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
         // Ensure transparent background
         svg.setAttribute('style', (svg.getAttribute('style') || '') + '; background: transparent;');
 
+        // Force white stroke on all track elements as attributes (beats inline style overrides)
+        svg.querySelectorAll('path, polyline, polygon, circle, ellipse, line, rect').forEach((el) => {
+          el.setAttribute('fill', 'none');
+          el.setAttribute('stroke', '#ffffff');
+          el.setAttribute('stroke-width', '1.5');
+          // Clear any inline style that might override CSS
+          el.removeAttribute('style');
+        });
+
         // Inject style to make all paths thin, white, and glowing
         // Scoped to .f1-track-svg to avoid bleeding into other SVGs (e.g. Lucide icons)
         svg.classList.add('f1-track-svg');
@@ -242,13 +247,19 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
             fill: none !important;
             stroke: #ffffff !important;
             stroke-width: 1.5 !important;
-            filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 10px #ffffff99);
           }
           .f1-teal-strip {
             fill: none !important;
             stroke: #00e5cc !important;
             stroke-width: 3 !important;
-            filter: drop-shadow(0 0 5px #00e5cc) drop-shadow(0 0 12px #00e5ccbb) !important;
+          }
+          @keyframes f1-dash {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: var(--f1-track-len); }
+          }
+          .f1-teal-strip {
+            animation: f1-dash var(--f1-anim-dur, 35s) linear infinite;
+            will-change: stroke-dashoffset;
           }
         `;
         svg.insertBefore(styleEl, svg.firstChild);
@@ -261,25 +272,15 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
 
         if (trackPath) {
           const totalLen = trackPath.getTotalLength?.() ?? 500;
-          const stripLen = totalLen * 0.08; // strip is ~8% of the track length
-          const gap = totalLen * 10; // huge gap ensures only one strip is ever visible
+          const stripLen = totalLen * 0.08;
+          const gap = totalLen * 10;
 
-          // Clone the track path as the teal overlay
           const strip = trackPath.cloneNode() as SVGPathElement;
           strip.setAttribute('class', 'f1-teal-strip');
           strip.setAttribute('stroke-dasharray', `${stripLen} ${gap}`);
           strip.setAttribute('stroke-dashoffset', '0');
+          strip.style.setProperty('--f1-track-len', `-${totalLen}`);
           strip.removeAttribute('id');
-
-          // Animate the dashoffset to move the strip around the track
-          const anim = doc.createElementNS('http://www.w3.org/2000/svg', 'animate');
-          anim.setAttribute('attributeName', 'stroke-dashoffset');
-          anim.setAttribute('from', '0');
-          anim.setAttribute('to', `-${totalLen}`);
-          anim.setAttribute('dur', '35s');
-          anim.setAttribute('repeatCount', 'indefinite');
-          anim.setAttribute('calcMode', 'linear');
-          strip.appendChild(anim);
           svg.appendChild(strip);
         }
 
@@ -294,7 +295,7 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
     <div
       className={className}
       dangerouslySetInnerHTML={{ __html: svgContent }}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', willChange: 'transform', filter: 'drop-shadow(0 0 4px #ffffff88) drop-shadow(0 0 8px #ffffff44)' }}
     />
   );
 };
@@ -312,13 +313,17 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
       fill: none !important;
       stroke: #ffffff !important;
       stroke-width: 1.5 !important;
-      filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 10px #ffffff99);
     }
     .f1-teal-strip {
       fill: none !important;
       stroke: #00e5cc !important;
       stroke-width: 3 !important;
-      filter: drop-shadow(0 0 5px #00e5cc) drop-shadow(0 0 12px #00e5ccbb) !important;
+      animation: f1-dash var(--f1-anim-dur, 35s) linear infinite;
+      will-change: stroke-dashoffset;
+    }
+    @keyframes f1-dash {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: var(--f1-track-len); }
     }
   </style>`;
 
@@ -343,22 +348,14 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
 
     const totalLen = trackPath.getTotalLength?.() ?? 500;
     const stripLen = totalLen * 0.08;
-    const gap = totalLen * 10; // huge gap ensures only one strip is ever visible
+    const gap = totalLen * 10;
 
     const strip = trackPath.cloneNode() as SVGPathElement;
     strip.setAttribute('class', 'f1-teal-strip');
     strip.setAttribute('stroke-dasharray', `${stripLen} ${gap}`);
     strip.setAttribute('stroke-dashoffset', '0');
+    strip.style.setProperty('--f1-track-len', `-${totalLen}`);
     strip.removeAttribute('id');
-
-    const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-    anim.setAttribute('attributeName', 'stroke-dashoffset');
-    anim.setAttribute('from', '0');
-    anim.setAttribute('to', `-${totalLen}`);
-    anim.setAttribute('dur', '35s');
-    anim.setAttribute('repeatCount', 'indefinite');
-    anim.setAttribute('calcMode', 'linear');
-    strip.appendChild(anim);
     svg.appendChild(strip);
 
     return () => { strip.remove(); };
@@ -369,7 +366,7 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
       ref={containerRef}
       className={className}
       dangerouslySetInnerHTML={{ __html: processed }}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', willChange: 'transform', filter: 'drop-shadow(0 0 4px #ffffff88) drop-shadow(0 0 8px #ffffff44)' }}
     />
   );
 };
@@ -394,11 +391,11 @@ function getTvStyle(provider: string): React.CSSProperties {
 // ============================
 // ⏱️ SessionCountdown
 // ============================
-const SessionCountdown = ({ race }: { race: F1Race }) => {
+const SessionCountdown = ({ race, isMobile = false }: { race: F1Race; isMobile?: boolean }) => {
   const cd = useSessionCountdown(race);
   if (!cd) return null;
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <span className="text-lg font-semibold" style={{ color: '#2dd4bf' }}>{cd.label === 'QUAL' ? 'Q' : cd.label}</span>
       <span className="text-lg font-semibold text-white tabular-nums">
         {String(cd.days).padStart(2, '0')} : {String(cd.hours).padStart(2, '0')} : {String(cd.mins).padStart(2, '0')} : {String(cd.secs).padStart(2, '0')}
@@ -412,7 +409,7 @@ const SessionCountdown = ({ race }: { race: F1Race }) => {
 // 🏎️ RaceCalendarNavigator — left panel of Dashboard
 // ============================
 
-const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
+const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { races: F1Race[]; isMobile?: boolean; teamsData?: F1Team[] }) => {
   // Build sorted entries with parsed date keys
   const racesWithKeys = useMemo(() => {
     return races
@@ -494,6 +491,217 @@ const RaceCalendarNavigator = ({ races }: { races: F1Race[] }) => {
     ? new Date(calendarMonth.year, calendarMonth.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
     : '';
 
+  // ── Shared nav header (used both on desktop and as sticky on mobile) ──
+  const navHeader = (
+    <div
+      className={`relative flex items-center${isMobile ? ' pl-16 pr-10 sticky top-0 z-30 backdrop-blur-md bg-background/80 flex-nowrap justify-between' : ' gap-3'}`}
+      style={isMobile ? { paddingTop: '26px', paddingBottom: '14px' } : undefined}
+    >
+      {/* Left: arrows + race number */}
+      <div className="flex items-center gap-1 shrink-0">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <span className="text-lg font-semibold whitespace-nowrap">Race {race.race_number}</span>
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= racesWithKeys.length - 1} className="rounded-full">
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* Countdown — inline on mobile, absolutely centered on desktop */}
+      {isMobile ? (
+        <div className="shrink-0">
+          <SessionCountdown race={race} isMobile={isMobile} />
+        </div>
+      ) : (
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <SessionCountdown race={race} isMobile={isMobile} />
+        </div>
+      )}
+
+      {/* Calendar icon + popup */}
+      <div className="absolute right-0" ref={calendarRef}>
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-transparent" onClick={openCalendar} aria-label="Pick a race weekend">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        </Button>
+
+        {showCalendar && calendarMonth && (
+          <div className="absolute top-11 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72" style={{ backgroundColor: '#1a1a1a' }}>
+            {/* Month navigation */}
+            <div className="flex items-center justify-between mb-3">
+              <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m - 2, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+              <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 mb-1">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+                <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-y-1">
+              {calGrid.map((key, i) => {
+                if (!key) return <div key={`empty-${i}`} />;
+                const hasRace = raceDateSet.has(key);
+                const isSelected = key === currentKey;
+                const isToday = key === todayKey;
+                const dayNum = parseInt(key.split('-')[2], 10);
+                return (
+                  <button key={key} onClick={() => handleCalendarDayClick(key)} disabled={!hasRace}
+                    className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
+                      ${isSelected ? 'bg-white text-black shadow-lg' : hasRace ? 'text-white hover:bg-white/15 cursor-pointer' : 'text-white/20 cursor-default'}`}>
+                    {dayNum}
+                    {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />}
+                    {isToday && isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── Mobile layout: sticky header + scrollable dashboard content ──
+  if (isMobile) {
+    return (
+      <div className="flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
+        {navHeader}
+
+        <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
+          {/* Race info card */}
+          <Card
+            className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 mx-0 mb-3"
+            onClick={() => window.open(race.urls.race_page, '_blank', 'noopener,noreferrer')}
+          >
+            <div className="absolute inset-0" style={{ background: '#141414' }} />
+            <div className="relative z-10 px-4 py-3 flex items-center justify-between gap-4">
+              <div className="flex flex-col justify-start min-w-0 gap-1">
+                <h2 className="text-xl font-extrabold text-white leading-tight truncate">{race.race_name}</h2>
+                <p className="text-sm font-bold text-white/50 leading-tight truncate">{race.circuit}</p>
+                <p className="text-xs font-medium text-white/30 leading-tight">{race.date}</p>
+              </div>
+              {(() => {
+                const st = race.session_times ?? {};
+                const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
+                const badges = hasSprint
+                  ? [{ label: 'SQ', time: st['Sprint'] ?? st['Sprint Qualifying'] }, { label: 'SPR', time: st['Sprint Race'] }, { label: 'QUAL', time: st['Qualifying'] }, { label: 'RACE', time: st['Race'] }]
+                  : [{ label: 'QUAL', time: st['Qualifying'] }, { label: 'RACE', time: st['Race'] ?? race.start_time_west }];
+                const visibleBadges = badges.filter(b => b.time);
+                if (!visibleBadges.length) return null;
+                return (
+                  <div className="flex-shrink-0 flex flex-col gap-1 items-end">
+                    {visibleBadges.map(({ label, time }) => {
+                      const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
+                      const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
+                      return (
+                        <div key={label} className="flex items-center gap-1">
+                          <span className="text-[10px] font-black tracking-wider" style={{ color: '#2dd4bf' }}>{label}</span>
+                          <span className="text-[10px] font-semibold text-white">{datePart}</span>
+                          <span className="text-[10px] font-medium text-white/70">{timePart}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </Card>
+
+          {/* Track SVG */}
+          <Card className="relative overflow-hidden rounded-2xl border border-white/10 mb-3 mx-0" style={{ height: '240px' }}>
+            <div className="absolute inset-0" style={{ background: '#141414' }} />
+            <style>{`.f1-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
+            <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'scale(1.1) translateY(10%)', transformOrigin: 'center center' }}>
+              {race.track_svg_extracted
+                ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
+                : <InlineSvg url={race.track_svg} className="w-full h-full" />
+              }
+            </div>
+          </Card>
+
+          {/* Driver standings — top 6 */}
+          {(() => {
+            const allDrivers = teamsData.flatMap((team) =>
+              (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff' }))
+            ).filter((d: any) => d.points != null).sort((a: any, b: any) => b.points - a.points).slice(0, 6);
+            if (!allDrivers.length) return null;
+            return (
+              <div className="mb-3">
+                <p className="text-xs font-black tracking-widest text-white/30 uppercase mb-2 px-1">Drivers</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {allDrivers.map((driver: any, index: number) => {
+                    const accent = driver.teamColour;
+                    const lastName = driver.name.split(' ').slice(1).join(' ') || driver.name;
+                    return (
+                      <div key={driver.name} className="relative rounded-xl overflow-hidden" style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px' }}>
+                        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+                        <div className="relative z-10 flex items-center justify-between px-3 h-12">
+                          <div className="flex flex-col">
+                            <span className="text-[11px] font-black text-white/40">#{index + 1}</span>
+                            <span className="text-sm font-black text-white uppercase tracking-wide">{lastName}</span>
+                          </div>
+                          <span className="text-xl font-black text-white leading-none">
+                            {driver.points}<span className="text-[10px] font-semibold text-white/40 ml-1">PTS</span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Constructor standings — top 6 */}
+          {(() => {
+            const sortedTeams = [...teamsData].sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0)).slice(0, 6);
+            if (!sortedTeams.length) return null;
+            return (
+              <div className="mb-3">
+                <p className="text-xs font-black tracking-widest text-white/30 uppercase mb-2 px-1">Constructors</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {sortedTeams.map((team: any, index: number) => {
+                    const accent = team.colour ?? '#ffffff';
+                    return (
+                      <div key={team.name} className="relative rounded-xl overflow-hidden" style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px' }}>
+                        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+                        <div className="relative z-10 flex items-center justify-between px-3 h-12">
+                          <div className="flex items-center gap-2">
+                            {team.logo_url && <img src={team.logo_url} alt="" className="w-5 h-5 object-contain" loading="lazy" />}
+                            <div className="flex flex-col">
+                              <span className="text-[11px] font-black text-white/40">#{index + 1}</span>
+                              <span className="text-sm font-black text-white truncate max-w-[80px]">{team.name}</span>
+                            </div>
+                          </div>
+                          <span className="text-xl font-black text-white leading-none">
+                            {team.team_points ?? 0}<span className="text-[10px] font-semibold text-white/40 ml-1">PTS</span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Desktop layout (unchanged) ──
   return (
     <div className="flex flex-col h-full space-y-3">
 
@@ -985,6 +1193,14 @@ const F1 = () => {
 
   return (
     <PageLayout theme="f1">
+      {/* ── Mobile: no tabs, just the dashboard navigator full screen ── */}
+      {isMobile ? (
+        loading ? (
+          <div className="flex items-center justify-center h-screen text-sm text-muted-foreground">Loading races…</div>
+        ) : (
+          <RaceCalendarNavigator races={calendarData} isMobile={true} teamsData={teamsData} />
+        )
+      ) : (
       <Tabs
         theme="f1"
         value={activeTab}
@@ -1158,11 +1374,12 @@ const F1 = () => {
           <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
             <div className="grid grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
               {[...calendarData]
-                .sort((a, b) => parseRaceEndDate(a.date).localeCompare(parseRaceEndDate(b.date)))
+                .sort((a, b) => a.race_number - b.race_number)
                 .map((race, index) => {
-                  const todayKey = new Date().toISOString().slice(0, 11);
+                  const todayKey = new Date().toISOString().slice(0, 10);
                   const raceKey = parseRaceEndDate(race.date);
-                  const isUpcoming = raceKey >= todayKey;
+                  const hasDate = !!race.date && race.date.trim().length > 0 && race.date.trim().toUpperCase() !== 'TBD';
+                  const isUpcoming = hasDate && raceKey >= todayKey;
                   return (
                     <div
                       key={race.race_number}
@@ -1174,18 +1391,9 @@ const F1 = () => {
                       }}
                       onClick={() => setRaceModal(race)}
                     >
-                      {/* TV Provider — top right */}
-                      {race.tv_provider && (
-                        <div className="absolute top-3 right-3 z-10">
-                          <Badge className="text-[10px] font-bold px-2 py-0.5" style={getTvStyle(race.tv_provider)}>
-                            {race.tv_provider}
-                          </Badge>
-                        </div>
-                      )}
-
                       {/* Text */}
                       <div className="relative z-10 p-4 pb-2 flex-shrink-0">
-                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: '#e10600' }}>
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: '#2dd4bf' }}>
                           Race {race.race_number}
                         </span>
                         <div className="flex items-start gap-2 mt-0.5">
@@ -1223,8 +1431,9 @@ const F1 = () => {
         </TabsContent>
 
       </Tabs>
+      )} {/* end desktop-only block */}
 
-      {/* Race Modal */}
+      {/* Race Modal — shown on both mobile and desktop */}
       {raceModal && (
         <div
           className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"

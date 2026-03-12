@@ -622,12 +622,12 @@ const TeamCard = ({
               />
             )}
             <h3 className="text-lg font-bold truncate flex-1 min-w-0">{team.name}</h3>
-            <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-              <div className="text-xl font-bold whitespace-nowrap">
-                #{(team as any).rank || '—'}
-              </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
               <div className="text-xl font-bold whitespace-nowrap">
                 {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
+              </div>
+              <div className="text-xl font-bold whitespace-nowrap text-white/50">
+                #{(team as any).rank || '—'}
               </div>
             </div>
           </div>
@@ -1342,8 +1342,8 @@ const NFL = () => {
 
                 <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-24">
                   {currentTeam && (
-                    <div className="w-full flex flex-wrap gap-4 items-start">
-                      <div className="w-full min-w-[550px] max-w-[800px] shrink-0">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '1rem', alignItems: 'start' }}>
+                      <div>
                         <TeamCard
                           key={currentTeam.name}
                           team={{ ...currentTeam, rank: (orderedTeams.findIndex((t) => t.name === currentTeam.name) + 1) || 1 }}
@@ -1352,12 +1352,11 @@ const NFL = () => {
                           allTeams={teams}
                         />
                       </div>
-                      <div className="flex-1 min-w-[280px] max-w-[405px]">
-                        <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
-                          <CardHeader className="py-2 px-3">
-                          </CardHeader>
-                          <CardContent className="h-[220px] p-1">
-                            <Doughnut
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
+                            <CardContent className="h-[235px] p-1">
+                              <Doughnut
                               data={(() => {
                                 const wins = Number(currentTeam.wins || 0);
                                 const losses = Number(currentTeam.losses || 0) + Number(currentTeam.ties || 0);
@@ -1387,11 +1386,11 @@ const NFL = () => {
                             />
                           </CardContent>
                         </Card>
-                      </div>
-                      <div className="flex-1 min-w-[280px] max-w-[342px]">
-                        <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
-                          <CardContent className="h-[220px] p-1">
-                            <Radar
+                        </div>
+                        <div className="flex-1">
+                          <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
+                            <CardContent className="h-[235px] p-1">
+                              <Radar
                               data={(() => {
                                 const games = (currentTeam.wins || 0) + (currentTeam.losses || 0) + (currentTeam.ties || 0);
                                 const winPct = Number(currentTeam.win_pct || 0);
@@ -1457,6 +1456,7 @@ const NFL = () => {
                             />
                           </CardContent>
                         </Card>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1843,12 +1843,9 @@ const DashboardTodayScheduleNFL = ({
 
   return (
     <div ref={shellRef} className="flex-1 min-h-0 w-full h-full overflow-hidden">
+      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div className="grid grid-cols-1 h-full items-start content-start" style={{ rowGap: gap, paddingTop: gap, paddingBottom: gap, height: '100%', opacity: layout.ready ? 1 : 0, transition: 'opacity 140ms ease-out' }}>
-        {games.map((g) => {
-          let awayAbbr = (g as any).away as string | undefined;
-          let homeAbbr = (g as any).home as string | undefined;
-          let awayName: string | undefined;
-          let homeName: string | undefined;
+        {games.map((g, index) => {
           if ((!awayAbbr || !homeAbbr) && g.matchup) {
             const parts = g.matchup.split('@');
             awayName = parts[0]?.trim();
@@ -1893,7 +1890,7 @@ const DashboardTodayScheduleNFL = ({
             <Card
               key={g.game_id || `${g.matchup}-${g.date}`}
               className="relative overflow-hidden transition-all duration-300 bg-card border flex flex-col cursor-pointer hover:ring-2 hover:ring-white/20"
-              style={{ padding: cardPadding, height: cardHeight ? `${cardHeight}px` : undefined, minHeight: 0 }}
+              style={{ padding: cardPadding, height: cardHeight ? `${cardHeight}px` : undefined, minHeight: 0, animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
               onClick={() => { if (g.game_id && onGameClick) onGameClick(g.game_id); }}
             >
               <CardContent className="p-0 flex-1 flex flex-col" style={{ paddingTop: topPad, paddingBottom: bottomPad }}>
@@ -2156,8 +2153,10 @@ const ScheduleNFLViewV2 = ({
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
-          {games.map((g) => {
+        <>
+          <style>{`@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+          <div key={currentKey} className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
+          {games.map((g, index) => {
             let awayAbbr = (g as any).away as string | undefined;
             let homeAbbr = (g as any).home as string | undefined;
             if ((!awayAbbr || !homeAbbr) && g.matchup) {
@@ -2204,6 +2203,7 @@ const ScheduleNFLViewV2 = ({
               <Card
                 key={g.game_id}
                 className="relative overflow-hidden transition-all duration-300 border p-2 flex flex-col h-full container cursor-pointer hover:ring-2 hover:ring-white/20 rounded-2xl"
+                style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
                 onClick={() => {
                   if (g.game_id && onGameClick) onGameClick(g.game_id);
                   else if (g.game_link) window.open(g.game_link, '_blank', 'noopener,noreferrer');
@@ -2211,7 +2211,7 @@ const ScheduleNFLViewV2 = ({
               >
                 {isLiveGame && (
                   <>
-                    <style>{`@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } }`}</style>
+                    <style>{`@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
                     <div className="absolute top-2 left-2 z-10 sched-live-dot" style={{ borderRadius: '50%', backgroundColor: '#ffffff', boxShadow: '0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(255,255,255,0.4)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                   </>
                 )}
@@ -2316,6 +2316,7 @@ const ScheduleNFLViewV2 = ({
             );
           })}
         </div>
+        </>
       )}
     </div>
   );
