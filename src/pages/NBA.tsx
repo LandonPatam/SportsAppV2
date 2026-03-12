@@ -447,7 +447,7 @@ const teamGradientColors: Record<string, { start: string; end: string }> = {
   'GSW': { start: '#1D428A', end: '#FFC72C' },
   'HOU': { start: '#CE1141', end: '#000000' },
   'IND': { start: '#002D62', end: '#FDBB30' },
-  'LAC': { start: '#C8102E', end: '#1D428A' },
+  'LAC': { start: '#090941', end: '#ffffff' },
   'LAL': { start: '#552583', end: '#FDB927' },
   'MEM': { start: '#5D76A9', end: '#12173F' },
   'MIA': { start: '#98002E', end: '#F9A01B' },
