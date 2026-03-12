@@ -1466,7 +1466,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
                                 ...(logoSize ? { width: logoSize, height: logoSize } : {}),
                                 ...(isFinal && awayWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
                               }}
-                              loading="lazy"
+                              loading="eager"
                             />
                             {awayAbbr && recordMap[awayAbbr] && (
                               <div className="text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
@@ -1527,7 +1527,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
                                 ...(logoSize ? { width: logoSize, height: logoSize } : {}),
                                 ...(isFinal && homeWin ? { filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(255,255,255,0.6))' } : {})
                               }}
-                              loading="lazy"
+                              loading="eager"
                             />
                             {homeAbbr && recordMap[homeAbbr] && (
                               <div className="text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
@@ -2829,26 +2829,27 @@ const fetchData = async () => {
     setLoading(true);
     
     // Safe JSON fetch helper — returns null if response is partial/corrupt
-    const safeFetchJson = async (url: string) => {
-      const resp = await fetch(url);
+    const safeFetchJson = async (url: string, options?: RequestInit) => {
+      const resp = await fetch(url, options);
       if (!resp.ok) return null;
       const text = await resp.text();
       try {
-        return JSON.parse(text);
+        return { data: JSON.parse(text), text };
       } catch {
         console.warn(`Skipping corrupt JSON from ${url} — will retry next cycle`);
         return null;
       }
     };
 
-    // Fetch team and player data with cache-busting timestamp
-    const [teamData, playerData] = await Promise.all([
-      safeFetchJson('/data/espn_NBA_team_stats.json?' + Date.now()),
-      safeFetchJson('/data/espn_NBA_player_stats.json?' + Date.now()),
+    // Fetch all 3 endpoints in parallel — team/player use HTTP cache (they rarely change)
+    const [teamResult, playerResult, schedResult] = await Promise.all([
+      safeFetchJson('/data/espn_NBA_team_stats.json'),
+      safeFetchJson('/data/espn_NBA_player_stats.json'),
+      safeFetchJson('/data/nba_schedule.json', { cache: 'no-cache' }),
     ]);
 
-    if (teamData) {
-      const teamsWithConference = teamData.map((team: NBATeam) => ({
+    if (teamResult) {
+      const teamsWithConference = teamResult.data.map((team: NBATeam) => ({
         ...team,
         conference: teamConferences[team.TEAM_NAME]?.conference || 'Unknown',
         division: teamConferences[team.TEAM_NAME]?.division || 'Unknown',
@@ -2858,21 +2859,15 @@ const fetchData = async () => {
       setNbaTeams(teamsWithConference);
     }
 
-    if (playerData) {
-      _cachedPlayers = playerData;
-      setNbaPlayerData(playerData);
+    if (playerResult) {
+      _cachedPlayers = playerResult.data;
+      setNbaPlayerData(playerResult.data);
     }
 
-    // Fetch schedule
-    try {
-      const text = await fetch('/data/nba_schedule.json', { cache: 'no-cache' }).then(r => r.ok ? r.text() : null);
-      if (text) {
-        const schedJson = JSON.parse(text) as NBAScheduleData;
-        _cachedSchedule = schedJson;
-        setScheduleData(schedJson);
-      }
-    } catch {
-      // Silently ignore — partial write, retry next cycle
+    if (schedResult) {
+      const schedJson = schedResult.data as NBAScheduleData;
+      _cachedSchedule = schedJson;
+      setScheduleData(schedJson);
     }
 
     setLastUpdate(new Date());
@@ -3129,6 +3124,11 @@ const abbrToLogo = React.useMemo(() => {
   nbaTeams.forEach((t) => {
     const abbr = teamAbbreviations[t.TEAM_NAME];
     if (abbr && t.LOGO_URL) map[abbr] = t.LOGO_URL;
+  });
+  // Preload all logos into browser cache as soon as we have them
+  Object.values(map).forEach((url) => {
+    const img = new Image();
+    img.src = url;
   });
   return map;
 }, [nbaTeams]);
