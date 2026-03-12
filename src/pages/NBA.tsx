@@ -1163,7 +1163,6 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
     return () => document.removeEventListener('mousedown', handler);
   }, [showCalendar]);
 
-  if (!scheduleData) return <div className="text-sm text-muted-foreground">Loading schedule…</div>;
   const logos: Record<string, string> = Array.isArray(scheduleData) ? {} : (scheduleData?.teams || {});
 
   // Helper to format date labels from YYYY-MM-DD
@@ -1173,7 +1172,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
     return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
-  if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
+  if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground"></div>;
 
   const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
   const currentKey = dateKeys[clamp(index)];

@@ -1196,7 +1196,7 @@ const F1 = () => {
       {/* ── Mobile: no tabs, just the dashboard navigator full screen ── */}
       {isMobile ? (
         loading ? (
-          <div className="flex items-center justify-center h-screen text-sm text-muted-foreground">Loading races…</div>
+          <div className="flex items-center justify-center h-screen text-sm text-muted-foreground"></div>
         ) : (
           <RaceCalendarNavigator races={calendarData} isMobile={true} teamsData={teamsData} />
         )
@@ -1230,7 +1230,6 @@ const F1 = () => {
               <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
                   <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                    Loading races…
                   </div>
                 ) : (
                   <RaceCalendarNavigator races={calendarData} />

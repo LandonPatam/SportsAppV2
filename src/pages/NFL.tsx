@@ -2052,7 +2052,7 @@ const ScheduleNFLViewV2 = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [showCalendar]);
 
-  if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground">No scheduled games available.</div>;
+  if (dateKeys.length === 0) return <div className="text-sm text-muted-foreground"></div>;
   const clamp = (n: number) => Math.max(0, Math.min(dateKeys.length - 1, n));
   const currentKey = dateKeys[clamp(index)];
   const games = gamesByDate[currentKey] || [];
