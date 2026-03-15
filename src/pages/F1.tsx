@@ -435,6 +435,9 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
   const [index, setIndex] = useState(initialIndex);
   useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
 
+  // Results modal state
+  const [resultsModal, setResultsModal] = useState<F1Race | null>(null);
+
   // Calendar popup state
   const calendarRef = useRef<HTMLDivElement>(null);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -583,7 +586,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
           {/* Race info card */}
           <Card
             className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 mx-0 mb-3"
-            onClick={() => window.open(race.urls.race_page, '_blank', 'noopener,noreferrer')}
+            onClick={() => setResultsModal(race)}
           >
             <div className="absolute inset-0" style={{ background: '#141414' }} />
             <div className="relative z-10 px-4 py-3 flex items-center justify-between gap-4">
@@ -829,7 +832,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
       <Card
         className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 flex-shrink-0 flex flex-col justify-center"
         style={{ flex: '1 0 0', maxHeight: '25%' }}
-        onClick={() => window.open(race.urls.race_page, '_blank', 'noopener,noreferrer')}
+        onClick={() => setResultsModal(race)}
       >
         <div className="absolute inset-0" style={{ background: '#141414' }} />
         <div className="relative z-10 px-4 py-3 flex items-center justify-between gap-4 h-full">
@@ -895,6 +898,46 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
           }
         </div>
       </Card>
+
+      {/* Results Modal */}
+      {resultsModal && (
+        <div
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onClick={() => setResultsModal(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div
+            className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-3 border-b border-white/10">
+              <span className="text-white font-bold text-sm">{resultsModal.race_name} — Results</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(resultsModal.urls.results, '_blank', 'noopener,noreferrer')}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Open on F1.com
+                </button>
+                <button
+                  onClick={() => setResultsModal(null)}
+                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg p-2 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 rotate-[-90deg]" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden bg-white rounded-b-2xl">
+              <iframe
+                src={resultsModal.urls.results}
+                className="w-full h-full border-0"
+                title={`${resultsModal.race_name} Results`}
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -964,7 +1007,7 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
                 {raceEntries.map(([race, pts]) => (
                   <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
                     <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
-                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{ptsToPos(pts)}</span>
+                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{pts != null ? pts : '—'}</span>
                   </div>
                 ))}
               </div>
@@ -977,7 +1020,50 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
 
   return (
     <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-end items-center gap-2 mb-3">
+        {/* Info icon with points tooltip */}
+        <div className="relative group">
+          <button className="flex items-center justify-center w-7 h-7 rounded-full transition-colors" style={{ color: '#ffffff66' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffffcc')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#ffffff66')}
+            aria-label="Points system info"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="3" />
+              <line x1="12" y1="12" x2="12" y2="16" />
+            </svg>
+          </button>
+          {/* Tooltip */}
+          <div className="absolute right-0 top-9 z-50 hidden group-hover:block w-64 rounded-xl border border-white/10 shadow-2xl p-3" style={{ backgroundColor: '#1a1a1a' }}>
+            <p className="text-[10px] font-black tracking-widest uppercase mb-2" style={{ color: '#2dd4bf' }}>Points System</p>
+            <div className="grid grid-cols-3 gap-x-2 mb-2">
+              <span className="text-[9px] font-bold text-white/30 uppercase">Place</span>
+              <span className="text-[9px] font-bold text-white/30 uppercase">Race</span>
+              <span className="text-[9px] font-bold text-white/30 uppercase">Sprint</span>
+            </div>
+            {[
+              ['1st', 25, 8],
+              ['2nd', 18, 7],
+              ['3rd', 15, 6],
+              ['4th', 12, 5],
+              ['5th', 10, 4],
+              ['6th',  8, 3],
+              ['7th',  6, 2],
+              ['8th',  4, 1],
+              ['9th',  2, '—'],
+              ['10th', 1, '—'],
+              ['11th+', 0, '—'],
+            ].map(([place, race, sprint]) => (
+              <div key={String(place)} className="grid grid-cols-3 gap-x-2 py-0.5 border-b border-white/5">
+                <span className="text-[10px] font-bold text-white/50">{place}</span>
+                <span className="text-[10px] font-black text-white">{race}</span>
+                <span className="text-[10px] font-black text-white/60">{sprint}</span>
+              </div>
+            ))}
+
+          </div>
+        </div>
         <button
           onClick={() => { setExpandAll(!expandAll); setExpandedDriver(null); }}
           className="px-5 py-2 text-xs font-bold rounded-full transition-all duration-200"
