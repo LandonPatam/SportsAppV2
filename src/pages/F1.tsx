@@ -413,6 +413,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
   // Build sorted entries with parsed date keys
   const racesWithKeys = useMemo(() => {
     return races
+      .filter((r) => r.start_time_west !== 'Canceled')
       .map((r) => ({ race: r, dateKey: parseRaceEndDate(r.date) }))
       .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
   }, [races]);
@@ -962,9 +963,10 @@ function ptsToPos(pts: number | null): string {
   return PTS_TO_POS[pts] ?? `${pts}pts`; // fallback shows raw pts if unexpected value
 }
 
-const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
+const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; calendarData?: any[] }) => {
   const [expandedDriver, setExpandedDriver] = useState<string | null>(null);
   const [expandAll, setExpandAll] = useState(true);
+  const [showPositions, setShowPositions] = useState(true);
   const [numCols, setNumCols] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
 
   useEffect(() => {
@@ -972,6 +974,55 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
+
+  // Build position lookup: driverName -> raceAbbrev -> { pos, sprintPos }
+  // Race abbreviations come from the driver's race_points keys.
+  // We match calendar races (which have results[]) to abbreviations by order —
+  // both ESPN standings columns and calendar races are in chronological order.
+  const positionMap = useMemo(() => {
+    const completedRaces = calendarData
+      .filter((r: any) => Array.isArray(r.results) && r.results.length > 0)
+      .sort((a: any, b: any) => a.race_number - b.race_number);
+
+    // Get ordered race abbreviations from the first driver with race_points
+    const firstDriverWithPoints = teamsData
+      .flatMap((t: any) => t.drivers ?? [])
+      .find((d: any) => d.race_points && Object.keys(d.race_points).length > 0);
+    const raceAbbrevs: string[] = firstDriverWithPoints
+      ? Object.keys(firstDriverWithPoints.race_points)
+      : [];
+
+    const map: Record<string, Record<string, { pos: number | null; sprintPos: number | null }>> = {};
+
+    teamsData.flatMap((t: any) => t.drivers ?? []).forEach((driver: any) => {
+      map[driver.name] = {};
+      raceAbbrevs.forEach((abbrev, i) => {
+        const calRace = completedRaces[i];
+        if (!calRace) return;
+
+        // Find this driver in main results
+        const mainEntry = (calRace.results ?? []).find((r: any) => {
+          const dn = (r.driver ?? '').toLowerCase();
+          const sn = (r.short_name ?? '').toLowerCase();
+          const parts = driver.name.toLowerCase().split(' ');
+          return parts.some((p: string) => dn.includes(p) || sn.includes(p));
+        });
+        const sprintEntry = (calRace.sprint_results ?? []).find((r: any) => {
+          const dn = (r.driver ?? '').toLowerCase();
+          const sn = (r.short_name ?? '').toLowerCase();
+          const parts = driver.name.toLowerCase().split(' ');
+          return parts.some((p: string) => dn.includes(p) || sn.includes(p));
+        });
+
+        map[driver.name][abbrev] = {
+          pos: mainEntry?.position ?? null,
+          sprintPos: sprintEntry?.position ?? null,
+        };
+      });
+    });
+
+    return map;
+  }, [calendarData, teamsData]);
 
   const drivers = teamsData.flatMap((team) =>
     (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff', teamLogo: team.logo_url }))
@@ -984,6 +1035,8 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
     const accent = driver.teamColour;
     const raceEntries = Object.entries(driver.race_points ?? {}) as [string, number | null][];
     const isExpanded = expandAll || expandedDriver === driver.name;
+    const driverPositions = positionMap[driver.name] ?? {};
+
     return (
       <div
         key={driver.name}
@@ -1004,12 +1057,45 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
           <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
             <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
               <div className="grid grid-cols-3 gap-x-2 gap-y-1">
-                {raceEntries.map(([race, pts]) => (
-                  <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
-                    <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
-                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{pts != null ? pts : '—'}</span>
-                  </div>
-                ))}
+                {raceEntries.map(([race, pts]) => {
+                  const posData = driverPositions[race];
+                  const hasPos = posData && posData.pos != null;
+                  const hasSprint = posData && posData.sprintPos != null;
+
+                  let displayValue: React.ReactNode;
+                  let isActive: boolean;
+
+                  if (showPositions) {
+                    if (hasPos) {
+                      const posLabel = `P${posData!.pos}`;
+                      const sprintColor = posData!.sprintPos === 1 ? '#a855f7' : posData!.sprintPos === 2 ? '#3b82f6' : posData!.sprintPos === 3 ? '#22c55e' : 'white';
+                      displayValue = (
+                        <span>
+                          <span style={{ color: posData!.pos === 1 ? '#a855f7' : posData!.pos === 2 ? '#3b82f6' : posData!.pos === 3 ? '#22c55e' : 'white' }}>
+                            {posLabel}
+                          </span>
+                          {hasSprint && (
+                            <span style={{ color: sprintColor }}>{` · P${posData!.sprintPos}`}</span>
+                          )}
+                        </span>
+                      );
+                      isActive = true;
+                    } else {
+                      displayValue = '—';
+                      isActive = false;
+                    }
+                  } else {
+                    displayValue = pts != null ? pts : '—';
+                    isActive = pts != null && pts > 0;
+                  }
+
+                  return (
+                    <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
+                      <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
+                      <span className={`text-[11px] font-black ${isActive ? '' : 'text-white/20'}`}>{displayValue}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1061,9 +1147,17 @@ const DriversTab = ({ teamsData }: { teamsData: F1Team[] }) => {
                 <span className="text-[10px] font-black text-white/60">{sprint}</span>
               </div>
             ))}
-
           </div>
         </div>
+        <button
+          onClick={() => setShowPositions(p => !p)}
+          className="px-5 py-2 text-xs font-bold rounded-full transition-all duration-200"
+          style={showPositions
+            ? { backgroundColor: '#2dd4bf', color: '#000000' }
+            : { backgroundColor: '#1f1f1f', color: '#ffffff99', border: '1px solid #ffffff22' }}
+        >
+          {showPositions ? 'Points View' : 'Positions View'}
+        </button>
         <button
           onClick={() => { setExpandAll(!expandAll); setExpandedDriver(null); }}
           className="px-5 py-2 text-xs font-bold rounded-full transition-all duration-200"
@@ -1442,7 +1536,7 @@ const F1 = () => {
             TAB: Drivers
         ======================== */}
         <TabsContent value="drivers" className="mt-0">
-          <DriversTab teamsData={teamsData} />
+          <DriversTab teamsData={teamsData} calendarData={calendarData} />
         </TabsContent>
 
         {/* ========================
@@ -1464,39 +1558,60 @@ const F1 = () => {
                   const todayKey = new Date().toISOString().slice(0, 10);
                   const raceKey = parseRaceEndDate(race.date);
                   const hasDate = !!race.date && race.date.trim().length > 0 && race.date.trim().toUpperCase() !== 'TBD';
-                  const isUpcoming = hasDate && raceKey >= todayKey;
+                  const isCanceled = race.start_time_west === 'Canceled';
+                  const isUpcoming = !isCanceled && hasDate && raceKey >= todayKey;
                   return (
                     <div
                       key={race.race_number}
-                      className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 flex flex-col"
+                      className="relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col"
                       style={{
                         background: '#141414',
                         height: '280px',
                         animation: `slideUp 0.35s ease-out ${index * 0.03}s both`,
+                        borderColor: isCanceled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                        opacity: isCanceled ? 0.5 : 1,
+                        cursor: isCanceled ? 'default' : 'pointer',
                       }}
-                      onClick={() => setRaceModal(race)}
+                      onClick={() => !isCanceled && setRaceModal(race)}
                     >
+                      {/* Canceled diagonal stripe overlay */}
+                      {isCanceled && (
+                        <div className="absolute inset-0 z-20 pointer-events-none rounded-2xl overflow-hidden">
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12px)',
+                          }} />
+                        </div>
+                      )}
                       {/* Text */}
                       <div className="relative z-10 p-4 pb-2 flex-shrink-0">
-                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: '#2dd4bf' }}>
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: isCanceled ? '#666' : '#2dd4bf' }}>
                           Race {race.race_number}
                         </span>
                         <div className="flex items-start gap-2 mt-0.5">
-                          <h2 className="text-lg font-extrabold text-white leading-tight flex-1">
+                          <h2 className="text-lg font-extrabold leading-tight flex-1" style={{ color: isCanceled ? 'rgba(255,255,255,0.4)' : 'white' }}>
                             {race.race_name}
                           </h2>
                           <Badge
                             className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 mt-0.5"
-                            style={isUpcoming ? { backgroundColor: '#e10600', color: '#ffffff' } : { backgroundColor: '#2a2a2a', color: '#888' }}
+                            style={isCanceled
+                              ? { backgroundColor: '#3a1a1a', color: '#ff4444', border: '1px solid #ff444433' }
+                              : isUpcoming
+                              ? { backgroundColor: '#e10600', color: '#ffffff' }
+                              : { backgroundColor: '#2a2a2a', color: '#888' }}
                           >
-                            {isUpcoming ? 'Upcoming' : 'Completed'}
+                            {isCanceled ? 'Canceled' : isUpcoming ? 'Upcoming' : 'Completed'}
                           </Badge>
                         </div>
-                        <p className="text-xs text-white/50 mt-0.5">{race.circuit}</p>
+                        <p className="text-xs mt-0.5" style={{ color: isCanceled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)' }}>{race.circuit}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[11px] font-semibold text-white/60">{race.date}</span>
-                          <span className="text-white/20 text-xs">·</span>
-                          <span className="text-[11px] font-semibold text-white/60">{race.start_time_west}</span>
+                          <span className="text-[11px] font-semibold" style={{ color: isCanceled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.6)' }}>{race.date}</span>
+                          {!isCanceled && (
+                            <>
+                              <span className="text-white/20 text-xs">·</span>
+                              <span className="text-[11px] font-semibold text-white/60">{race.start_time_west}</span>
+                            </>
+                          )}
                         </div>
                       </div>
 

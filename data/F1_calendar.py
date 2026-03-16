@@ -291,8 +291,8 @@ def utc_iso_to_pst_str(utc_iso: str) -> str:
 def fetch_session_times(race_page_url: str) -> dict:
     """
     Visits the race page and extracts session times from the raceStrip JSON blob.
-    Returns dict keyed by session name, values are PST strings.
-    Only returns entries where timeValid=true.
+    Returns dict keyed by session name, values are PST time strings or "Canceled".
+    Includes entries where timeValid=true OR the session is marked as canceled.
     """
     try:
         resp = requests.get(race_page_url, headers=headers, timeout=15)
@@ -305,8 +305,16 @@ def fetch_session_times(race_page_url: str) -> dict:
         result = {}
         for s in sessions:
             name = s.get("session", "").strip()
-            utc_time = s.get("time", "")
-            if name and utc_time and s.get("timeValid"):
+            if not name:
+                continue
+            # Check for cancellation — ESPN may signal this via a "status", "canceled",
+            # or "isCanceled" field, or by a time value that contains "cancel" text.
+            status     = str(s.get("status",     "")).lower()
+            is_canceled = s.get("isCanceled") or s.get("canceled") or "cancel" in status
+            utc_time   = s.get("time", "")
+            if is_canceled:
+                result[name] = "Canceled"
+            elif utc_time and s.get("timeValid"):
                 result[name] = utc_iso_to_pst_str(utc_time)
         return result
     except Exception as e:
@@ -357,7 +365,57 @@ for block in event_blocks:
     circuit_url   = f"{base_url}{ev_link.replace('/race/', '/circuit/')}"
     results_url   = f"{base_url}{ev_link.replace('/race/', '/results/')}"
 
-    # EST -> PST fallback for date/start_time
+    # ── Canceled race — ESPN shows "Canceled" in the detail field ──
+    if time_detail.strip().lower() == "canceled":
+        print(f"[CANCELED] {gp_name} — marked Canceled on ESPN schedule.")
+        existing = existing_by_name.get(gp_name)
+        canceled_sessions = {}
+        if existing:
+            # Mark every previously known session as Canceled
+            for k in existing.get("session_times", {}):
+                canceled_sessions[k] = "Canceled"
+        # Always ensure Race itself is present
+        if not canceled_sessions:
+            canceled_sessions = {"Race": "Canceled"}
+        f1_calendar.append({
+            "race_number":         count,
+            "race_name":           gp_name,
+            "circuit":             circuit_name,
+            "date":                existing.get("date", "TBD") if existing else "TBD",
+            "start_time_west":     "Canceled",
+            "tv_provider":         "Apple TV",
+            "track_svg":           existing.get("track_svg", "Not Found") if existing else "Not Found",
+            "track_svg_extracted": existing.get("track_svg_extracted") if existing else None,
+            "session_times":       canceled_sessions,
+            "urls": {"race_page": race_page_url, "circuit_info": circuit_url, "results": results_url}
+        })
+        count += 1
+        continue
+
+    existing = existing_by_name.get(gp_name)
+    existing_session_times = existing.get("session_times", {}) if existing else {}
+    has_existing_times = bool(existing_session_times)
+
+    # ── Helper: does this record contain any Canceled marker? ──
+    def existing_has_canceled(rec: dict) -> bool:
+        if rec is None:
+            return False
+        if rec.get("start_time_west") == "Canceled":
+            return True
+        return any(v == "Canceled" for v in rec.get("session_times", {}).values())
+
+    # ── Already have real session times and nothing is canceled → keep everything as-is.
+    # This is the primary guard for completed races. ESPN changes the schedule page format
+    # after a race finishes (switches to results mode), so date/time parsing goes to TBD.
+    # We never want to overwrite a race that already has good stored data.
+    if has_existing_times and not existing_has_canceled(existing):
+        print(f"[SKIP] {gp_name} — has stored session times, keeping existing data.")
+        existing["race_number"] = count
+        f1_calendar.append(existing)
+        count += 1
+        continue
+
+    # ── Parse date/time from ESPN schedule page (only runs for new or canceled races) ──
     clean_time = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', time_detail).replace(" EST", "").replace(" EDT", "")
     try:
         dt_est     = datetime.strptime(clean_time, "%a, %B %d at %I:%M %p")
@@ -367,46 +425,27 @@ for block in event_blocks:
     except:
         date_range, start_time = "TBD", "TBD"
 
-    existing = existing_by_name.get(gp_name)
+    if existing_has_canceled(existing):
+        print(f"[REFRESH] {gp_name} — has canceled session(s), re-fetching times.")
 
-    # ── Race weekend already started / completed → preserve existing data ──
-    if weekend_has_started(date_range):
-        print(f"[SKIP] {gp_name} — weekend started or past, keeping existing data.")
-        if existing:
-            existing["race_number"] = count
-            f1_calendar.append(existing)
-        else:
-            f1_calendar.append({
-                "race_number":         count,
-                "race_name":           gp_name,
-                "circuit":             circuit_name,
-                "date":                date_range,
-                "start_time_west":     start_time,
-                "tv_provider":         "Apple TV",
-                "track_svg":           "Not Found",
-                "track_svg_extracted": None,
-                "session_times":       {},
-                "urls": {"race_page": race_page_url, "circuit_info": circuit_url, "results": results_url}
-            })
-        count += 1
-        continue
-
-    # ── Future race → fetch SVG, extract circuit, fetch session times ──
+    # ── Fetch SVG + session times ──
+    is_refresh = existing_has_canceled(existing)
     track_svg_url = existing.get("track_svg", "Not Found") if existing else "Not Found"
 
-    # Fetch SVG URL
-    try:
-        print(f"Fetching circuit SVG URL for {gp_name}...")
-        circuit_resp = requests.get(circuit_url, headers=headers, timeout=10)
-        svg_match = re.search(r'https://a\.espncdn\.com/i/venues/f1/day/(\d+\.svg)', circuit_resp.text)
-        if svg_match:
-            track_svg_url = f"https://a.espncdn.com/i/venues/f1/day/{svg_match.group(1)}"
-    except:
-        pass
+    # Skip SVG re-fetch on canceled refresh — circuit art won't have changed
+    if not is_refresh:
+        try:
+            print(f"Fetching circuit SVG URL for {gp_name}...")
+            circuit_resp = requests.get(circuit_url, headers=headers, timeout=10)
+            svg_match = re.search(r'https://a\.espncdn\.com/i/venues/f1/day/(\d+\.svg)', circuit_resp.text)
+            if svg_match:
+                track_svg_url = f"https://a.espncdn.com/i/venues/f1/day/{svg_match.group(1)}"
+        except:
+            pass
 
-    # Extract circuit outline from SVG
+    # Extract circuit outline from SVG (skip on refresh — reuse existing)
     track_svg_extracted = existing.get("track_svg_extracted") if existing else None
-    if track_svg_url and track_svg_url != "Not Found":
+    if not is_refresh and track_svg_url and track_svg_url != "Not Found":
         print(f"Extracting circuit outline for {gp_name}...")
         extracted = extract_circuit_from_url(track_svg_url)
         if extracted:
@@ -420,12 +459,20 @@ for block in event_blocks:
     print(f"Fetching session times for {gp_name}...")
     session_times = fetch_session_times(race_page_url)
     if session_times:
-        print(f"  Found {len(session_times)} session(s): {', '.join(session_times.keys())}")
-        if session_times.get("Race"):
-            start_time = session_times["Race"]
+        canceled_sessions  = [k for k, v in session_times.items() if v == "Canceled"]
+        scheduled_sessions = [k for k, v in session_times.items() if v != "Canceled"]
+        summary_parts = []
+        if scheduled_sessions:
+            summary_parts.append(f"{len(scheduled_sessions)} scheduled: {', '.join(scheduled_sessions)}")
+        if canceled_sessions:
+            summary_parts.append(f"{len(canceled_sessions)} canceled: {', '.join(canceled_sessions)}")
+        print(f"  Found {len(session_times)} session(s) — {'; '.join(summary_parts)}")
+        race_time = session_times.get("Race")
+        if race_time:
+            start_time = race_time
     else:
         print(f"  No session times found.")
-        session_times = existing.get("session_times", {}) if existing else {}
+        session_times = {}
 
     f1_calendar.append({
         "race_number":         count,
@@ -440,6 +487,7 @@ for block in event_blocks:
         "urls": {"race_page": race_page_url, "circuit_info": circuit_url, "results": results_url}
     })
     count += 1
+
 
     # Small delay to be polite between races
     time.sleep(0.4)

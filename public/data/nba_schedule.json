@@ -14808,11 +14808,12 @@
       "ABC"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810831/timberwolves-thunder",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "116",
+    "away_score": "103",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "Oklahoma City Thunder"
   },
   {
     "game_id": "401810832",
@@ -14822,11 +14823,12 @@
     "location": "Rocket Mortgage FieldHouse",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810832/mavericks-cavaliers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "120",
+    "away_score": "130",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "Dallas Mavericks"
   },
   {
     "game_id": "401810833",
@@ -14836,11 +14838,12 @@
     "location": "Scotiabank Arena",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810833/pistons-raptors",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "119",
+    "away_score": "108",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "Toronto Raptors"
   },
   {
     "game_id": "401810834",
@@ -14850,11 +14853,12 @@
     "location": "Fiserv Forum",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810834/pacers-bucks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "134",
+    "away_score": "123",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "Milwaukee Bucks"
   },
   {
     "game_id": "401810835",
@@ -14864,11 +14868,12 @@
     "location": "Wells Fargo Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810835/trail-blazers-76ers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "109",
+    "away_score": "103",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "Philadelphia 76ers"
   },
   {
     "game_id": "401810836",
@@ -14880,11 +14885,12 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810836/warriors-knicks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "110",
+    "away_score": "107",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "New York Knicks"
   },
   {
     "game_id": "401810837",
@@ -14894,11 +14900,12 @@
     "location": "Golden 1 Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810837/jazz-kings",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
+    "home_score": "116",
+    "away_score": "111",
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "final",
+    "winner": "Sacramento Kings"
   },
   {
     "game_id": "401810838",
@@ -14910,11 +14917,11 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810838/magic-hawks",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810839",
@@ -14924,11 +14931,11 @@
     "location": "Capital One Arena",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810839/warriors-wizards",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810840",
@@ -14938,11 +14945,11 @@
     "location": "Barclays Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810840/trail-blazers-nets",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810841",
@@ -14952,11 +14959,11 @@
     "location": "TD Banknorth Garden",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810841/suns-celtics",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810842",
@@ -14966,11 +14973,11 @@
     "location": "United Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810842/grizzlies-bulls",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810843",
@@ -14980,11 +14987,11 @@
     "location": "Smoothie King Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810843/mavericks-pelicans",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810844",
@@ -14996,11 +15003,11 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810844/lakers-rockets",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810845",
@@ -15010,11 +15017,11 @@
     "location": "Intuit Dome",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401810845/spurs-clippers",
-    "winner": null,
     "home_score": null,
     "away_score": null,
     "is_nba_cup": false,
-    "tournament": null
+    "tournament": null,
+    "status": "scheduled"
   },
   {
     "game_id": "401810846",
