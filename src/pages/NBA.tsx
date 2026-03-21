@@ -478,6 +478,59 @@ interface ResolvedGameTeams {
   awayName?: string;
 }
 
+// Compute current win/loss streak for each team from schedule results.
+// Returns a map of abbr -> { type: 'W' | 'L', count: number }
+// Compute current win/loss streak for each team from schedule results.
+const computeStreakMap = (scheduleData: NBAScheduleData | null): Record<string, { type: 'W' | 'L'; count: number }> => {
+  if (!scheduleData) return {};
+  const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
+    ? (scheduleData as ScheduleGameAny[])
+    : (scheduleData.games || []);
+
+  const finished = gamesArr.filter((g) => {
+    const status = String((g as any).status || '').toLowerCase();
+    const isFinal = status.includes('final') || Boolean((g as any).winner);
+    const aScore = Number((g as any).away_score);
+    const hScore = Number((g as any).home_score);
+    return isFinal && Number.isFinite(aScore) && Number.isFinite(hScore);
+  });
+
+  finished.sort((a, b) => (String(a.date || '')).localeCompare(String(b.date || '')));
+
+  const teamResults: Record<string, ('W' | 'L')[]> = {};
+  for (const g of finished) {
+    let awayAbbr = (g as any).away as string | undefined;
+    let homeAbbr = (g as any).home as string | undefined;
+    if ((!awayAbbr || !homeAbbr) && g.matchup) {
+      const parts = g.matchup.split('@');
+      const an = parts[0]?.trim();
+      const hn = parts[1]?.trim();
+      if (an) awayAbbr = (teamAbbreviations as any)[an] ?? awayAbbr;
+      if (hn) homeAbbr = (teamAbbreviations as any)[hn] ?? homeAbbr;
+    }
+    if (!awayAbbr || !homeAbbr) continue;
+    const aScore = Number((g as any).away_score);
+    const hScore = Number((g as any).home_score);
+    const awayWon = aScore > hScore;
+    const awayKey = awayAbbr.toUpperCase();
+    const homeKey = homeAbbr.toUpperCase();
+    if (!teamResults[awayKey]) teamResults[awayKey] = [];
+    if (!teamResults[homeKey]) teamResults[homeKey] = [];
+    teamResults[awayKey].push(awayWon ? 'W' : 'L');
+    teamResults[homeKey].push(awayWon ? 'L' : 'W');
+  }
+
+  const streakMap: Record<string, { type: 'W' | 'L'; count: number }> = {};
+  for (const [abbr, results] of Object.entries(teamResults)) {
+    if (results.length === 0) continue;
+    const last = results[results.length - 1];
+    let count = 0;
+    for (let i = results.length - 1; i >= 0 && results[i] === last; i--) count++;
+    streakMap[abbr] = { type: last, count };
+  }
+  return streakMap;
+};
+
 const resolveMatchupTeams = (game: ScheduleGameAny): ResolvedGameTeams => {
   let awayAbbr = ((game as any).away || '').toString().trim().toUpperCase();
   let homeAbbr = ((game as any).home || '').toString().trim().toUpperCase();
@@ -615,6 +668,7 @@ const DashboardTodaySchedule = ({
   scheduleData,
   logoMap,
   recordMap,
+  streakMap = {},
   onGapChange,
   onTeamFocus,
   favoriteTeamIds = [],
@@ -623,6 +677,7 @@ const DashboardTodaySchedule = ({
   scheduleData: NBAScheduleData | null;
   logoMap: Record<string, string>;
   recordMap: Record<string, string>;
+  streakMap?: Record<string, { type: 'W' | 'L'; count: number }>;
   onGapChange?: (gap: number) => void;
   onTeamFocus?: (info: { teamName?: string; teamAbbr?: string }) => void;
   favoriteTeamIds?: number[];
@@ -835,6 +890,10 @@ const DashboardTodaySchedule = ({
           const awayFavorite = !!(awayTeamObj && favoriteTeamSet.has(awayTeamObj.TEAM_ID));
           const homeFavorite = !!(homeTeamObj && favoriteTeamSet.has(homeTeamObj.TEAM_ID));
 
+          // Streak data
+          const awayStreak = normalizedAwayAbbr ? streakMap[normalizedAwayAbbr] : undefined;
+          const homeStreak = normalizedHomeAbbr ? streakMap[normalizedHomeAbbr] : undefined;
+
           // Get team gradient colors for background
           const awayColor = awayAbbr && teamGradientColors[awayAbbr]?.start || '#f8f8f8';
           const homeColor = homeAbbr && teamGradientColors[homeAbbr]?.start || '#dc2626';
@@ -900,17 +959,26 @@ const DashboardTodaySchedule = ({
                           className={`
                             whitespace-nowrap text-white/80 font-bold drop-shadow-md transition-all duration-300
                             ${isStacked 
-                              ? "mt-1" 
-                              : "absolute left-full top-1/2 ml-4" // Removed -translate-y-1/2 from class, handling it in style
+                              ? "mt-1 flex items-center justify-center gap-1" 
+                              : "absolute left-full top-1/2 ml-4 flex items-center gap-1"
                             }
                           `}
                           style={{ 
                              fontSize: recordSize,
-                             // Combine X offset and Y centering here
                              transform: isStacked ? 'none' : `translate(-${recordOffset}px, -50%)`
                           }}
                         >
-                          ({formatRecord(awayRecord)})
+                          {awayStreak && awayStreak.count >= 3 && (
+                            <span style={{ color: awayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                              {awayStreak.count}
+                            </span>
+                          )}
+                          <span>({formatRecord(awayRecord)})</span>
+                          {awayStreak && (
+                            <span style={{ color: awayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                              {awayStreak.type === 'W' ? '↑' : '↓'}
+                            </span>
+                          )}
                         </span>
                       )}
                     </button>
@@ -996,17 +1064,26 @@ const DashboardTodaySchedule = ({
                           className={`
                             whitespace-nowrap text-white/80 font-bold drop-shadow-md transition-all duration-300
                             ${isStacked 
-                              ? "mt-1"
-                              : "absolute right-full top-1/2 mr-4" // Removed -translate-y-1/2 from class
+                              ? "mt-1 flex items-center justify-center gap-1"
+                              : "absolute right-full top-1/2 mr-4 flex items-center gap-1"
                             }
                           `}
                           style={{ 
                              fontSize: recordSize,
-                             // Combine X offset and Y centering here
                              transform: isStacked ? 'none' : `translate(${recordOffset}px, -50%)` 
                           }}
                         >
-                          ({formatRecord(homeRecord)})
+                          {homeStreak && homeStreak.count >= 3 && (
+                            <span style={{ color: homeStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                              {homeStreak.count}
+                            </span>
+                          )}
+                          <span>({formatRecord(homeRecord)})</span>
+                          {homeStreak && (
+                            <span style={{ color: homeStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                              {homeStreak.type === 'W' ? '↑' : '↓'}
+                            </span>
+                          )}
                         </span>
                       )}
                     </button>
@@ -1104,7 +1181,7 @@ const StatRow = ({
 // ============================
 
 // Compact, arrow-controlled view
-const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, isMobile = false }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, onGameClick?: (gameId: string) => void, isMobile?: boolean }) => {
+const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {}, onGameClick, isMobile = false }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, streakMap?: Record<string, { type: 'W' | 'L'; count: number }>, onGameClick?: (gameId: string) => void, isMobile?: boolean }) => {
   // Build games grouped by date from the provided schedule
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
@@ -1376,6 +1453,13 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
             const recordFontSize = isMobile ? 'clamp(0.65rem, 2.5cqi, 0.8rem)' : 'clamp(0.6rem, 2.2cqi, 0.75rem)';
             const liveFontSize = isMobile ? 'clamp(0.75rem, 3cqi, 0.95rem)' : 'clamp(0.65rem, 2.5cqi, 0.85rem)';
 
+            const awayNormAbbr = (awayAbbr || '').toUpperCase();
+            const homeNormAbbr = (homeAbbr || '').toUpperCase();
+            const awayDisplayRecord = awayAbbr ? recordMap[awayAbbr] : undefined;
+            const homeDisplayRecord = homeAbbr ? recordMap[homeAbbr] : undefined;
+            const awayDisplayStreak = streakMap[awayNormAbbr] ?? null;
+            const homeDisplayStreak = streakMap[homeNormAbbr] ?? null;
+
             return (
               <Card 
                 key={g.game_id} 
@@ -1468,9 +1552,19 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
                               }}
                               loading="eager"
                             />
-                            {awayAbbr && recordMap[awayAbbr] && (
-                              <div className="text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
-                                ({recordMap[awayAbbr].replace(/-/g, ' - ')})
+                            {awayAbbr && awayDisplayRecord && (
+                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                                {awayDisplayStreak && awayDisplayStreak.count >= 3 && (
+                                  <span className="absolute right-full pr-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                    {awayDisplayStreak.count}
+                                  </span>
+                                )}
+                                <span>({awayDisplayRecord.replace(/-/g, ' - ')})</span>
+                                {awayDisplayStreak && (
+                                  <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                                    {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </>
@@ -1529,9 +1623,19 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, onGameClick, is
                               }}
                               loading="eager"
                             />
-                            {homeAbbr && recordMap[homeAbbr] && (
-                              <div className="text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
-                                ({recordMap[homeAbbr].replace(/-/g, ' - ')})
+                            {homeAbbr && homeDisplayRecord && (
+                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                                {homeDisplayStreak && homeDisplayStreak.count >= 3 && (
+                                  <span className="absolute right-full pr-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                    {homeDisplayStreak.count}
+                                  </span>
+                                )}
+                                <span>({homeDisplayRecord.replace(/-/g, ' - ')})</span>
+                                {homeDisplayStreak && (
+                                  <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                                    {homeDisplayStreak.type === 'W' ? '↑' : '↓'}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </>
@@ -3143,6 +3247,9 @@ const abbrToRecord = React.useMemo(() => {
   return map;
 }, [nbaTeams]);
 
+// Map team abbreviation to current streak (computed from schedule results)
+const abbrToStreakMap = React.useMemo(() => computeStreakMap(scheduleData), [scheduleData]);
+
 const abbrToTeamMap = React.useMemo(() => {
   const map: Record<string, NBATeam> = {};
   nbaTeams.forEach((t) => {
@@ -3779,7 +3886,7 @@ useEffect(() => {
     - Click a game card to open ESPN box score in an iframe modal
 ======================== */}
 <TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
-  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
+  <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} streakMap={abbrToStreakMap} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
 </TabsContent>
 
 {/* ========================
