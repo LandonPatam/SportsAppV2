@@ -1155,6 +1155,7 @@ const NFL = () => {
 
   return (
     <PageLayout theme="nfl">
+      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div className="flex justify-end">
       </div>
 
@@ -1343,7 +1344,7 @@ const NFL = () => {
                 <div className="flex-1 min-h-0 min-w-0 overflow-y-auto no-scrollbar flex flex-col gap-5 pr-0 pb-24">
                   {currentTeam && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '1rem', alignItems: 'start' }}>
-                      <div>
+                      <div style={{ animation: 'slideUp 0.4s ease-out 0s both' }}>
                         <TeamCard
                           key={currentTeam.name}
                           team={{ ...currentTeam, rank: (orderedTeams.findIndex((t) => t.name === currentTeam.name) + 1) || 1 }}
@@ -1352,7 +1353,7 @@ const NFL = () => {
                           allTeams={teams}
                         />
                       </div>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3" style={{ animation: 'slideUp 0.4s ease-out 0.05s both' }}>
                         <div className="flex-1">
                           <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
                             <CardContent className="h-[235px] p-1">
@@ -1506,17 +1507,18 @@ const NFL = () => {
                     {conference} {division}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {divisionTeams.map((team) => {
+                    {divisionTeams.map((team, teamIdx) => {
                       const conferenceRank = conferenceTeams.findIndex((t) => t.name === team.name) + 1;
                       return (
+                        <div key={team.name} style={{ animation: `slideUp 0.4s ease-out ${teamIdx * 0.05}s both` }}>
                         <TeamCard
-                          key={team.name}
                           team={{ ...team, rank: conferenceRank }}
                           leagueAverages={leagueAverages}
                           conferenceAverages={conferenceAverages}
                           allTeams={teams}
                           compact={true}
                         />
+                        </div>
                       );
                     })}
                   </div>
@@ -1667,6 +1669,7 @@ const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; in
         padding: '3px',
         scrollMarginTop: '16px',
         scrollMarginBottom: '16px',
+        animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
       }}
     >
       <div

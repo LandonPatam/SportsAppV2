@@ -3440,6 +3440,7 @@ useEffect(() => {
   // ============================
   return (
     <PageLayout theme="nba">
+      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <div className="flex justify-end">
       </div>
       {/* Tabs for Dashboard / All / East / West / Scorers / Schedule */}
@@ -3774,7 +3775,7 @@ useEffect(() => {
             return (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '1rem', alignItems: 'start' }}>
                 {/* Team card — fills its grid cell */}
-                <div>
+                <div style={{ animation: 'slideUp 0.4s ease-out 0s both' }}>
                   <TeamCard
                     key={currentTeam.TEAM_ID}
                     team={{ ...currentTeam, rank: (teams.findIndex((tt) => tt.TEAM_ID === currentTeam.TEAM_ID) + 1) || 1 }}
@@ -3786,7 +3787,7 @@ useEffect(() => {
                   />
                 </div>
                 {/* Both charts side-by-side in second cell */}
-                <div className="flex gap-3">
+                <div className="flex gap-3" style={{ animation: 'slideUp 0.4s ease-out 0.05s both' }}>
                   <div className="flex-1">
                     <Card className="bg-transparent border-none w-full h-[235px] overflow-hidden">
                       <CardContent className="h-[235px] p-1">
@@ -3814,7 +3815,7 @@ useEffect(() => {
                 style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
               >
                 <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-                  {topTeamPlayers.map((p) => {
+                  {topTeamPlayers.map((p, pIdx) => {
                     const primary = teamGradientColors[p.TEAM_ABBREVIATION]?.start || '#1e40af';
                     const secondary = teamGradientColors[p.TEAM_ABBREVIATION]?.end || '#dc2626';
                     return (
@@ -3826,6 +3827,7 @@ useEffect(() => {
                           padding: '3px',
                           scrollMarginTop: '16px',
                           scrollMarginBottom: '16px',
+                          animation: `slideUp 0.4s ease-out ${pIdx * 0.05}s both`,
                         }}
                       >
                         <div
