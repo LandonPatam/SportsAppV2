@@ -16,7 +16,7 @@ SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
 
 # --- Postseason auto-crawl settings ---
-POSTSEASON_SCAN_INTERVAL_HOURS = 6               # how often to re-scan during postseason
+POSTSEASON_SCAN_INTERVAL_HOURS = 1               # how often to re-scan during postseason
 _STATE_PATH = "public/data/.nba_schedule_last_scan.txt"
 # ==========================================================
 

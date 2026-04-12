@@ -4,6 +4,7 @@
 // ============================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import {
   Card, CardContent,
@@ -410,6 +411,12 @@ const SessionCountdown = ({ race, isMobile = false }: { race: F1Race; isMobile?:
 // ============================
 
 const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { races: F1Race[]; isMobile?: boolean; teamsData?: F1Team[] }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pages = ['/nba', '/f1', '/nfl'] as const;
+  const currentPageIdx = pages.findIndex(p => location.pathname.startsWith(p));
+  const cycleToNextPage = () => navigate(pages[(currentPageIdx === -1 ? 1 : currentPageIdx + 1) % pages.length]);
+
   // Build sorted entries with parsed date keys
   const racesWithKeys = useMemo(() => {
     return races
@@ -503,11 +510,11 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
     >
       {/* Left: arrows + race number */}
       <div className="flex items-center gap-1 shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full hover:bg-white/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <span className="text-lg font-semibold whitespace-nowrap">Race {race.race_number}</span>
-        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= racesWithKeys.length - 1} className="rounded-full">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= racesWithKeys.length - 1} className="rounded-full hover:bg-white/10">
           <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
@@ -581,9 +588,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
   if (isMobile) {
     return (
       <div className="flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
-        {navHeader}
-
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
+        <div className="flex-1 overflow-y-auto no-scrollbar pb-4">
           {/* Race info card */}
           <Card
             className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 mx-0 mb-3"
@@ -701,6 +706,35 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
             );
           })()}
         </div>
+
+        <div className="px-4 pb-px pt-2">
+          <div
+            className="flex items-center rounded-[28px] overflow-hidden"
+            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
+          >
+            <button
+              onClick={() => setIndex(i => clamp(i - 1))}
+              disabled={index <= 0}
+              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+            <button
+              onClick={cycleToNextPage}
+              className="flex-[2] flex flex-col items-center justify-center h-16 border-x border-white/10 active:bg-white/10 transition-colors"
+            >
+              <span className="text-white font-bold text-base tracking-wider">F1</span>
+              <span className="text-white/40 text-[11px] mt-0.5">Race {race.race_number}</span>
+            </button>
+            <button
+              onClick={() => setIndex(i => clamp(i + 1))}
+              disabled={index >= racesWithKeys.length - 1}
+              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -717,7 +751,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
             size="icon"
             onClick={() => setIndex((i) => clamp(i - 1))}
             disabled={index <= 0}
-            className="rounded-full"
+            className="rounded-full hover:bg-white/10"
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>
@@ -729,7 +763,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
             size="icon"
             onClick={() => setIndex((i) => clamp(i + 1))}
             disabled={index >= racesWithKeys.length - 1}
-            className="rounded-full"
+            className="rounded-full hover:bg-white/10"
           >
             <ChevronRight className="w-5 h-5" />
           </Button>

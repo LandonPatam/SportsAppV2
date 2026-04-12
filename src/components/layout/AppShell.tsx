@@ -99,35 +99,6 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      {/* Mobile: Rounded Square Page Switcher */}
-      {isMobile && (
-        <div className="fixed top-5 left-4 z-50">
-          <button
-            onClick={handleMobileSquareClick}
-            className="relative flex items-center justify-center focus:outline-none active:scale-95"
-            style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '18px',
-              background: backgrounds[activePage],
-              transition: 'background 0.4s ease-in-out, transform 0.15s ease',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-            }}
-            aria-label={`Switch page, current: ${pageLabels[activePage]}`}
-          >
-            <span
-              className="text-white font-bold tracking-wide select-none"
-              style={{
-                fontSize: '13px',
-                letterSpacing: '0.05em',
-                textShadow: '0 1px 4px rgba(0,0,0,0.4)',
-              }}
-            >
-              {pageLabels[activePage]}
-            </span>
-          </button>
-        </div>
-      )}
 
       {/* Main Content - routes render here */}
       {children}

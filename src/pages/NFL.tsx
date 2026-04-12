@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1486,7 +1487,15 @@ const NFL = () => {
           const conferenceTeams = teams
             .filter((team) => team.conference === conference)
             .sort((a, b) => b.wins - a.wins);
-          
+
+          // Flat list of all teams in render order — used for global animation index
+          const orderedConferenceTeams = ['East', 'North', 'South', 'West'].flatMap((division) =>
+            teams
+              .filter((t) => t.conference === conference && t.division.endsWith(division))
+              .sort((a, b) => b.wins - a.wins)
+          );
+          const globalIndexMap = new Map(orderedConferenceTeams.map((t, i) => [t.name, i]));
+
           return (
           <TabsContent
             key={conference}
@@ -1507,10 +1516,11 @@ const NFL = () => {
                     {conference} {division}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {divisionTeams.map((team, teamIdx) => {
+                    {divisionTeams.map((team) => {
                       const conferenceRank = conferenceTeams.findIndex((t) => t.name === team.name) + 1;
+                      const globalIdx = globalIndexMap.get(team.name) ?? 0;
                       return (
-                        <div key={team.name} style={{ animation: `slideUp 0.4s ease-out ${teamIdx * 0.05}s both` }}>
+                        <div key={team.name} style={{ animation: `slideUp 0.4s ease-out ${globalIdx * 0.05}s both` }}>
                         <TeamCard
                           team={{ ...team, rank: conferenceRank }}
                           leagueAverages={leagueAverages}
@@ -1532,7 +1542,7 @@ const NFL = () => {
         {/* Schedule Tab */}
         <TabsContent
           value="schedule"
-          className={isMobile ? 'max-h-[100vh] overflow-y-auto pr-2 pb-16' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
+          className={isMobile ? 'mt-0 h-[100dvh] flex flex-col overflow-hidden' : 'max-h-[100vh] overflow-y-auto no-scrollbar pr-2 pb-16'}
         >
           <ScheduleNFLViewV2
             scheduleData={scheduleData}
@@ -1988,6 +1998,12 @@ const ScheduleNFLViewV2 = ({
   onGameClick?: (gameId: string) => void;
   isMobile?: boolean;
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pages = ['/nba', '/f1', '/nfl'] as const;
+  const currentPageIdx = pages.findIndex(p => location.pathname.startsWith(p));
+  const cycleToNextPage = () => navigate(pages[(currentPageIdx === -1 ? 2 : currentPageIdx + 1) % pages.length]);
+
   const gamesByDate = useMemo(() => {
     const map: Record<string, NFLScheduleGame[]> = {};
     const arr: NFLScheduleGame[] = Array.isArray(scheduleData) ? (scheduleData as NFLScheduleGame[]) : [];
@@ -2090,13 +2106,14 @@ const ScheduleNFLViewV2 = ({
     : '';
 
   return (
-    <div className="space-y-4">
-      <div className={`relative flex items-center gap-3 ${isMobile ? 'justify-start pl-20 pt-3' : 'justify-center'}`}>
-        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
+    <div className={isMobile ? 'flex flex-col flex-1 overflow-hidden' : 'space-y-4'}>
+      {!isMobile && (
+      <div className="relative flex items-center gap-3 justify-center">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full hover:bg-white/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <div className="text-lg font-semibold">{formatLabel(currentKey)}</div>
-        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full hover:bg-white/10">
           <ChevronRight className="w-5 h-5" />
         </Button>
 
@@ -2150,7 +2167,9 @@ const ScheduleNFLViewV2 = ({
           )}
         </div>
       </div>
+      )}
 
+      <div className={isMobile ? 'flex-1 overflow-y-auto no-scrollbar pb-4 pr-2' : undefined}>
       {games.length === 0 ? (
         <Card className="bg-card/60 backdrop-blur-sm border">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
@@ -2320,6 +2339,38 @@ const ScheduleNFLViewV2 = ({
           })}
         </div>
         </>
+      )}
+      </div>
+
+      {isMobile && (
+        <div className="px-4 pb-px pt-2">
+          <div
+            className="flex items-center rounded-[28px] overflow-hidden"
+            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
+          >
+            <button
+              onClick={() => setIndex(i => clamp(i - 1))}
+              disabled={index <= 0}
+              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+            <button
+              onClick={cycleToNextPage}
+              className="flex-[2] flex flex-col items-center justify-center h-16 border-x border-white/10 active:bg-white/10 transition-colors"
+            >
+              <span className="text-white font-bold text-base tracking-wider">NFL</span>
+              <span className="text-white/40 text-[11px] mt-0.5">{formatLabel(currentKey)}</span>
+            </button>
+            <button
+              onClick={() => setIndex(i => clamp(i + 1))}
+              disabled={index >= dateKeys.length - 1}
+              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

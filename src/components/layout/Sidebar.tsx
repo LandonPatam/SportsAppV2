@@ -2,9 +2,6 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 
-const currentDate = new Date();
-const month = currentDate.toLocaleString('default', { month: 'long' });
-const year = currentDate.getFullYear();
 
 const neonGlowStyles = {
   blue: {
@@ -139,10 +136,6 @@ const F1Icon = ({ className, active = false }: IconProps) => (
 
 interface SidebarProps {
   className?: string;
-}
-
-interface SidebarProps {
-  className?: string;
   theme?: SidebarTheme;
   onHoverChange?: (state: boolean) => void;
 }
@@ -170,12 +163,6 @@ export function Sidebar({ className, theme = 'default', onHoverChange }: Sidebar
     { title: '', icon: NBAIcon, href: '/nba', offsetY: 100, offsetX: 7 },
     { title: '', icon: F1Icon, href: '/f1', offsetY: 120, offsetX: 20 },
   ];
-
-  const totalItems = navItems.length;
-  const expandedPercent = 25;
-  const expandedBasis = `${expandedPercent}%`;
-  const collapsedBasis =
-    totalItems > 1 ? `calc((100% - ${expandedPercent}%) / ${totalItems - 1})` : '100%';
 
   React.useEffect(() => {
     onHoverChange?.(isHovered);

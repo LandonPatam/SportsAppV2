@@ -4,6 +4,7 @@
 // ============================
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import {
   Card, CardContent, CardHeader, CardTitle,
@@ -1141,12 +1142,14 @@ const StatRow = ({
   highlight,
   dense = false,
   bold = false,
+  noProvider = false,
 }: {
   label: string;
   value: string | number;
   highlight?: 'high' | 'low' | 'neutral' | 'best';
   dense?: boolean;
   bold?: boolean;
+  noProvider?: boolean;
 }) => {
   const colorClass =
     highlight === 'best'
@@ -1157,21 +1160,22 @@ const StatRow = ({
       ? 'text-red-400 font-semibold'
       : 'text-foreground';
 
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={`flex items-center text-sm cursor-help text-left ${dense ? 'gap-[4rem]' : 'gap-[0.5rem]'}`}>
-            <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left ${bold ? 'font-bold' : ''}`}>{label}</span>
-            <span className={`${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="center">
-          <p>{statDescriptions[label] || 'Stat description unavailable'}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+  const inner = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={`flex items-center text-sm cursor-help text-left ${dense ? 'gap-[4rem]' : 'gap-[0.5rem]'}`}>
+          <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left ${bold ? 'font-bold' : ''}`}>{label}</span>
+          <span className={`${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="center">
+        <p>{statDescriptions[label] || 'Stat description unavailable'}</p>
+      </TooltipContent>
+    </Tooltip>
   );
+
+  if (noProvider) return inner;
+  return <TooltipProvider>{inner}</TooltipProvider>;
 };
 
 
@@ -1182,6 +1186,12 @@ const StatRow = ({
 
 // Compact, arrow-controlled view
 const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {}, onGameClick, isMobile = false }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, streakMap?: Record<string, { type: 'W' | 'L'; count: number }>, onGameClick?: (gameId: string) => void, isMobile?: boolean }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pages = ['/nba', '/f1', '/nfl'] as const;
+  const currentPageIdx = pages.findIndex(p => location.pathname.startsWith(p));
+  const cycleToNextPage = () => navigate(pages[(currentPageIdx === -1 ? 0 : currentPageIdx + 1) % pages.length]);
+
   // Build games grouped by date from the provided schedule
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
@@ -1290,13 +1300,14 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
     : '';
 
   return (
-    <div className="space-y-4">
-      <div className={`relative flex items-center gap-3 ${isMobile ? 'justify-start pl-20 pt-3' : 'justify-center'}`}>
-        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full">
+    <div className={isMobile ? 'flex flex-col flex-1 overflow-hidden' : 'space-y-4'}>
+      {!isMobile && (
+      <div className="relative flex items-center gap-3 justify-center">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full hover:bg-white/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <div className="text-lg font-semibold">{formatLabel(currentKey)}</div>
-        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full">
+        <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full hover:bg-white/10">
           <ChevronRight className="w-5 h-5" />
         </Button>
 
@@ -1390,7 +1401,9 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
           )}
         </div>
       </div>
+      )}
 
+      <div className={isMobile ? 'flex-1 overflow-y-auto no-scrollbar pb-4 pr-2' : undefined}>
       {games.length === 0 ? (
         <Card className="bg-card/60 backdrop-blur-sm border">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
@@ -1648,6 +1661,38 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
               </Card>
             );
           })}
+        </div>
+      )}
+      </div>
+
+      {isMobile && (
+        <div className="px-4 pb-px pt-2">
+          <div
+            className="flex items-center rounded-[28px] overflow-hidden"
+            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
+          >
+            <button
+              onClick={() => setIndex(i => clamp(i - 1))}
+              disabled={index <= 0}
+              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+            <button
+              onClick={cycleToNextPage}
+              className="flex-[2] flex flex-col items-center justify-center h-16 border-x border-white/10 active:bg-white/10 transition-colors"
+            >
+              <span className="text-white font-bold text-base tracking-wider">NBA</span>
+              <span className="text-white/40 text-[11px] mt-0.5">{formatLabel(currentKey)}</span>
+            </button>
+            <button
+              onClick={() => setIndex(i => clamp(i + 1))}
+              disabled={index >= dateKeys.length - 1}
+              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -3189,6 +3234,27 @@ const playerAverages = React.useMemo<PlayerAverages | null>(() => {
   };
 }, [allPlayers]);
 
+// Official NBA full-season attempt thresholds for percentage stats.
+// Scaled dynamically by season progress (maxGP / 82) so the bar rises
+// as the season goes on — matching how stats.nba.com qualifies leaders.
+const PLAYER_PCT_QUALIFIERS: Partial<Record<keyof Player, { attemptField: keyof Player; fullSeasonThreshold: number }>> = {
+  FG_PCT:  { attemptField: 'FGA',  fullSeasonThreshold: 300 },
+  FG3_PCT: { attemptField: 'FG3A', fullSeasonThreshold: 82  },
+  FT_PCT:  { attemptField: 'FTA',  fullSeasonThreshold: 125 },
+};
+
+const _maxGP = allPlayers.length > 0
+  ? allPlayers.reduce((max, p) => Math.max(max, p.GP), 0)
+  : 82;
+const _seasonProgress = Math.min(_maxGP / 82, 1);
+
+const meetsQualifier = (p: Player, field: keyof Player): boolean => {
+  const q = PLAYER_PCT_QUALIFIERS[field];
+  if (!q) return true;
+  const totalAttempts = (p as any)[q.attemptField] * p.GP;
+  return totalAttempts >= q.fullSeasonThreshold * _seasonProgress;
+};
+
 const leagueStatLeaders = React.useMemo<StatLeaderMap>(() => {
   const leaderMap: StatLeaderMap = {};
   const epsilon = 0.01;
@@ -3196,6 +3262,7 @@ const leagueStatLeaders = React.useMemo<StatLeaderMap>(() => {
     let bestValue: number | null = null;
     let leaderIds: number[] = [];
     allPlayers.forEach((p) => {
+      if (!meetsQualifier(p, key)) return;
       const value = Number((p as any)[key]);
       if (!Number.isFinite(value)) return;
       if (bestValue === null) {
@@ -3359,12 +3426,25 @@ const getPlayerStat = (p: Player, field: PlayerSortField): number => {
 const sortedTopPlayers = React.useMemo(() => {
   return Object.values(nbaPlayerData)
     .flat()
+    .filter((p: Player) => meetsQualifier(p, playerSortField as keyof Player))
     .sort(
       (a: Player, b: Player) =>
         getPlayerStat(b, playerSortField) - getPlayerStat(a, playerSortField)
     )
     .slice(0, 50);
 }, [nbaPlayerData, playerSortField]);
+
+// Pre-compute valueScore + highlights per player so the render reads plain values
+// instead of calling getPlayerValueScore/getPlayerHighlight 650+ times inline.
+const sortedTopPlayersWithMeta = React.useMemo(() => {
+  return sortedTopPlayers.map(player => {
+    const highlights: Partial<Record<keyof Player, 'best' | 'high' | 'low' | 'neutral'>> = {};
+    for (const key of PLAYER_STAT_KEYS) {
+      highlights[key] = getPlayerHighlight(player, key);
+    }
+    return { player, valueScore: getPlayerValueScore(player), highlights };
+  });
+}, [sortedTopPlayers, leagueStatLeaders, playerAverages]);
 
 
 
@@ -3449,7 +3529,7 @@ useEffect(() => {
         value={isMobile ? 'schedule' : activeTab}
         className="w-full"
         onValueChange={(v) => {
-          if (!isMobile) setActiveTab(v);
+          if (!isMobile) React.startTransition(() => setActiveTab(v));
         }}
       >
   {/* ========================
@@ -3887,7 +3967,7 @@ useEffect(() => {
     - Live game dot indicator, TV provider badges
     - Click a game card to open ESPN box score in an iframe modal
 ======================== */}
-<TabsContent value="schedule" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
+<TabsContent value="schedule" className={isMobile ? 'mt-0 h-[100dvh] flex flex-col overflow-hidden' : 'max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2'}>
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} streakMap={abbrToStreakMap} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
 </TabsContent>
 
@@ -4095,12 +4175,12 @@ useEffect(() => {
 
 
 
-  {/* === Player Grid (All Stats with Tooltips) === */}
-  
+  {/* === Player Grid === */}
+
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-16">
-  {sortedTopPlayers.map((player: Player, index) => (
+  {sortedTopPlayersWithMeta.map(({ player, valueScore, highlights }, index) => (
       <div
-        key={player.PLAYER_ID}
+        key={`${player.PLAYER_ID}-${playerSortField}`}
         className="relative rounded-xl overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(300deg, ${
@@ -4137,44 +4217,48 @@ useEffect(() => {
               style={{ letterSpacing: '0.3px', padding: '0.25rem 0.5rem' }}
             >
               {playerSortField === 'VALUE_SCORE'
-                ? `Value: ${getPlayerValueScore(player).toFixed(1)}`
+                ? `Value: ${valueScore.toFixed(1)}`
                 : `${playerSortField.replace('_', ' ')}: ${getPlayerStat(player, playerSortField).toFixed(1)}`}
             </Badge>
           </div>
 
-          {/* Inner stats card to match TeamCard style */}
-          <Card
-            className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
-            style={{ backgroundColor: '#0000004c', opacity: 1 }}
-          >
-            <CardHeader className="pb-0"></CardHeader>
-            <CardContent>
-              {/* Grid of Player Stats with Tooltips */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Left column */}
-                <div className="space-y-2">
-                  <StatRow label="GP" value={player.GP.toFixed(0)} bold />
-                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getPlayerHighlight(player, 'MIN')} bold />
-                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getPlayerHighlight(player, 'PTS')} bold />
-                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getPlayerHighlight(player, 'REB')} bold />
-                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getPlayerHighlight(player, 'AST')} bold />
-                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getPlayerHighlight(player, 'STL')} bold />
-                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getPlayerHighlight(player, 'BLK')} bold />
-                </div>
-
-                {/* Right column */}
-                <div className="space-y-2">
-                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getPlayerHighlight(player, 'TOV')} bold />
-                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getPlayerHighlight(player, 'FGA')} bold />
-                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG_PCT')} bold />
-                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getPlayerHighlight(player, 'FG3A')} bold />
-                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FG3_PCT')} bold />
-                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getPlayerHighlight(player, 'FTA')} bold />
-                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getPlayerHighlight(player, 'FT_PCT')} bold />
-                </div>
+          {/* Stats grid — plain divs, no Radix overhead */}
+          <div className="rounded-lg p-6" style={{ backgroundColor: '#0000004c' }}>
+            <div className="grid grid-cols-2 gap-x-4">
+              <div className="space-y-2">
+                {([
+                  ['GP',  player.GP.toFixed(0),                        undefined       ],
+                  ['MIN', player.MIN.toFixed(1),                        highlights.MIN  ],
+                  ['PPG', player.PTS.toFixed(1),                        highlights.PTS  ],
+                  ['REB', player.REB.toFixed(1),                        highlights.REB  ],
+                  ['AST', player.AST.toFixed(1),                        highlights.AST  ],
+                  ['STL', player.STL.toFixed(1),                        highlights.STL  ],
+                  ['BLK', player.BLK.toFixed(1),                        highlights.BLK  ],
+                ] as [string, string, string | undefined][]).map(([lbl, val, hl]) => (
+                  <div key={lbl} className="flex items-center gap-8 text-sm">
+                    <span className="text-muted-foreground w-10 font-bold">{lbl}</span>
+                    <span className={hl === 'best' ? 'text-yellow-300 font-bold' : hl === 'high' ? 'text-green-400 font-bold' : hl === 'low' ? 'text-red-400 font-bold' : 'text-white font-bold'}>{val}</span>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                {([
+                  ['TOV', player.TOV.toFixed(1),                        highlights.TOV     ],
+                  ['FGA', player.FGA.toFixed(1),                        highlights.FGA     ],
+                  ['FG%', (player.FG_PCT * 100).toFixed(1) + '%',       highlights.FG_PCT  ],
+                  ['3PA', player.FG3A.toFixed(1),                       highlights.FG3A    ],
+                  ['3P%', (player.FG3_PCT * 100).toFixed(1) + '%',      highlights.FG3_PCT ],
+                  ['FTA', player.FTA.toFixed(1),                        highlights.FTA     ],
+                  ['FT%', (player.FT_PCT * 100).toFixed(1) + '%',       highlights.FT_PCT  ],
+                ] as [string, string, string | undefined][]).map(([lbl, val, hl]) => (
+                  <div key={lbl} className="flex items-center gap-8 text-sm">
+                    <span className="text-muted-foreground w-10 font-bold">{lbl}</span>
+                    <span className={hl === 'best' ? 'text-yellow-300 font-bold' : hl === 'high' ? 'text-green-400 font-bold' : hl === 'low' ? 'text-red-400 font-bold' : 'text-white font-bold'}>{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     ))}

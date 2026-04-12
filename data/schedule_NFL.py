@@ -10,9 +10,14 @@ import time
 # ==========================================================
 FIND_SCHEDULE = False   # Toggle True to crawl schedule, False to skip
 SAVE_PATH = "public/data/nfl_schedule.json"
+TEMP_PATH = SAVE_PATH + ".tmp"
 VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
 SLEEP_BETWEEN_CALLS = 1.5
 MAX_EMPTY_DAYS = 20
+
+# --- Postseason auto-crawl settings ---
+POSTSEASON_SCAN_INTERVAL_HOURS = 6               # how often to re-scan during playoffs
+_STATE_PATH = "public/data/.nfl_schedule_last_scan.txt"
 # ==========================================================
 
 HEADERS = {
@@ -23,6 +28,17 @@ HEADERS = {
 
 UTC = pytz.utc
 PACIFIC = pytz.timezone("America/Los_Angeles")
+
+# ==========================================================
+# SAFE ATOMIC WRITE HELPER
+# ==========================================================
+def atomic_write_json(data, save_path: str, temp_path: str):
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    with open(temp_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temp_path, save_path)
 
 # ==========================================================
 # DYNAMIC SEASON DATE CALCULATION
@@ -61,14 +77,16 @@ def get_season_dates(today: object) -> tuple:
 
     # Recalculate kickoff for the resolved season year
     labor_day = get_labor_day(season_year)
-    season_start = labor_day + timedelta(days=3)          # Kickoff Thursday
-    season_end   = datetime(season_year + 1, 2, 16).date() # Day after latest possible Super Bowl
+    season_start     = labor_day + timedelta(days=3)           # Kickoff Thursday
+    postseason_start = season_start + timedelta(weeks=18)       # ~Wild Card weekend
+    season_end       = datetime(season_year + 1, 2, 16).date()  # Day after latest possible Super Bowl
 
-    return season_year, season_start, season_end
+    return season_year, season_start, postseason_start, season_end
 
 today = datetime.now().date()
-SEASON_YEAR, SEASON_START_DATE, SEASON_END_DATE = get_season_dates(today)
-print(f"Active season: {SEASON_YEAR} | Start: {SEASON_START_DATE} | End: {SEASON_END_DATE}")
+SEASON_YEAR, SEASON_START_DATE, POSTSEASON_START, SEASON_END_DATE = get_season_dates(today)
+print(f"Active season: {SEASON_YEAR} | Start: {SEASON_START_DATE} | "
+      f"Postseason: {POSTSEASON_START} | End: {SEASON_END_DATE}")
 
 # ==========================================================
 # Load Existing Schedule (with new-season auto-reset)
@@ -108,19 +126,17 @@ def load_schedule() -> tuple:
     if earliest is not None and earliest < SEASON_START_DATE:
         print(f"[NEW SEASON DETECTED] Earliest game in JSON is {earliest}, "
               f"but current season starts {SEASON_START_DATE}. Resetting schedule.")
-        # Wipe the file
-        os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-        with open(SAVE_PATH, "w", encoding="utf-8") as f:
-            json.dump([], f)
+        atomic_write_json([], SAVE_PATH, TEMP_PATH)
+        if os.path.exists(_STATE_PATH):
+            os.remove(_STATE_PATH)
         return [], True
 
     return data, False
 
 schedule, schedule_was_reset = load_schedule()
 if schedule_was_reset:
-    # Force a crawl on the next section even if the flag is off,
-    # because we just nuked the data.  Print a reminder either way.
-    print("Schedule was reset. Set FIND_SCHEDULE = True to repopulate.")
+    FIND_SCHEDULE = True
+    print("[AUTO] New season detected — auto-populating schedule.")
 
 # Ensure each game has a UTC timestamp for reliable sorting
 def ensure_ts_utc(g: dict) -> int:
@@ -160,11 +176,41 @@ for g in schedule:
 seen_ids = {g.get("game_id") for g in schedule if g.get("game_id")}
 
 # ==========================================================
+# AUTO-CRAWL during postseason
+# ==========================================================
+_crawl_start_date = SEASON_START_DATE
+
+if not FIND_SCHEDULE:
+    if POSTSEASON_START <= today <= SEASON_END_DATE:
+        last_scan = None
+        if os.path.exists(_STATE_PATH):
+            try:
+                with open(_STATE_PATH, "r") as _sf:
+                    last_scan = datetime.fromisoformat(_sf.read().strip())
+            except Exception:
+                last_scan = None
+
+        hours_since = (
+            (datetime.now() - last_scan).total_seconds() / 3600
+            if last_scan else float("inf")
+        )
+
+        if hours_since >= POSTSEASON_SCAN_INTERVAL_HOURS:
+            FIND_SCHEDULE = True
+            _crawl_start_date = today
+            print(f"[AUTO] Postseason detected — scanning from {today} (last scan: {last_scan or 'never'})")
+        else:
+            print(f"[AUTO] Postseason window active but last scan was {hours_since:.1f}h ago — skipping.")
+else:
+    if not schedule_was_reset:
+        print("[MANUAL] FIND_SCHEDULE forced True — full crawl from SEASON_START_DATE.")
+
+# ==========================================================
 # PART 1 – FIND SCHEDULE (Optional)
 # ==========================================================
 if FIND_SCHEDULE:
     print("Starting NFL schedule fetch...")
-    current_date = SEASON_START_DATE
+    current_date = _crawl_start_date
     empty_days = 0
 
     while current_date <= SEASON_END_DATE and empty_days < MAX_EMPTY_DAYS:
@@ -276,14 +322,16 @@ if FIND_SCHEDULE:
             ensure_ts_utc(g)
         schedule.sort(key=lambda x: (str(x.get("date") or ""), int(x.get("ts_utc") or 0)))
 
-        os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-        with open(SAVE_PATH, "w", encoding="utf-8") as out:
-            json.dump(schedule, out, indent=2, ensure_ascii=False)
+        atomic_write_json(schedule, SAVE_PATH, TEMP_PATH)
 
         current_date += timedelta(days=1)
         time.sleep(SLEEP_BETWEEN_CALLS)
 
     print(f"\nSchedule fetch complete – {len(schedule)} total games saved.")
+
+    os.makedirs(os.path.dirname(_STATE_PATH), exist_ok=True)
+    with open(_STATE_PATH, "w") as _sf:
+        _sf.write(datetime.now().isoformat())
 
 
 # ==========================================================
@@ -446,7 +494,6 @@ else:
     for g in schedule:
         ensure_ts_utc(g)
     schedule.sort(key=lambda x: (str(x.get("date") or ""), int(x.get("ts_utc") or 0)))
-    with open(SAVE_PATH, "w", encoding="utf-8") as out:
-        json.dump(schedule, out, indent=2, ensure_ascii=False)
+    atomic_write_json(schedule, SAVE_PATH, TEMP_PATH)
 
     print(f"Schedule saved to {SAVE_PATH}")
