@@ -233,6 +233,9 @@ interface ScheduleGameAny {
   game_link?: string;
   period?: number;        // quarter/period number (1-4, or 5+ for OT)
   clock?: string;         // remaining time in period (e.g., "10.0")
+  is_playoff?: boolean;
+  series_note?: string;   // e.g., 'Eastern Conference First Round - Game 5'
+  series_game_number?: number;
 }
 
 type NBAScheduleData =
@@ -1192,12 +1195,32 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
   const currentPageIdx = pages.findIndex(p => location.pathname.startsWith(p));
   const cycleToNextPage = () => navigate(pages[(currentPageIdx === -1 ? 0 : currentPageIdx + 1) % pages.length]);
 
+  const gamesArr = useMemo<ScheduleGameAny[]>(() =>
+    Array.isArray(scheduleData)
+      ? (scheduleData as ScheduleGameAny[])
+      : (scheduleData?.games || [])
+  , [scheduleData]);
+
+  // Map canonical team-pair key → { teamName: wins } for playoff series
+  const seriesRecordMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    for (const g of gamesArr) {
+      if (!g.is_playoff) continue;
+      const winner = (g as any).winner as string | undefined;
+      if (!winner) continue;
+      const away = g.matchup?.split('@')[0]?.trim();
+      const home = g.matchup?.split('@')[1]?.trim();
+      if (!away || !home) continue;
+      const key = [away, home].sort().join('|');
+      if (!map[key]) map[key] = {};
+      map[key][winner] = (map[key][winner] || 0) + 1;
+    }
+    return map;
+  }, [gamesArr]);
+
   // Build games grouped by date from the provided schedule
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
-    const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
-      ? (scheduleData as ScheduleGameAny[])
-      : (scheduleData?.games || []);
 
     for (const g of gamesArr) {
       const k = ((g.date as string) || '').slice(0, 10);
@@ -1207,7 +1230,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
     }
     for (const k of Object.keys(map)) map[k].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     return map;
-  }, [scheduleData]);
+  }, [gamesArr]);
 
 
   // All available date keys sorted ascending
@@ -1473,6 +1496,14 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
             const awayDisplayStreak = streakMap[awayNormAbbr] ?? null;
             const homeDisplayStreak = streakMap[homeNormAbbr] ?? null;
 
+            const isPlayoff = !!g.is_playoff;
+            const seriesNote = g.series_note;
+            const seriesWins = isPlayoff && awayName && homeName
+              ? seriesRecordMap[[awayName, homeName].sort().join('|')] || {}
+              : null;
+            const awaySeriesWins = seriesWins && awayName ? (seriesWins[awayName] || 0) : 0;
+            const homeSeriesWins = seriesWins && homeName ? (seriesWins[homeName] || 0) : 0;
+
             return (
               <Card 
                 key={g.game_id} 
@@ -1565,14 +1596,28 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                               }}
                               loading="eager"
                             />
-                            {awayAbbr && awayDisplayRecord && (
+                            {isPlayoff && seriesWins ? (
                               <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
                                 {awayDisplayStreak && awayDisplayStreak.count >= 3 && (
                                   <span className="absolute right-full pr-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
                                     {awayDisplayStreak.count}
                                   </span>
                                 )}
-                                <span>({awayDisplayRecord.replace(/-/g, ' - ')})</span>
+                                <span>( {awaySeriesWins} - {homeSeriesWins} )</span>
+                                {awayDisplayStreak && (
+                                  <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                                    {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
+                                  </span>
+                                )}
+                              </div>
+                            ) : awayAbbr && awayDisplayRecord && (
+                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                                {awayDisplayStreak && awayDisplayStreak.count >= 3 && (
+                                  <span className="absolute right-full pr-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                    {awayDisplayStreak.count}
+                                  </span>
+                                )}
+                                <span>( {awayDisplayRecord.replace(/-/g, ' - ')} )</span>
                                 {awayDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
@@ -1619,6 +1664,15 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                             {g.time || 'TBA'}
                           </div>
                         )}
+                        {isPlayoff && seriesNote && (() => {
+                          const [roundPart, gamePart] = seriesNote.split(/\s*-\s*(?=Game\s)/i);
+                          return (
+                            <div className="absolute top-full text-white/50 font-medium text-center w-full leading-tight" style={{ fontSize: recordFontSize, marginTop: "0.2cqi" }}>
+                              <div className="truncate">{roundPart}</div>
+                              {gamePart && <div className="truncate">{gamePart}</div>}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Home side */}
@@ -1636,14 +1690,28 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                               }}
                               loading="eager"
                             />
-                            {homeAbbr && homeDisplayRecord && (
+                            {isPlayoff && seriesWins ? (
                               <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
                                 {homeDisplayStreak && homeDisplayStreak.count >= 3 && (
                                   <span className="absolute right-full pr-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
                                     {homeDisplayStreak.count}
                                   </span>
                                 )}
-                                <span>({homeDisplayRecord.replace(/-/g, ' - ')})</span>
+                                <span>( {homeSeriesWins} - {awaySeriesWins} )</span>
+                                {homeDisplayStreak && (
+                                  <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
+                                    {homeDisplayStreak.type === 'W' ? '↑' : '↓'}
+                                  </span>
+                                )}
+                              </div>
+                            ) : homeAbbr && homeDisplayRecord && (
+                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                                {homeDisplayStreak && homeDisplayStreak.count >= 3 && (
+                                  <span className="absolute right-full pr-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                    {homeDisplayStreak.count}
+                                  </span>
+                                )}
+                                <span>( {homeDisplayRecord.replace(/-/g, ' - ')} )</span>
                                 {homeDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {homeDisplayStreak.type === 'W' ? '↑' : '↓'}

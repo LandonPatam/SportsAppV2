@@ -1,3 +1,4 @@
+import re
 import requests
 import json
 import os
@@ -39,9 +40,18 @@ def atomic_write_json(data, save_path: str, temp_path: str):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     with open(temp_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-        f.flush()          # flush Python buffers → OS buffer
-        os.fsync(f.fileno())  # flush OS buffer → disk
-    os.replace(temp_path, save_path)  # atomic rename
+        f.flush()
+        os.fsync(f.fileno())
+    # On Windows, os.replace can fail if the target is locked; fall back to direct write
+    try:
+        os.replace(temp_path, save_path)
+    except PermissionError:
+        with open(save_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
 
 
 # ==========================================================
@@ -237,6 +247,11 @@ if FIND_SCHEDULE:
                 is_nba_cup = "nba cup" in note_text or nba_cup_text is not None
                 nba_cup_label = nba_cup_text or (event.get("note") if "nba cup" in note_text else None)
 
+                is_playoff = any(kw in note_text for kw in ("round", "conference", "finals", "semifinal", "playoff"))
+                series_note = event.get("note") if is_playoff else None
+                _series_game_match = re.search(r'game\s+(\d+)', note_text)
+                series_game_number = int(_series_game_match.group(1)) if _series_game_match else None
+
                 if existing_game:
                     print(f"Updating game: {away_name} @ {home_name} — {date_clean} {time_clean}")
                     existing_game.update({
@@ -248,6 +263,9 @@ if FIND_SCHEDULE:
                         "game_link": link,
                         "is_nba_cup": is_nba_cup,
                         "tournament": nba_cup_label or None,
+                        "is_playoff": is_playoff,
+                        "series_note": series_note,
+                        "series_game_number": series_game_number,
                     })
                 else:
                     schedule.append({
@@ -263,6 +281,9 @@ if FIND_SCHEDULE:
                         "away_score": None,
                         "is_nba_cup": is_nba_cup,
                         "tournament": nba_cup_label or None,
+                        "is_playoff": is_playoff,
+                        "series_note": series_note,
+                        "series_game_number": series_game_number,
                     })
                     seen_ids.add(game_id)
                     print(f"Added {away_name} @ {home_name} — {date_clean} {time_clean}")
@@ -348,16 +369,23 @@ else:
             else []
         )
 
+        found_in_espn = False
         for event in events:
             if event.get("id") != game["game_id"]:
                 continue
 
+            found_in_espn = True
             status = event.get("status", "")
             fullStatus = event.get("fullStatus", {})
             status_type = fullStatus.get("type", {})
             status_state = status_type.get("state", "")
             status_name = status_type.get("name", "")
             status_completed = status_type.get("completed", False)
+
+            if status_name in ("STATUS_CANCELED", "STATUS_POSTPONED"):
+                game["status"] = "cancelled"
+                print(f"Marking cancelled: {game.get('matchup')} ({status_name})")
+                break
 
             competitors = event.get("competitors", [])
             home_team = next((t for t in competitors if t.get("homeAway") == "home"), {})
@@ -427,7 +455,16 @@ else:
 
             break
 
+        if not found_in_espn and game_date < today:
+            game["status"] = "cancelled"
+            print(f"Not found in ESPN, marking cancelled: {game.get('matchup')} on {game_date}")
+
         time.sleep(SLEEP_BETWEEN_CALLS)
+
+    removed = [g for g in schedule if g.get("status") == "cancelled"]
+    schedule = [g for g in schedule if g.get("status") != "cancelled"]
+    if removed:
+        print(f"Removed {len(removed)} phantom/cancelled game(s): {[g.get('matchup') for g in removed]}")
 
     print(f"\nUpdate complete: {updated_count} games finalized, {live_count} games live, {total_checked} total checked")
 
