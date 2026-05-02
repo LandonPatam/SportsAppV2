@@ -164,6 +164,25 @@ else:
     print("[MANUAL] FIND_SCHEDULE forced True — full crawl from SEASON_START_DATE.")
 
 # ==========================================================
+# 🏀 PRE-COMPUTE DECIDED PLAYOFF SERIES
+# Used in Part 1 to skip re-adding "If Necessary" games for
+# series that are already over (one team has 4 wins).
+# ==========================================================
+_decided_series: set = set()
+_sw: dict = {}
+for _g in schedule:
+    if not _g.get("is_playoff") or _g.get("status") != "final" or not _g.get("winner"):
+        continue
+    _sa = _g["matchup"].split("@")[0].strip()
+    _sh = _g["matchup"].split("@")[1].strip()
+    _sk = tuple(sorted([_sa, _sh]))
+    _sw.setdefault(_sk, {})
+    _sw[_sk][_g["winner"]] = _sw[_sk].get(_g["winner"], 0) + 1
+for _sk, _wins in _sw.items():
+    if any(w >= 4 for w in _wins.values()):
+        _decided_series.add(_sk)
+
+# ==========================================================
 # 🏀 PART 1 — FIND SCHEDULE (Optional)
 # ==========================================================
 if FIND_SCHEDULE:
@@ -251,6 +270,14 @@ if FIND_SCHEDULE:
                 series_note = event.get("note") if is_playoff else None
                 _series_game_match = re.search(r'game\s+(\d+)', note_text)
                 series_game_number = int(_series_game_match.group(1)) if _series_game_match else None
+
+                if (is_playoff
+                        and "if necessary" in note_text
+                        and not existing_game):
+                    _key = tuple(sorted([away_name, home_name]))
+                    if _key in _decided_series:
+                        print(f"Skipping If Necessary game for decided series: {away_name} @ {home_name}")
+                        continue
 
                 if existing_game:
                     print(f"Updating game: {away_name} @ {home_name} — {date_clean} {time_clean}")

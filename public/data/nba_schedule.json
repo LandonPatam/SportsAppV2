@@ -19459,8 +19459,8 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nba/game?gameId=401869417",
-    "home_score": "75",
-    "away_score": "83",
+    "home_score": "77",
+    "away_score": "90",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": true,
@@ -19468,7 +19468,7 @@
     "series_game_number": 6,
     "status": "live",
     "period": 4,
-    "clock": "3:51"
+    "clock": "2:09"
   },
   {
     "game_id": "401869381",
@@ -19480,8 +19480,8 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nba/game?gameId=401869381",
-    "home_score": "87",
-    "away_score": "76",
+    "home_score": "89",
+    "away_score": "79",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": true,
@@ -19489,7 +19489,7 @@
     "series_game_number": 6,
     "status": "live",
     "period": 3,
-    "clock": "2:47"
+    "clock": "1:42"
   },
   {
     "game_id": "401869409",
