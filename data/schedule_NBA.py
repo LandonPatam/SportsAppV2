@@ -466,6 +466,35 @@ else:
     if removed:
         print(f"Removed {len(removed)} phantom/cancelled game(s): {[g.get('matchup') for g in removed]}")
 
+    # Remove "If Necessary" playoff games where the series is already decided (4 wins)
+    series_wins: dict = {}
+    for g in schedule:
+        if not g.get("is_playoff") or g.get("status") != "final" or not g.get("winner"):
+            continue
+        away = g["matchup"].split("@")[0].strip()
+        home = g["matchup"].split("@")[1].strip()
+        key = tuple(sorted([away, home]))
+        series_wins.setdefault(key, {})
+        series_wins[key][g["winner"]] = series_wins[key].get(g["winner"], 0) + 1
+
+    decided_removed = []
+    kept = []
+    for g in schedule:
+        if (g.get("is_playoff")
+                and "if necessary" in (g.get("series_note") or "").lower()
+                and g.get("status") != "final"):
+            away = g["matchup"].split("@")[0].strip()
+            home = g["matchup"].split("@")[1].strip()
+            key = tuple(sorted([away, home]))
+            if any(w >= 4 for w in series_wins.get(key, {}).values()):
+                decided_removed.append(g)
+                continue
+        kept.append(g)
+
+    if decided_removed:
+        schedule = kept
+        print(f"Removed {len(decided_removed)} 'If Necessary' game(s) from decided series: {[g.get('matchup') for g in decided_removed]}")
+
     print(f"\nUpdate complete: {updated_count} games finalized, {live_count} games live, {total_checked} total checked")
 
     schedule.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")))

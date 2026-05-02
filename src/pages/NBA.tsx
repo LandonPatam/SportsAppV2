@@ -1578,6 +1578,11 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                 )}
 
                 <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+                {isPlayoff && seriesNote && (
+                  <div className="absolute left-0 right-0 text-white/50 font-medium truncate text-center px-2 z-20" style={{ top: '2px', fontSize: recordFontSize }}>
+                    {seriesNote.replace(/\s*if necessary/i, '*')}
+                  </div>
+                )}
                 <CardContent className="relative z-10 py-0 flex flex-col h-full">
                   <div className="flex-1 flex items-center py-1">
                     <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
@@ -1664,15 +1669,6 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                             {g.time || 'TBA'}
                           </div>
                         )}
-                        {isPlayoff && seriesNote && (() => {
-                          const [roundPart, gamePart] = seriesNote.split(/\s*-\s*(?=Game\s)/i);
-                          return (
-                            <div className="absolute top-full text-white/50 font-medium text-center w-full leading-tight" style={{ fontSize: recordFontSize, marginTop: "0.2cqi" }}>
-                              <div className="truncate">{roundPart}</div>
-                              {gamePart && <div className="truncate">{gamePart}</div>}
-                            </div>
-                          );
-                        })()}
                       </div>
 
                       {/* Home side */}
