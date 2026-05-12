@@ -19458,7 +19458,7 @@
     "tv_providers": [
       "Prime Video"
     ],
-    "game_link": "https://www.espn.com/nba/game?gameId=401869417",
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401869417/pistons-magic",
     "home_score": "79",
     "away_score": "93",
     "is_nba_cup": false,
@@ -19478,7 +19478,7 @@
     "tv_providers": [
       "Prime Video"
     ],
-    "game_link": "https://www.espn.com/nba/game?gameId=401869381",
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401869381/cavaliers-raptors",
     "home_score": "112",
     "away_score": "110",
     "is_nba_cup": false,
@@ -19530,6 +19530,246 @@
     "status": "final"
   },
   {
+    "game_id": "401869418",
+    "matchup": "Orlando Magic @ Detroit Pistons",
+    "date": "2026-05-03",
+    "time": "12:30 PM",
+    "location": "Little Caesars Arena",
+    "tv_providers": [
+      "ABC"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401869418/magic-pistons",
+    "winner": "Detroit Pistons",
+    "home_score": "116",
+    "away_score": "94",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East 1st Round - Game 7",
+    "series_game_number": 7,
+    "status": "final"
+  },
+  {
+    "game_id": "401869384",
+    "matchup": "Toronto Raptors @ Cleveland Cavaliers",
+    "date": "2026-05-03",
+    "time": "4:30 PM",
+    "location": "Rocket Mortgage FieldHouse",
+    "tv_providers": [
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401869384/raptors-cavaliers",
+    "winner": "Cleveland Cavaliers",
+    "home_score": "114",
+    "away_score": "102",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East 1st Round - Game 7",
+    "series_game_number": 7,
+    "status": "final"
+  },
+  {
+    "game_id": "401871159",
+    "matchup": "Philadelphia 76ers @ New York Knicks",
+    "date": "2026-05-04",
+    "time": "5:00 PM",
+    "location": "Madison Square Garde",
+    "tv_providers": [
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871159/76ers-knicks",
+    "winner": "New York Knicks",
+    "home_score": "137",
+    "away_score": "98",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East Semifinals - Game 1",
+    "series_game_number": 1,
+    "status": "final"
+  },
+  {
+    "game_id": "401871152",
+    "matchup": "Minnesota Timberwolves @ San Antonio Spurs",
+    "date": "2026-05-04",
+    "time": "6:30 PM",
+    "location": "AT&T Center",
+    "tv_providers": [
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871152/timberwolves-spurs",
+    "winner": "Minnesota Timberwolves",
+    "home_score": "102",
+    "away_score": "104",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "West Semifinals - Game 1",
+    "series_game_number": 1,
+    "status": "final"
+  },
+  {
+    "game_id": "401871333",
+    "matchup": "Cleveland Cavaliers @ Detroit Pistons",
+    "date": "2026-05-05",
+    "time": "4:00 PM",
+    "location": "Little Caesars Arena",
+    "tv_providers": [
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871333/cavaliers-pistons",
+    "winner": "Detroit Pistons",
+    "home_score": "111",
+    "away_score": "101",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East Semifinals - Game 1",
+    "series_game_number": 1,
+    "status": "final"
+  },
+  {
+    "game_id": "401871326",
+    "matchup": "Los Angeles Lakers @ Oklahoma City Thunder",
+    "date": "2026-05-05",
+    "time": "5:30 PM",
+    "location": "Chesapeake Energy Arena",
+    "tv_providers": [
+      "Peacock"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871326/lakers-thunder",
+    "winner": "Oklahoma City Thunder",
+    "home_score": "108",
+    "away_score": "90",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "West Semifinals - Game 1",
+    "series_game_number": 1,
+    "status": "final"
+  },
+  {
+    "game_id": "401871160",
+    "matchup": "Philadelphia 76ers @ New York Knicks",
+    "date": "2026-05-06",
+    "time": "4:00 PM",
+    "location": "Madison Square Garde",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871160/76ers-knicks",
+    "winner": "New York Knicks",
+    "home_score": "108",
+    "away_score": "102",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East Semifinals - Game 2",
+    "series_game_number": 2,
+    "status": "final"
+  },
+  {
+    "game_id": "401871153",
+    "matchup": "Minnesota Timberwolves @ San Antonio Spurs",
+    "date": "2026-05-06",
+    "time": "6:30 PM",
+    "location": "AT&T Center",
+    "tv_providers": [
+      "ESPN"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871153/timberwolves-spurs",
+    "winner": "San Antonio Spurs",
+    "home_score": "133",
+    "away_score": "95",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "West Semifinals - Game 2",
+    "series_game_number": 2,
+    "status": "final"
+  },
+  {
+    "game_id": "401871334",
+    "matchup": "Cleveland Cavaliers @ Detroit Pistons",
+    "date": "2026-05-07",
+    "time": "4:00 PM",
+    "location": "Little Caesars Arena",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871334/cavaliers-pistons",
+    "winner": "Detroit Pistons",
+    "home_score": "107",
+    "away_score": "97",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East Semifinals - Game 2",
+    "series_game_number": 2,
+    "status": "final"
+  },
+  {
+    "game_id": "401871327",
+    "matchup": "Los Angeles Lakers @ Oklahoma City Thunder",
+    "date": "2026-05-07",
+    "time": "6:30 PM",
+    "location": "Chesapeake Energy Arena",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871327/lakers-thunder",
+    "winner": "Oklahoma City Thunder",
+    "home_score": "125",
+    "away_score": "107",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "West Semifinals - Game 2",
+    "series_game_number": 2,
+    "status": "final"
+  },
+  {
+    "game_id": "401871161",
+    "matchup": "New York Knicks @ Philadelphia 76ers",
+    "date": "2026-05-08",
+    "time": "4:00 PM",
+    "location": "Wells Fargo Center",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871161/knicks-76ers",
+    "winner": "New York Knicks",
+    "home_score": "94",
+    "away_score": "108",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "East Semifinals - Game 3",
+    "series_game_number": 3,
+    "status": "final"
+  },
+  {
+    "game_id": "401871154",
+    "matchup": "San Antonio Spurs @ Minnesota Timberwolves",
+    "date": "2026-05-08",
+    "time": "6:30 PM",
+    "location": "Target Center",
+    "tv_providers": [
+      "Prime Video"
+    ],
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871154/spurs-timberwolves",
+    "winner": "San Antonio Spurs",
+    "home_score": "108",
+    "away_score": "115",
+    "is_nba_cup": false,
+    "tournament": null,
+    "is_playoff": true,
+    "series_note": "West Semifinals - Game 3",
+    "series_game_number": 3,
+    "status": "final"
+  },
+  {
     "game_id": "401871335",
     "matchup": "Detroit Pistons @ Cleveland Cavaliers",
     "date": "2026-05-09",
@@ -19558,7 +19798,7 @@
     "tv_providers": [
       "ABC"
     ],
-    "game_link": "https://www.espn.com/nba/game?gameId=401871328",
+    "game_link": "https://www.espn.com/nba/game/_/gameId/401871328/thunder-lakers",
     "home_score": "108",
     "away_score": "131",
     "is_nba_cup": false,
@@ -19639,33 +19879,15 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401871329/thunder-lakers",
-    "home_score": "7",
-    "away_score": "7",
+    "home_score": "110",
+    "away_score": "115",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": true,
     "series_note": "West Semifinals - Game 4",
     "series_game_number": 4,
-    "status": "live",
-    "period": 1,
-    "clock": "8:20"
-  },
-  {
-    "game_id": "401871163",
-    "matchup": "Philadelphia 76ers @ New York Knicks",
-    "date": "2026-05-11",
-    "time": "9:00 PM",
-    "location": "Madison Square Garde",
-    "tv_providers": [],
-    "game_link": "https://www.espn.com/nba/game/_/gameId/401871163/76ers-knicks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "is_nba_cup": false,
-    "tournament": null,
-    "is_playoff": true,
-    "series_note": "East Semifinals - Game 5 If Necessary",
-    "series_game_number": 5
+    "status": "final",
+    "winner": "Oklahoma City Thunder"
   },
   {
     "game_id": "401871156",
@@ -19687,29 +19909,10 @@
     "series_game_number": 5
   },
   {
-    "game_id": "401871330",
-    "matchup": "Los Angeles Lakers @ Oklahoma City Thunder",
-    "date": "2026-05-12",
-    "time": "9:00 PM",
-    "location": "Chesapeake Energy Arena",
-    "tv_providers": [
-      "ESPN"
-    ],
-    "game_link": "https://www.espn.com/nba/game/_/gameId/401871330/lakers-thunder",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "is_nba_cup": false,
-    "tournament": null,
-    "is_playoff": true,
-    "series_note": "West Semifinals - Game 5 If Necessary",
-    "series_game_number": 5
-  },
-  {
     "game_id": "401871337",
     "matchup": "Cleveland Cavaliers @ Detroit Pistons",
-    "date": "2026-05-12",
-    "time": "9:00 PM",
+    "date": "2026-05-13",
+    "time": "5:00 PM",
     "location": "Little Caesars Arena",
     "tv_providers": [
       "ESPN"
@@ -19723,23 +19926,6 @@
     "is_playoff": true,
     "series_note": "East Semifinals - Game 5",
     "series_game_number": 5
-  },
-  {
-    "game_id": "401871164",
-    "matchup": "New York Knicks @ Philadelphia 76ers",
-    "date": "2026-05-13",
-    "time": "9:00 PM",
-    "location": "Wells Fargo Center",
-    "tv_providers": [],
-    "game_link": "https://www.espn.com/nba/game/_/gameId/401871164/knicks-76ers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "is_nba_cup": false,
-    "tournament": null,
-    "is_playoff": true,
-    "series_note": "East Semifinals - Game 6 If Necessary",
-    "series_game_number": 6
   },
   {
     "game_id": "401871157",
@@ -19772,24 +19958,7 @@
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": true,
-    "series_note": "East Semifinals - Game 6 If Necessary",
-    "series_game_number": 6
-  },
-  {
-    "game_id": "401871331",
-    "matchup": "Oklahoma City Thunder @ Los Angeles Lakers",
-    "date": "2026-05-15",
-    "time": "9:00 PM",
-    "location": "Staples Center",
-    "tv_providers": [],
-    "game_link": "https://www.espn.com/nba/game/_/gameId/401871331/thunder-lakers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "is_nba_cup": false,
-    "tournament": null,
-    "is_playoff": true,
-    "series_note": "West Semifinals - Game 6 If Necessary",
+    "series_note": "East Semifinals - Game 6",
     "series_game_number": 6
   },
   {
@@ -19810,23 +19979,6 @@
     "series_game_number": 7
   },
   {
-    "game_id": "401871165",
-    "matchup": "Philadelphia 76ers @ New York Knicks",
-    "date": "2026-05-16",
-    "time": "9:00 PM",
-    "location": "Madison Square Garde",
-    "tv_providers": [],
-    "game_link": "https://www.espn.com/nba/game/_/gameId/401871165/76ers-knicks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "is_nba_cup": false,
-    "tournament": null,
-    "is_playoff": true,
-    "series_note": "East Semifinals - Game 7 If Necessary",
-    "series_game_number": 7
-  },
-  {
     "game_id": "401871339",
     "matchup": "Cleveland Cavaliers @ Detroit Pistons",
     "date": "2026-05-16",
@@ -19841,23 +19993,6 @@
     "tournament": null,
     "is_playoff": true,
     "series_note": "East Semifinals - Game 7 If Necessary",
-    "series_game_number": 7
-  },
-  {
-    "game_id": "401871332",
-    "matchup": "Los Angeles Lakers @ Oklahoma City Thunder",
-    "date": "2026-05-17",
-    "time": "9:00 PM",
-    "location": "Chesapeake Energy Arena",
-    "tv_providers": [],
-    "game_link": "https://www.espn.com/nba/game/_/gameId/401871332/lakers-thunder",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "is_nba_cup": false,
-    "tournament": null,
-    "is_playoff": true,
-    "series_note": "West Semifinals - Game 7 If Necessary",
     "series_game_number": 7
   },
   {

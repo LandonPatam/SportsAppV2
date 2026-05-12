@@ -1202,7 +1202,9 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
       : (scheduleData?.games || [])
   , [scheduleData]);
 
-  // Map canonical team-pair key → { teamName: wins } for playoff series
+  // Map round+team-pair key → { teamName: wins } for playoff series.
+  // Keyed by round prefix (e.g. "East Semifinals") + sorted team names so the
+  // same two teams meeting in different rounds don't bleed into each other.
   const seriesRecordMap = useMemo(() => {
     const map: Record<string, Record<string, number>> = {};
     for (const g of gamesArr) {
@@ -1212,26 +1214,50 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
       const away = g.matchup?.split('@')[0]?.trim();
       const home = g.matchup?.split('@')[1]?.trim();
       if (!away || !home) continue;
-      const key = [away, home].sort().join('|');
+      const round = g.series_note?.split(' - ')[0]?.trim() ?? '';
+      const key = [round, ...[away, home].sort()].join('|');
       if (!map[key]) map[key] = {};
       map[key][winner] = (map[key][winner] || 0) + 1;
     }
     return map;
   }, [gamesArr]);
 
-  // Build games grouped by date from the provided schedule
+  // Set of series keys (round+team-pair) where one team has 4 wins (series over).
+  const decidedSeries = useMemo(() => {
+    const decided = new Set<string>();
+    for (const [key, wins] of Object.entries(seriesRecordMap)) {
+      if (Object.values(wins).some(w => w >= 4)) decided.add(key);
+    }
+    return decided;
+  }, [seriesRecordMap]);
+
+  // Build games grouped by date, excluding future games for decided series.
   const gamesByDate = useMemo(() => {
     const map: Record<string, ScheduleGameAny[]> = {};
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
     for (const g of gamesArr) {
       const k = ((g.date as string) || '').slice(0, 10);
       if (!k) continue;
+
+      // Hide any unplayed game belonging to a series that's already been decided.
+      if (g.is_playoff && !(g as any).winner) {
+        const away = g.matchup?.split('@')[0]?.trim();
+        const home = g.matchup?.split('@')[1]?.trim();
+        if (away && home) {
+          const round = g.series_note?.split(' - ')[0]?.trim() ?? '';
+          const key = [round, ...[away, home].sort()].join('|');
+          if (decidedSeries.has(key)) continue;
+        }
+      }
+
       if (!map[k]) map[k] = [];
       map[k].push(g);
     }
     for (const k of Object.keys(map)) map[k].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     return map;
-  }, [gamesArr]);
+  }, [gamesArr, decidedSeries]);
 
 
   // All available date keys sorted ascending
@@ -1499,8 +1525,9 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
 
             const isPlayoff = !!g.is_playoff;
             const seriesNote = g.series_note;
+            const seriesRound = seriesNote?.split(' - ')[0]?.trim() ?? '';
             const seriesWins = isPlayoff && awayName && homeName
-              ? seriesRecordMap[[awayName, homeName].sort().join('|')] || {}
+              ? seriesRecordMap[[seriesRound, ...[awayName, homeName].sort()].join('|')] || {}
               : null;
             const awaySeriesWins = seriesWins && awayName ? (seriesWins[awayName] || 0) : 0;
             const homeSeriesWins = seriesWins && homeName ? (seriesWins[homeName] || 0) : 0;

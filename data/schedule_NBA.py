@@ -2,7 +2,11 @@ import re
 import requests
 import json
 import os
+import sys
 from datetime import datetime, timedelta
+
+if sys.stdout.encoding and sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 import pytz
 import time
 
@@ -156,8 +160,11 @@ if not FIND_SCHEDULE:
 
         if hours_since >= POSTSEASON_SCAN_INTERVAL_HOURS:
             FIND_SCHEDULE = True
-            _crawl_start_date = today
-            print(f"[AUTO] Postseason detected — scanning from {today} (last scan: {last_scan or 'never'})")
+            # Look back up to 10 days so games played before the last scan aren't missed.
+            # This is critical for catching early playoff series games (Games 1 & 2) that
+            # were played before the scraper first ran in postseason mode.
+            _crawl_start_date = max(POSTSEASON_START, today - timedelta(days=10))
+            print(f"[AUTO] Postseason detected — scanning from {_crawl_start_date} (last scan: {last_scan or 'never'})")
         else:
             print(f"[AUTO] Postseason window active but last scan was {hours_since:.1f}h ago — skipping.")
 else:
@@ -507,9 +514,13 @@ else:
     decided_removed = []
     kept = []
     for g in schedule:
+        # Remove any future (non-final, non-live) playoff game whose series is already decided.
+        # This covers both "If Necessary" games and regular scheduled games that became
+        # unnecessary after a sweep (e.g. Games 5 & 6 when a team wins 4-0).
         if (g.get("is_playoff")
-                and "if necessary" in (g.get("series_note") or "").lower()
-                and g.get("status") != "final"):
+                and g.get("status") not in ("final", "live")
+                and g.get("status") != "cancelled"
+                and not g.get("winner")):
             away = g["matchup"].split("@")[0].strip()
             home = g["matchup"].split("@")[1].strip()
             key = tuple(sorted([away, home]))
@@ -520,7 +531,7 @@ else:
 
     if decided_removed:
         schedule = kept
-        print(f"Removed {len(decided_removed)} 'If Necessary' game(s) from decided series: {[g.get('matchup') for g in decided_removed]}")
+        print(f"Removed {len(decided_removed)} future game(s) from decided series: {[g.get('series_note') + ' (' + g.get('matchup','') + ')' for g in decided_removed]}")
 
     print(f"\nUpdate complete: {updated_count} games finalized, {live_count} games live, {total_checked} total checked")
 
