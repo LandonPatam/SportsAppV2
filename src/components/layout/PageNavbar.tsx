@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // ── Module-level data cache ──────────────────────────────────────────────────
@@ -288,6 +288,80 @@ const NextEventCountdown = () => {
   );
 };
 
+// ── TabBar with sliding indicator ────────────────────────────────────────────
+
+interface TabBarProps {
+  tabs: Tab[];
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  activePath: string;
+}
+
+function TabBar({ tabs, activeTab, onTabChange, activePath }: TabBarProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const initializedRef = useRef(false);
+
+  useLayoutEffect(() => {
+    const activeIndex = tabs.findIndex(t => t.value === activeTab);
+    const el = tabRefs.current[activeIndex];
+    const container = containerRef.current;
+    const indicator = indicatorRef.current;
+    if (!el || !container || !indicator) return;
+
+    const left = el.getBoundingClientRect().left - container.getBoundingClientRect().left;
+    const width = el.offsetWidth;
+
+    if (!initializedRef.current) {
+      indicator.style.transition = 'none';
+      indicator.style.transform = `translateX(${left}px)`;
+      indicator.style.width = `${width}px`;
+      indicator.style.opacity = '1';
+      initializedRef.current = true;
+      void indicator.getBoundingClientRect(); // flush so "no-transition" position commits
+      indicator.style.transition = 'transform 0.2s ease, width 0.2s ease';
+    } else {
+      indicator.style.transform = `translateX(${left}px)`;
+      indicator.style.width = `${width}px`;
+    }
+  }, [activeTab, tabs]);
+
+  useLayoutEffect(() => {
+    const indicator = indicatorRef.current;
+    if (!indicator || !initializedRef.current) return;
+    indicator.style.background = ACTIVE_STYLES[activePath]?.background ?? 'white';
+  }, [activePath]);
+
+  return (
+    <div ref={containerRef} className="relative flex flex-1 items-center gap-5 mx-3">
+      {tabs.map(({ value, label }, i) => (
+        <button
+          key={value}
+          ref={el => { tabRefs.current[i] = el; }}
+          onClick={() => onTabChange(value)}
+          className="text-[15px] font-semibold pt-3 pb-3 whitespace-nowrap"
+          style={{
+            color: activeTab === value ? 'white' : 'rgba(255,255,255,0.45)',
+            transition: 'color 0.2s ease',
+          }}
+        >
+          {label}
+        </button>
+      ))}
+      <span
+        ref={indicatorRef}
+        className="absolute bottom-0 left-0 h-0.5 rounded-full pointer-events-none"
+        style={{
+          opacity: 0,
+          willChange: 'transform, width',
+          background: ACTIVE_STYLES[activePath]?.background ?? 'white',
+        }}
+      />
+    </div>
+  );
+}
+
 // ── PageNavbar ────────────────────────────────────────────────────────────────
 
 export function PageNavbar({ tabs, activeTab, onTabChange }: PageNavbarProps) {
@@ -321,24 +395,7 @@ export function PageNavbar({ tabs, activeTab, onTabChange }: PageNavbarProps) {
       </div>
 
       {/* Center: page-specific underline tabs */}
-      <div className="flex flex-1 items-center gap-5 mx-3">
-        {tabs.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => onTabChange(value)}
-            className="relative text-[15px] font-semibold transition-all duration-200 pt-3 pb-3 whitespace-nowrap"
-            style={{ color: activeTab === value ? 'white' : 'rgba(255,255,255,0.45)' }}
-          >
-            {label}
-            {activeTab === value && (
-              <span
-                className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                style={{ background: ACTIVE_STYLES[activePath]?.background ?? 'white' }}
-              />
-            )}
-          </button>
-        ))}
-      </div>
+      <TabBar tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} activePath={activePath} />
 
       {/* Right: next upcoming event countdown */}
       <NextEventCountdown />
