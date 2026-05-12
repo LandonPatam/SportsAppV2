@@ -6,12 +6,13 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { PageNavbar } from '@/components/layout/PageNavbar';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
+  Tabs, TabsContent,
 } from '@/components/ui/tabs';
 import { X, Sun, Moon, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import {
@@ -3600,12 +3601,16 @@ useEffect(() => {
       Navigation Tab Bar — hidden on mobile (scoreboard-only on mobile)
   ======================== */}
   {!isMobile && (
-  <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
-    <TabsTrigger value="schedule">Scoreboard</TabsTrigger>
-    <TabsTrigger value="standings">Standings</TabsTrigger>
-    <TabsTrigger value="all">Team Stats</TabsTrigger>
-    <TabsTrigger value="top-scorers">Top Players</TabsTrigger>
-  </TabsList>
+    <PageNavbar
+      tabs={[
+        { value: 'schedule',    label: 'Scoreboard'  },
+        { value: 'standings',   label: 'Standings'   },
+        { value: 'all',         label: 'Team Stats'  },
+        { value: 'top-scorers', label: 'Top Players' },
+      ]}
+      activeTab={activeTab}
+      onTabChange={(v) => React.startTransition(() => setActiveTab(v))}
+    />
   )}
 
 
@@ -3667,7 +3672,7 @@ useEffect(() => {
             <SelectItem
               key={value}
               value={value as TeamSortField}
-              className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
+              className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-[#4c1d95] hover:to-[#2dd4bf] hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-[#4c1d95] data-[state=checked]:to-[#2dd4bf] data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
             >
               {label}
             </SelectItem>
@@ -4203,7 +4208,7 @@ useEffect(() => {
               <SelectItem
                 key={value}
                 value={value}
-                className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-purple-500 hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-purple-500 data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
+                className="cursor-pointer w-full justify-center text-center rounded-full px-4 py-2 text-sm font-semibold hover:bg-gradient-to-r hover:from-[#4c1d95] hover:to-[#2dd4bf] hover:text-white data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-[#4c1d95] data-[state=checked]:to-[#2dd4bf] data-[state=checked]:text-white transition-all duration-200 [&_[data-radix-select-item-indicator]]:hidden [&>span:first-child]:hidden"
               >
                 {label}
               </SelectItem>

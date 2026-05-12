@@ -6,12 +6,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { PageNavbar } from '@/components/layout/PageNavbar';
 import {
   Card, CardContent,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
+  Tabs, TabsContent,
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -34,6 +35,14 @@ interface F1Race {
     race_page: string;
     circuit_info: string;
     results: string;
+  };
+  circuit_stats?: {
+    location?: string;
+    length?: string;
+    corners?: number;
+    tags?: string[];
+    top_speed?: string;
+    lap_record?: { time: string; driver: string; year: number | null };
   };
 }
 
@@ -233,7 +242,7 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
         svg.querySelectorAll('path, polyline, polygon, circle, ellipse, line, rect').forEach((el) => {
           el.setAttribute('fill', 'none');
           el.setAttribute('stroke', '#ffffff');
-          el.setAttribute('stroke-width', '1.5');
+          el.setAttribute('stroke-width', '3.5');
           // Clear any inline style that might override CSS
           el.removeAttribute('style');
         });
@@ -247,19 +256,20 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
           .f1-track-svg circle, .f1-track-svg ellipse, .f1-track-svg line, .f1-track-svg rect {
             fill: none !important;
             stroke: #ffffff !important;
-            stroke-width: 1.5 !important;
+            stroke-width: 3.5 !important;
           }
           .f1-teal-strip {
             fill: none !important;
-            stroke: #00e5cc !important;
-            stroke-width: 3 !important;
+            stroke: #2dd4bf !important;
+            stroke-width: 7 !important;
+            stroke-linecap: round !important;
           }
           @keyframes f1-dash {
             from { stroke-dashoffset: 0; }
             to { stroke-dashoffset: var(--f1-track-len); }
           }
           .f1-teal-strip {
-            animation: f1-dash var(--f1-anim-dur, 35s) linear infinite;
+            animation: f1-dash var(--f1-anim-dur, 25s) linear infinite;
             will-change: stroke-dashoffset;
           }
         `;
@@ -313,13 +323,14 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
     .f1-track-svg circle, .f1-track-svg ellipse, .f1-track-svg line, .f1-track-svg rect {
       fill: none !important;
       stroke: #ffffff !important;
-      stroke-width: 1.5 !important;
+      stroke-width: 3.5 !important;
     }
     .f1-teal-strip {
       fill: none !important;
-      stroke: #00e5cc !important;
-      stroke-width: 3 !important;
-      animation: f1-dash var(--f1-anim-dur, 35s) linear infinite;
+      stroke: #2dd4bf !important;
+      stroke-width: 7 !important;
+      stroke-linecap: round !important;
+      animation: f1-dash var(--f1-anim-dur, 25s) linear infinite;
       will-change: stroke-dashoffset;
     }
     @keyframes f1-dash {
@@ -405,6 +416,68 @@ const SessionCountdown = ({ race, isMobile = false }: { race: F1Race; isMobile?:
   );
 };
 
+
+// ============================
+// 🗓️ Session display helpers
+// ============================
+
+function formatSessionShort(timeStr: string): { day: string; time: string } | null {
+  try {
+    const clean = timeStr.replace(/\s+P[SD]T$/, '').trim();
+    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+):(\d+) ([AP]M)$/);
+    if (!m) return null;
+    const year = new Date().getFullYear();
+    const d = new Date(`${m[1]} ${year}`);
+    if (isNaN(d.getTime())) return null;
+    const day = d.toLocaleDateString('en-US', { weekday: 'short' });
+    return { day, time: `${m[2]}:${m[3]} ${m[4]}` };
+  } catch { return null; }
+}
+
+const SESSION_ORDER: { keys: string[]; label: string }[] = [
+  { keys: ['Free Practice 1'], label: 'FP1' },
+  { keys: ['Free Practice 2'], label: 'FP2' },
+  { keys: ['Free Practice 3'], label: 'FP3' },
+  { keys: ['Free Practice'],   label: 'FP' },
+  { keys: ['Sprint Qualifying', 'Sprint'], label: 'SQ' },
+  { keys: ['Sprint Race'],     label: 'SPR' },
+  { keys: ['Qualifying'],      label: 'QUAL' },
+  { keys: ['Race'],            label: 'RACE' },
+];
+
+const COUNTDOWN_LABELS: Record<string, string> = {
+  SQ: 'Sprint Qualifying', SPR: 'Sprint Race', QUAL: 'Qualifying', RACE: 'Race',
+};
+
+const RaceCardFooter = ({ race }: { race: F1Race }) => {
+  const cd = useSessionCountdown(race);
+  if (!cd) return null;
+  const units = [
+    { v: cd.days,  l: 'DAYS' },
+    { v: cd.hours, l: 'HRS' },
+    { v: cd.mins,  l: 'MIN' },
+    { v: cd.secs,  l: 'SEC' },
+  ];
+  const label = COUNTDOWN_LABELS[cd.label] ?? cd.label;
+  return (
+    <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.06]">
+      <span className="text-[9px] font-black tracking-widest uppercase whitespace-nowrap" style={{ color: '#2dd4bf' }}>
+        {label} -
+      </span>
+      <div className="flex items-end gap-1.5">
+        {units.map(({ v, l }, i) => (
+          <React.Fragment key={l}>
+            {i > 0 && <span className="text-base font-black pb-3.5" style={{ color: 'rgba(255,255,255,0.2)' }}>:</span>}
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
+              <span className="text-[8px] font-bold tracking-widest mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{l}</span>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // ============================
 // 🏎️ RaceCalendarNavigator — left panel of Dashboard
@@ -743,195 +816,183 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
   return (
     <div className="flex flex-col h-full space-y-3">
 
-      {/* ── Date navigator header ── */}
-      <div className="relative flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIndex((i) => clamp(i - 1))}
-            disabled={index <= 0}
-            className="rounded-full hover:bg-white/10"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-
-          <span className="text-lg font-semibold">Race {race.race_number}</span>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIndex((i) => clamp(i + 1))}
-            disabled={index >= racesWithKeys.length - 1}
-            className="rounded-full hover:bg-white/10"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <SessionCountdown race={race} />
-        </div>
-
-        {/* Calendar icon + popup */}
-        <div className="absolute right-0" ref={calendarRef}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-transparent"
-            onClick={openCalendar}
-            aria-label="Pick a race weekend"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          </Button>
-
-          {showCalendar && calendarMonth && (
-            <div
-              className="absolute top-11 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72"
-              style={{ backgroundColor: '#1a1a1a' }}
-            >
-              {/* Month navigation */}
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-                  onClick={() => setCalendarMonth(({ year: y, month: m }) => {
-                    const d = new Date(y, m - 2, 1);
-                    return { year: d.getFullYear(), month: d.getMonth() + 1 };
-                  })}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
-                <button
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-                  onClick={() => setCalendarMonth(({ year: y, month: m }) => {
-                    const d = new Date(y, m, 1);
-                    return { year: d.getFullYear(), month: d.getMonth() + 1 };
-                  })}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Day-of-week headers */}
-              <div className="grid grid-cols-7 mb-1">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
-                ))}
-              </div>
-
-              {/* Day cells */}
-              <div className="grid grid-cols-7 gap-y-1">
-                {calGrid.map((key, i) => {
-                  if (!key) return <div key={`empty-${i}`} />;
-                  const hasRace = raceDateSet.has(key);
-                  const isSelected = key === currentKey;
-                  const isToday = key === todayKey;
-                  const dayNum = parseInt(key.split('-')[2], 10);
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => handleCalendarDayClick(key)}
-                      disabled={!hasRace}
-                      className={`
-                        relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
-                        ${isSelected
-                          ? 'bg-white text-black shadow-lg'
-                          : hasRace
-                          ? 'text-white hover:bg-white/15 cursor-pointer'
-                          : 'text-white/20 cursor-default'}
-                      `}
-                    >
-                      {dayNum}
-                      {isToday && !isSelected && (
-                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />
-                      )}
-                      {isToday && isSelected && (
-                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Top Card (1/4): Race info + session times ── */}
-      <Card
-        className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 flex-shrink-0 flex flex-col justify-center"
-        style={{ flex: '1 0 0', maxHeight: '25%' }}
-        onClick={() => setResultsModal(race)}
-      >
+      {/* ── Race info card ── */}
+      <Card className="relative overflow-hidden rounded-2xl border border-white/10 flex-shrink-0">
         <div className="absolute inset-0" style={{ background: '#141414' }} />
-        <div className="relative z-10 px-4 py-3 flex items-center justify-between gap-4 h-full">
+        <div className="relative z-10 flex flex-col">
 
-          {/* Left: race name + circuit + date range */}
-          <div className="flex flex-col justify-start min-w-0 h-full pt-2 gap-1">
-            <h2 className="text-2xl font-extrabold text-white leading-tight truncate">
-              {race.race_name}
-            </h2>
-            <p className="text-base font-bold text-white/50 leading-tight truncate">{race.circuit}</p>
-            <p className="text-xs font-medium text-white/30 leading-tight">{race.date}</p>
+          {/* Header: < RACE 07 / 24 > + calendar */}
+          <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/[0.06]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-0.5">
+              <Button variant="ghost" size="icon" onClick={() => setIndex(i => clamp(i - 1))} disabled={index <= 0} className="h-7 w-7 rounded-full hover:bg-white/10">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-[11px] font-black tracking-[0.15em] text-white/60 uppercase px-1">
+                Race {String(race.race_number).padStart(2, '0')} / {String(racesWithKeys.length).padStart(2, '0')}
+              </span>
+              <Button variant="ghost" size="icon" onClick={() => setIndex(i => clamp(i + 1))} disabled={index >= racesWithKeys.length - 1} className="h-7 w-7 rounded-full hover:bg-white/10">
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="relative" ref={calendarRef}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/10" onClick={openCalendar} aria-label="Pick a race weekend">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </Button>
+              {showCalendar && calendarMonth && (
+                <div className="absolute top-9 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72" style={{ backgroundColor: '#1a1a1a' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                      onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m - 2, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+                    <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+                      onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-7 mb-1">
+                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+                      <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-y-1">
+                    {calGrid.map((key, i) => {
+                      if (!key) return <div key={`empty-${i}`} />;
+                      const hasRace = raceDateSet.has(key);
+                      const isSelected = key === currentKey;
+                      const isToday = key === todayKey;
+                      const dayNum = parseInt(key.split('-')[2], 10);
+                      return (
+                        <button key={key} onClick={() => handleCalendarDayClick(key)} disabled={!hasRace}
+                          className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
+                            ${isSelected ? 'bg-white text-black shadow-lg' : hasRace ? 'text-white hover:bg-white/15 cursor-pointer' : 'text-white/20 cursor-default'}`}>
+                          {dayNum}
+                          {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />}
+                          {isToday && isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right: session times as inline badges */}
-          {(() => {
-            const st = race.session_times ?? {};
-            const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
-            const badges = hasSprint
-              ? [
-                  { label: 'SQ',   time: st['Sprint'] ?? st['Sprint Qualifying'] },
-                  { label: 'SPR',  time: st['Sprint Race'] },
-                  { label: 'QUAL', time: st['Qualifying'] },
-                  { label: 'RACE', time: st['Race'] },
-                ]
-              : [
-                  { label: 'QUAL', time: st['Qualifying'] },
-                  { label: 'RACE', time: st['Race'] ?? race.start_time_west },
-                ];
+          {/* Body: race name (left) + session times (right) */}
+          <div className="flex gap-4 px-4 py-3 cursor-pointer" onClick={() => setResultsModal(race)}>
+            <div className="flex-1 min-w-0">
+              <h2
+                className="font-black text-white uppercase leading-tight"
+                style={{ fontSize: `clamp(0.75rem, ${(2.0 - race.race_name.length * 0.05).toFixed(2)}rem, 1.25rem)` }}
+              >{race.race_name}</h2>
+              <p className="text-xs font-medium text-white/50 mt-1 truncate">{race.circuit}</p>
+              <p className="text-xs font-medium text-white/30 mt-0.5">{race.date}</p>
+            </div>
+            <div className="flex flex-col gap-0.5 flex-shrink-0 justify-center">
+              {SESSION_ORDER.map(s => {
+                const key = s.keys.find(k => race.session_times?.[k]);
+                if (!key) return null;
+                const fmt = formatSessionShort(race.session_times![key]);
+                if (!fmt) return null;
+                return (
+                  <div key={s.label} className="flex items-center gap-2">
+                    <span className="text-[10px] font-black w-8 uppercase tracking-wide" style={{ color: '#2dd4bf' }}>{s.label}</span>
+                    <span className="text-[10px] font-medium text-white/50 w-6">{fmt.day}</span>
+                    <span className="text-[10px] font-bold text-white tabular-nums">{fmt.time}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-            const visibleBadges = badges.filter(b => b.time);
-            if (!visibleBadges.length) return null;
+          {/* Countdown footer */}
+          <RaceCardFooter race={race} />
 
-            return (
-              <div className="flex-shrink-0 flex flex-col gap-1.5 items-end">
-                {visibleBadges.map(({ label, time }) => {
-                  const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
-                  const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
-                  return (
-                    <div key={label} className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-black tracking-wider" style={{ color: '#2dd4bf' }}>{label}</span>
-                      <span className="text-[11px] font-semibold text-white">{datePart}</span>
-                      <span className="text-[11px] font-medium text-white">{timePart}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
         </div>
       </Card>
 
       {/* ── Bottom Card (3/4): Track SVG ── */}
       <Card
         className="relative overflow-hidden rounded-2xl border border-white/10 flex-1 min-h-0"
-        style={{ flex: '3 0 0' }}
+        style={{ flex: '3 1 0', minHeight: 0 }}
       >
         <div className="absolute inset-0" style={{ background: '#141414' }} />
         <style>{`.f1-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
-        <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'scale(1.1) translateY(10%)', transformOrigin: 'center center' }}>
+        <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'translateY(8%)', transformOrigin: 'center center' }}>
           {race.track_svg_extracted
             ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
             : <InlineSvg url={race.track_svg} className="w-full h-full" />
           }
         </div>
+
+        {/* Four-corner overlay */}
+        {(() => {
+          const cs = race.circuit_stats;
+          const lap = cs?.lap_record;
+          const lapValid = lap && lap.time && lap.time !== 'TBD';
+          return (
+            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between">
+              {/* Top row */}
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.08]">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Circuit Layout</span>
+                {cs?.corners != null && (
+                  <span className="text-[10px] font-black uppercase tracking-wide" style={{ color: '#2dd4bf' }}>
+                    {cs.corners} <span className="text-white/40">Turns</span>
+                  </span>
+                )}
+              </div>
+              {/* Bottom row */}
+              <div className="flex items-end justify-between gap-2 px-3 py-2 border-t border-white/[0.08]">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Lap Record</span>
+                  {lapValid ? (
+                    <>
+                      <span className="text-xs font-black text-white tabular-nums">{lap!.time}</span>
+                      <span className="text-[9px] text-white/30">
+                        {lap!.driver.split(' ').pop()} · {lap!.year}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-black text-white/30">—</span>
+                  )}
+                </div>
+                {cs?.tags && cs.tags.length > 0 && (
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {cs.tags.map(tag => {
+                      const tl = tag.toLowerCase();
+                      let bg = 'rgba(255,255,255,0.06)', color = 'rgba(255,255,255,0.45)';
+                      if (tl.includes('nearly impossible')) { bg = 'rgba(120,0,0,0.35)';    color = '#f87171'; }
+                      else if (tl.includes('very difficult'))  { bg = 'rgba(180,20,20,0.30)';  color = '#fca5a5'; }
+                      else if (tl.includes('difficult'))       { bg = 'rgba(180,70,10,0.30)';  color = '#fb923c'; }
+                      else if (tl.includes('excellent'))       { bg = 'rgba(10,120,40,0.30)';  color = '#4ade80'; }
+                      else if (tl.includes('good'))            { bg = 'rgba(20,80,180,0.30)';  color = '#60a5fa'; }
+                      else if (tl.includes('very high'))   { bg = 'rgba(10,120,40,0.30)';  color = '#4ade80'; }
+                      else if (tl.includes('medium-high')) { bg = 'rgba(20,80,180,0.30)';  color = '#60a5fa'; }
+                      else if (tl.includes('high'))        { bg = 'rgba(180,70,10,0.30)';  color = '#fb923c'; }
+                      else if (tl.includes('medium'))      { bg = 'rgba(180,20,20,0.30)';  color = '#fca5a5'; }
+                      else if (tl.includes('low'))         { bg = 'rgba(120,0,0,0.35)';    color = '#f87171'; }
+                      return (
+                        <span
+                          key={tag}
+                          className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                          style={{ background: bg, color }}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </Card>
 
       {/* Results Modal */}
@@ -1139,7 +1200,7 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
   };
 
   return (
-    <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+    <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 6rem)' }}>
       <div className="flex justify-end items-center gap-2 mb-3">
         {/* Info icon with points tooltip */}
         <div className="relative group">
@@ -1269,7 +1330,7 @@ const ConstructorsTab = ({ teamsData }: { teamsData: F1Team[] }) => {
   };
 
   return (
-    <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+    <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 6rem)' }}>
       <div className="flex justify-end mb-3">
         <button
           onClick={() => { setExpandAll(!expandAll); setExpandedTeam(null); }}
@@ -1422,26 +1483,30 @@ const F1 = () => {
         onValueChange={(v) => setActiveTab(v)}
       >
         {/* ── Tab Bar ── */}
-        <TabsList className="grid py-2 px-2 w-full grid-cols-4 max-w-none mb-4 gap-2 -mt-1 -ml-2 pl-32">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="drivers">Drivers</TabsTrigger>
-          <TabsTrigger value="constructors">Constructors</TabsTrigger>
-          <TabsTrigger value="races">Races</TabsTrigger>
-        </TabsList>
+        <PageNavbar
+          tabs={[
+            { value: 'dashboard',    label: 'Dashboard'    },
+            { value: 'drivers',      label: 'Drivers'      },
+            { value: 'constructors', label: 'Constructors' },
+            { value: 'races',        label: 'Races'        },
+          ]}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
 
         {/* ========================
             TAB: Dashboard
         ======================== */}
-        <TabsContent value="dashboard" className="mt-0">
+        <TabsContent value="dashboard" className="mt-3">
           <div
             className="flex gap-4"
-            style={{ height: 'calc(100vh - 8rem)' }}
+            style={{ height: 'calc(100vh - 6rem)' }}
           >
             {/* Left column: Calendar + Driver grid stacked */}
-            <div className="flex flex-col gap-4 flex-shrink-0 min-h-0" style={{ width: '600px' }}>
+            <div className="flex flex-col gap-4 flex-shrink-0 min-h-0" style={{ width: '40%' }}>
 
               {/* Calendar */}
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0">
                 {loading ? (
                   <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                   </div>
@@ -1470,21 +1535,29 @@ const F1 = () => {
                             key={driver.name}
                             className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.015] transition-all duration-200"
                             style={{
-                              backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
-                              padding: '3px',
+                              backgroundColor: '#141414',
+                              border: '1px solid rgba(255,255,255,0.06)',
+                              borderLeft: `4px solid ${accent}`,
                               animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
                             }}
                           >
-                            <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
-                            <div className="relative z-10 flex items-center justify-between px-3 h-14">
-                              <div className="flex flex-col">
-                                <span className="text-[12px] font-black text-white/40">#{index + 1}</span>
-                                <span className="text-base font-black text-white uppercase tracking-wide">{lastName}</span>
-                              </div>
-                              <span className="text-2xl font-black text-white leading-none">
-                                {driver.points}
-                                <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
-                              </span>
+                            <div className="relative z-10 flex items-center justify-between px-3 h-12">
+                              <span className="text-sm font-black text-white uppercase tracking-wide">{lastName}</span>
+                              {(() => {
+                                const entries = Object.entries(driver.race_points ?? {});
+                                const latest = [...entries].reverse().find(([, v]) => v != null)?.[1] as number | null;
+                                return (
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-lg font-black text-white leading-none tabular-nums">{driver.points}</span>
+                                    <div className="flex items-baseline gap-1">
+                                      {latest != null && latest > 0 && (
+                                        <span className="text-[11px] font-black tabular-nums" style={{ color: '#2dd4bf' }}>+{latest}</span>
+                                      )}
+                                      <span className="text-[10px] font-semibold text-white/40 leading-none">PTS</span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         );
@@ -1510,16 +1583,15 @@ const F1 = () => {
                       key={team.name}
                       className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.015] transition-all duration-200 flex-1"
                       style={{
-                        backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`,
-                        padding: '3px',
+                        backgroundColor: '#141414',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderLeft: `4px solid ${accent}`,
                         animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
                       }}
                     >
-                      {/* Dark base */}
-                      <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
                       {/* Car image — anchored to bottom, pushed left */}
                       {team.car_url && (
-                        <div className="absolute inset-[3px] rounded-xl overflow-hidden" aria-hidden>
+                        <div className="absolute inset-0 rounded-xl overflow-hidden" aria-hidden>
                           <img
                             src={team.car_url}
                             alt=""
@@ -1527,12 +1599,10 @@ const F1 = () => {
                             style={{ height: '90px', width: 'auto', opacity: 0.95 }}
                             loading="lazy"
                           />
-                          {/* Fade car out to the right */}
                           <div
                             className="absolute inset-0"
                             style={{ background: 'linear-gradient(90deg, transparent 30%, #141414 68%)' }}
                           />
-                          {/* Fade bottom edge */}
                           <div
                             className="absolute inset-0"
                             style={{ background: 'linear-gradient(180deg, transparent 40%, #14141488 100%)' }}
@@ -1553,10 +1623,21 @@ const F1 = () => {
                       )}
                       <div className="relative z-10 flex items-center justify-between px-3 h-full">
                         <div />
-                        <span className="text-3xl font-black text-white leading-none">
-                          {pts}
-                          <span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
-                        </span>
+                        {(() => {
+                          const entries = Object.entries(team.team_race_points ?? {});
+                          const latest = [...entries].reverse().find(([, v]) => v != null)?.[1] as number | null;
+                          return (
+                            <div className="flex flex-col items-end">
+                              <span className="text-3xl font-black text-white leading-none tabular-nums">{pts}</span>
+                              <div className="flex items-baseline gap-1">
+                                {latest != null && latest > 0 && (
+                                  <span className="text-[11px] font-black tabular-nums" style={{ color: '#2dd4bf' }}>+{latest}</span>
+                                )}
+                                <span className="text-[10px] font-semibold text-white/40 leading-none">PTS</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
@@ -1569,22 +1650,22 @@ const F1 = () => {
         {/* ========================
             TAB: Drivers
         ======================== */}
-        <TabsContent value="drivers" className="mt-0">
+        <TabsContent value="drivers" className="mt-3">
           <DriversTab teamsData={teamsData} calendarData={calendarData} />
         </TabsContent>
 
         {/* ========================
             TAB: Constructors
         ======================== */}
-        <TabsContent value="constructors" className="mt-0">
+        <TabsContent value="constructors" className="mt-3">
           <ConstructorsTab teamsData={teamsData} />
         </TabsContent>
 
         {/* ========================
             TAB: Races
         ======================== */}
-        <TabsContent value="races" className="mt-0">
-          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 8rem)' }}>
+        <TabsContent value="races" className="mt-3">
+          <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 6rem)' }}>
             <div className="grid grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
               {[...calendarData]
                 .sort((a, b) => a.race_number - b.race_number)
@@ -1631,8 +1712,8 @@ const F1 = () => {
                             style={isCanceled
                               ? { backgroundColor: '#3a1a1a', color: '#ff4444', border: '1px solid #ff444433' }
                               : isUpcoming
-                              ? { backgroundColor: '#e10600', color: '#ffffff' }
-                              : { backgroundColor: '#2a2a2a', color: '#888' }}
+                              ? { backgroundColor: 'rgba(130,50,200,0.30)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.2)' }
+                              : { backgroundColor: 'rgba(10,120,40,0.30)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}
                           >
                             {isCanceled ? 'Canceled' : isUpcoming ? 'Upcoming' : 'Completed'}
                           </Badge>

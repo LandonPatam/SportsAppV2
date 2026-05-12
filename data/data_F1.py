@@ -491,6 +491,160 @@ def update_driver_points():
         print(f"Could not match (set to 0): {', '.join(unmatched)}")
 
 
+def fetch_circuit_stats():
+    """
+    Scrapes all circuit data from a single formula-timer.com/circuit page fetch
+    and writes it into f1_calendar.json under circuit_stats per race.
+    Fields: location, length, corners, tags, lap_record, top_speed.
+    """
+    if not os.path.exists(CALENDAR_PATH):
+        print(f"ERROR: {CALENDAR_PATH} not found.")
+        return
+
+    with open(CALENDAR_PATH) as f:
+        calendar = json.load(f)
+
+    # ── Race name keyword → formula-timer circuit ID ─────────────────────────
+    RACE_TO_FT = {
+        'Australian':    'albert_park',
+        'Chinese':       'shanghai',
+        'Japanese':      'suzuka',
+        'Bahrain':       'bahrain',
+        'Saudi':         'jeddah',
+        'Miami':         'miami',
+        'Canadian':      'villeneuve',
+        'Monaco':        'monaco',
+        'Barcelona':     'catalunya',
+        'Austrian':      'red_bull_ring',
+        'British':       'silverstone',
+        'Belgian':       'spa',
+        'Hungarian':     'hungaroring',
+        'Dutch':         'zandvoort',
+        'Italian':       'monza',
+        'Spanish':       'madrid',
+        'Azerbaijan':    'baku',
+        'Singapore':     'marina_bay',
+        'United States': 'americas',
+        'Mexico':        'rodriguez',
+        'Paulo':         'interlagos',
+        'Las Vegas':     'vegas',
+        'Qatar':         'losail',
+        'Abu Dhabi':     'yas_marina',
+    }
+
+    # ── Historical top speed (km/h) — not on formula-timer ───────────────────
+    TOP_SPEEDS = {
+        'albert_park':   335,
+        'shanghai':      338,
+        'suzuka':        320,
+        'bahrain':       323,
+        'jeddah':        344,
+        'miami':         320,
+        'villeneuve':    339,
+        'monaco':        298,
+        'catalunya':     324,
+        'red_bull_ring': 316,
+        'silverstone':   322,
+        'spa':           355,
+        'hungaroring':   304,
+        'zandvoort':     318,
+        'monza':         372,
+        'madrid':        320,
+        'baku':          358,
+        'marina_bay':    300,
+        'americas':      334,
+        'rodriguez':     358,
+        'interlagos':    332,
+        'vegas':         350,
+        'losail':        336,
+        'yas_marina':    325,
+    }
+
+    def strip_html(s):
+        s = re.sub(r'<!--.*?-->', '', s, flags=re.DOTALL)
+        s = re.sub(r'<[^>]+>', ' ', s)
+        s = re.sub(r'&amp;', '&', s)
+        s = re.sub(r'&#x27;', "'", s)
+        return re.sub(r'\s+', ' ', s).strip()
+
+    # ── Single page fetch ─────────────────────────────────────────────────────
+    try:
+        resp = requests.get('https://formula-timer.com/circuit', headers=headers, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"ERROR fetching formula-timer: {e}")
+        return
+
+    # Parse all circuit cards: each is an <a href="/circuit/ID"> block
+    cards = re.findall(r'href="(/circuit/[^"]+)">(.*?)(?=href="/circuit/|$)',
+                       resp.text, re.DOTALL)
+    ft_data = {}
+    for href, content in cards:
+        ft_id = href.replace('/circuit/', '')
+
+        loc_m   = re.search(r'text-gray-200 text-sm[^"]*"[^>]*>(.*?)</p>', content, re.DOTALL)
+        len_m   = re.search(r'Length:</span><div[^>]*>(.*?)</div>', content, re.DOTALL)
+        cor_m   = re.search(r'Corners:</span><div[^>]*>(.*?)</div>', content, re.DOTALL)
+        lap_m   = re.search(r'font-mono font-bold[^"]*"[^>]*>(.*?)</div>', content, re.DOTALL)
+        raw_tags = re.findall(r'rounded-full[^"]*"[^>]*>(.*?)</span>', content, re.DOTALL)
+
+        lap_record = None
+        if lap_m:
+            lap_time = strip_html(lap_m.group(1))
+            drv_m = re.search(r'text-slate-400[^"]*"[^>]*>(.*?)</div>',
+                              content[lap_m.end():], re.DOTALL)
+            if drv_m:
+                raw = strip_html(drv_m.group(1))
+                dm  = re.match(r'^(.+?)\s*\((\d{4})\)\s*$', raw)
+                lap_record = {
+                    'time':   lap_time,
+                    'driver': dm.group(1).strip() if dm else raw,
+                    'year':   int(dm.group(2)) if dm else None,
+                }
+
+        ft_data[ft_id] = {
+            'location':   strip_html(loc_m.group(1)) if loc_m else None,
+            'length':     strip_html(len_m.group(1)) if len_m else None,
+            'corners':    int(strip_html(cor_m.group(1))) if cor_m else None,
+            'tags':       [strip_html(t) for t in raw_tags if strip_html(t)],
+            'lap_record': lap_record,
+        }
+
+    print(f"Parsed {len(ft_data)} circuits from formula-timer")
+
+    # ── Match each calendar race and write stats ──────────────────────────────
+    updated = 0
+    for race in calendar:
+        if race.get('circuit_stats'):
+            print(f"[SKIP] {race['race_name']} — already populated")
+            continue
+
+        ft_id = next(
+            (fid for kw, fid in RACE_TO_FT.items() if kw.lower() in race['race_name'].lower()),
+            None
+        )
+        if not ft_id or ft_id not in ft_data:
+            print(f"[WARN] {race['race_name']} — no match (ft_id={ft_id})")
+            continue
+
+        stats = dict(ft_data[ft_id])
+        if ft_id in TOP_SPEEDS:
+            stats['top_speed'] = f"{TOP_SPEEDS[ft_id]} km/h"
+
+        race['circuit_stats'] = stats
+        updated += 1
+        lap = (stats.get('lap_record') or {})
+        print(f"[OK] {race['race_name']} ({ft_id}): "
+              f"loc={stats.get('location')} corners={stats.get('corners')} "
+              f"tags={stats.get('tags')} lap={lap.get('time')}")
+
+    with open(CALENDAR_PATH, 'w') as f:
+        json.dump(calendar, f, indent=4)
+
+    print(f"\n[OK] Circuit stats saved for {updated} race(s).")
+
+
 if __name__ == "__main__":
     update_calendar()
     update_driver_points()
+    fetch_circuit_stats()

@@ -26,7 +26,7 @@ export function PageLayout({ title, children, theme = 'default' }: PageLayoutPro
     <div
       className="flex-1 min-h-screen overflow-x-hidden"
       style={{
-        paddingTop: isMobile ? '0' : '1.5rem',
+        paddingTop: isMobile ? '0' : '0.75rem',
         paddingBottom: '1.5rem',
         paddingLeft: isMobile ? '0' : '1.5rem',
         paddingRight: isMobile ? '0' : '1.5rem',

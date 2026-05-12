@@ -384,7 +384,22 @@
             }
         ],
         "sprint_winner": null,
-        "sprint_results": null
+        "sprint_results": null,
+        "circuit_stats": {
+            "location": "Melbourne, Australia",
+            "length": "5.278 km",
+            "corners": 14,
+            "tags": [
+                "Difficult Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:20.260",
+                "driver": "Charles Leclerc",
+                "year": 2024
+            },
+            "top_speed": "335 km/h"
+        }
     },
     {
         "race_number": 2,
@@ -1132,7 +1147,22 @@
                 "position_change": "--",
                 "is_retired": true
             }
-        ]
+        ],
+        "circuit_stats": {
+            "location": "Shanghai, China",
+            "length": "5.451 km",
+            "corners": 16,
+            "tags": [
+                "Good Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:32.238",
+                "driver": "Michael Schumacher",
+                "year": 2004
+            },
+            "top_speed": "338 km/h"
+        }
     },
     {
         "race_number": 3,
@@ -1519,7 +1549,22 @@
             }
         ],
         "sprint_winner": null,
-        "sprint_results": null
+        "sprint_results": null,
+        "circuit_stats": {
+            "location": "Suzuka, Japan",
+            "length": "5.807 km",
+            "corners": 18,
+            "tags": [
+                "Difficult Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:30.983",
+                "driver": "Lewis Hamilton",
+                "year": 2019
+            },
+            "top_speed": "320 km/h"
+        }
     },
     {
         "race_number": 4,
@@ -1541,6 +1586,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057430",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057430",
             "results": "https://www.espn.com/f1/results/_/id/600057430"
+        },
+        "circuit_stats": {
+            "location": "Sakhir, Bahrain",
+            "length": "5.412 km",
+            "corners": 15,
+            "tags": [
+                "Excellent Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:31.447",
+                "driver": "Pedro de la Rosa",
+                "year": 2005
+            },
+            "top_speed": "323 km/h"
         }
     },
     {
@@ -1563,6 +1623,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057431",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057431",
             "results": "https://www.espn.com/f1/results/_/id/600057431"
+        },
+        "circuit_stats": {
+            "location": "Jeddah, Saudi Arabia",
+            "length": "6.174 km",
+            "corners": 27,
+            "tags": [
+                "Good Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:30.734",
+                "driver": "Lewis Hamilton",
+                "year": 2021
+            },
+            "top_speed": "344 km/h"
         }
     },
     {
@@ -1585,6 +1660,747 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057432",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057432",
             "results": "https://www.espn.com/f1/results/_/id/600057432"
+        },
+        "winner": {
+            "driver": "Kimi Antonelli",
+            "short_name": "K. Antonelli",
+            "team": "Mercedes",
+            "team_color": "#00D2BE",
+            "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5829.png",
+            "race_time": "1:33:19.273",
+            "fastest_lap": "--"
+        },
+        "results": [
+            {
+                "position": 1,
+                "driver": "Kimi Antonelli",
+                "short_name": "K. Antonelli",
+                "team": "Mercedes",
+                "team_color": "#00D2BE",
+                "country": "Italy",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5829.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:33:19.273",
+                "time_behind_leader": "1:33:19.273",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 2,
+                "driver": "Lando Norris",
+                "short_name": "L. Norris",
+                "team": "McLaren",
+                "team_color": "#FF8700",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5579.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "1:31.869 (35)",
+                "race_time": "1:33:22.537",
+                "time_behind_leader": "+3.264",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 3,
+                "driver": "Oscar Piastri",
+                "short_name": "O. Piastri",
+                "team": "McLaren",
+                "team_color": "#FF8700",
+                "country": "Australia",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5752.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:33:46.365",
+                "time_behind_leader": "+27.092",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 4,
+                "driver": "George Russell",
+                "short_name": "G. Russell",
+                "team": "Mercedes",
+                "team_color": "#00D2BE",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5503.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:02.324",
+                "time_behind_leader": "+43.051",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 5,
+                "driver": "Max Verstappen",
+                "short_name": "M. Verstappen",
+                "team": "Red Bull",
+                "team_color": "#00327D",
+                "country": "Netherlands",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4665.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:08.222",
+                "time_behind_leader": "+48.949",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 6,
+                "driver": "Lewis Hamilton",
+                "short_name": "L. Hamilton",
+                "team": "Ferrari",
+                "team_color": "#DC0000",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/868.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:13.026",
+                "time_behind_leader": "+53.753",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 7,
+                "driver": "Franco Colapinto",
+                "short_name": "F. Colapinto",
+                "team": "Alpine",
+                "team_color": "#FFF500",
+                "country": "Argentina",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5823.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:21.144",
+                "time_behind_leader": "+1:01.871",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 8,
+                "driver": "Charles Leclerc",
+                "short_name": "C. Leclerc",
+                "team": "Ferrari",
+                "team_color": "#DC0000",
+                "country": "Monaco",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5498.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:23.518",
+                "time_behind_leader": "+1:04.245",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 9,
+                "driver": "Carlos Sainz",
+                "short_name": "C. Sainz",
+                "team": "Williams",
+                "team_color": "#FFFFFF",
+                "country": "Spain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4686.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:41.345",
+                "time_behind_leader": "+1:22.072",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 10,
+                "driver": "Alexander Albon",
+                "short_name": "A. Albon",
+                "team": "Williams",
+                "team_color": "#FFFFFF",
+                "country": "Thailand",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5592.png",
+                "laps_completed": "57",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "1:34:50.245",
+                "time_behind_leader": "+1:30.972",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 11,
+                "driver": "Oliver Bearman",
+                "short_name": "O. Bearman",
+                "team": "Haas",
+                "team_color": "#5A5A5A",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5789.png",
+                "laps_completed": "56",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 12,
+                "driver": "Gabriel Bortoleto",
+                "short_name": "G. Bortoleto",
+                "team": "Audi",
+                "team_color": "#FF2D00",
+                "country": "Brazil",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5835.png",
+                "laps_completed": "56",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 13,
+                "driver": "Esteban Ocon",
+                "short_name": "E. Ocon",
+                "team": "Haas",
+                "team_color": "#5A5A5A",
+                "country": "France",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4678.png",
+                "laps_completed": "56",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 14,
+                "driver": "Arvid Lindblad",
+                "short_name": "A. Lindblad",
+                "team": "Racing Bulls",
+                "team_color": "#6692FF",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5855.png",
+                "laps_completed": "56",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 15,
+                "driver": "Fernando Alonso",
+                "short_name": "F. Alonso",
+                "team": "Aston Martin",
+                "team_color": "#006F62",
+                "country": "Spain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/348.png",
+                "laps_completed": "56",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 16,
+                "driver": "Sergio P\u00e9rez",
+                "short_name": "S. P\u00e9rez",
+                "team": "Cadillac",
+                "team_color": "#A2AAAD",
+                "country": "Mexico",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4472.png",
+                "laps_completed": "56",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 17,
+                "driver": "Lance Stroll",
+                "short_name": "L. Stroll",
+                "team": "Aston Martin",
+                "team_color": "#006F62",
+                "country": "Canada",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4775.png",
+                "laps_completed": "56",
+                "pits": "2",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+1 Lap",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 18,
+                "driver": "Valtteri Bottas",
+                "short_name": "V. Bottas",
+                "team": "Cadillac",
+                "team_color": "#A2AAAD",
+                "country": "Finland",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4520.png",
+                "laps_completed": "55",
+                "pits": "3",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+2 Laps",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 19,
+                "driver": "Nico H\u00fclkenberg",
+                "short_name": "N. H\u00fclkenberg",
+                "team": "Audi",
+                "team_color": "#FF2D00",
+                "country": "Germany",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4396.png",
+                "laps_completed": "7",
+                "pits": "2",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+50 Laps",
+                "position_change": "--",
+                "is_retired": true
+            },
+            {
+                "position": 20,
+                "driver": "Liam Lawson",
+                "short_name": "L. Lawson",
+                "team": "Racing Bulls",
+                "team_color": "#6692FF",
+                "country": "New Zealand",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5741.png",
+                "laps_completed": "6",
+                "pits": "1",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+51 Laps",
+                "position_change": "--",
+                "is_retired": true
+            },
+            {
+                "position": 21,
+                "driver": "Pierre Gasly",
+                "short_name": "P. Gasly",
+                "team": "Alpine",
+                "team_color": "#FFF500",
+                "country": "France",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5501.png",
+                "laps_completed": "4",
+                "pits": "0",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+53 Laps",
+                "position_change": "--",
+                "is_retired": true
+            },
+            {
+                "position": 22,
+                "driver": "Isack Hadjar",
+                "short_name": "I. Hadjar",
+                "team": "Red Bull",
+                "team_color": "#00327D",
+                "country": "France",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5790.png",
+                "laps_completed": "4",
+                "pits": "0",
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+53 Laps",
+                "position_change": "--",
+                "is_retired": true
+            }
+        ],
+        "sprint_winner": {
+            "driver": "Lando Norris",
+            "short_name": "L. Norris",
+            "team": "McLaren",
+            "team_color": "#FF8700",
+            "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5579.png",
+            "race_time": "29:15.045",
+            "fastest_lap": "1:31.885 (10)"
+        },
+        "sprint_results": [
+            {
+                "position": 1,
+                "driver": "Lando Norris",
+                "short_name": "L. Norris",
+                "team": "McLaren",
+                "team_color": "#FF8700",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5579.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "1:31.885 (10)",
+                "race_time": "29:15.045",
+                "time_behind_leader": "29:15.045",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 2,
+                "driver": "Oscar Piastri",
+                "short_name": "O. Piastri",
+                "team": "McLaren",
+                "team_color": "#FF8700",
+                "country": "Australia",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5752.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:18.811",
+                "time_behind_leader": "+3.766",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 3,
+                "driver": "Charles Leclerc",
+                "short_name": "C. Leclerc",
+                "team": "Ferrari",
+                "team_color": "#DC0000",
+                "country": "Monaco",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5498.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:21.296",
+                "time_behind_leader": "+6.251",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 4,
+                "driver": "George Russell",
+                "short_name": "G. Russell",
+                "team": "Mercedes",
+                "team_color": "#00D2BE",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5503.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:27.996",
+                "time_behind_leader": "+12.951",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 5,
+                "driver": "Max Verstappen",
+                "short_name": "M. Verstappen",
+                "team": "Red Bull",
+                "team_color": "#00327D",
+                "country": "Netherlands",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4665.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:28.684",
+                "time_behind_leader": "+13.639",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 6,
+                "driver": "Kimi Antonelli",
+                "short_name": "K. Antonelli",
+                "team": "Mercedes",
+                "team_color": "#00D2BE",
+                "country": "Italy",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5829.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:28.822",
+                "time_behind_leader": "+13.777",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 7,
+                "driver": "Lewis Hamilton",
+                "short_name": "L. Hamilton",
+                "team": "Ferrari",
+                "team_color": "#DC0000",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/868.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:36.710",
+                "time_behind_leader": "+21.665",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 8,
+                "driver": "Pierre Gasly",
+                "short_name": "P. Gasly",
+                "team": "Alpine",
+                "team_color": "#FFF500",
+                "country": "France",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5501.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:45.570",
+                "time_behind_leader": "+30.525",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 9,
+                "driver": "Isack Hadjar",
+                "short_name": "I. Hadjar",
+                "team": "Red Bull",
+                "team_color": "#00327D",
+                "country": "France",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5790.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:50.391",
+                "time_behind_leader": "+35.346",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 10,
+                "driver": "Franco Colapinto",
+                "short_name": "F. Colapinto",
+                "team": "Alpine",
+                "team_color": "#FFF500",
+                "country": "Argentina",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5823.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "29:52.015",
+                "time_behind_leader": "+36.970",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 11,
+                "driver": "Esteban Ocon",
+                "short_name": "E. Ocon",
+                "team": "Haas",
+                "team_color": "#5A5A5A",
+                "country": "France",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4678.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:12.017",
+                "time_behind_leader": "+56.972",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 12,
+                "driver": "Oliver Bearman",
+                "short_name": "O. Bearman",
+                "team": "Haas",
+                "team_color": "#5A5A5A",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5789.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:12.410",
+                "time_behind_leader": "+57.365",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 13,
+                "driver": "Carlos Sainz",
+                "short_name": "C. Sainz",
+                "team": "Williams",
+                "team_color": "#FFFFFF",
+                "country": "Spain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4686.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:13.549",
+                "time_behind_leader": "+58.504",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 14,
+                "driver": "Liam Lawson",
+                "short_name": "L. Lawson",
+                "team": "Racing Bulls",
+                "team_color": "#6692FF",
+                "country": "New Zealand",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5741.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:14.403",
+                "time_behind_leader": "+59.358",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 15,
+                "driver": "Fernando Alonso",
+                "short_name": "F. Alonso",
+                "team": "Aston Martin",
+                "team_color": "#006F62",
+                "country": "Spain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/348.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:31.112",
+                "time_behind_leader": "+1:16.067",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 16,
+                "driver": "Sergio P\u00e9rez",
+                "short_name": "S. P\u00e9rez",
+                "team": "Cadillac",
+                "team_color": "#A2AAAD",
+                "country": "Mexico",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4472.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:31.736",
+                "time_behind_leader": "+1:16.691",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 17,
+                "driver": "Lance Stroll",
+                "short_name": "L. Stroll",
+                "team": "Aston Martin",
+                "team_color": "#006F62",
+                "country": "Canada",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4775.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:32.671",
+                "time_behind_leader": "+1:17.626",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 18,
+                "driver": "Alexander Albon",
+                "short_name": "A. Albon",
+                "team": "Williams",
+                "team_color": "#FFFFFF",
+                "country": "Thailand",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5592.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:43.218",
+                "time_behind_leader": "+1:28.173",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 19,
+                "driver": "Valtteri Bottas",
+                "short_name": "V. Bottas",
+                "team": "Cadillac",
+                "team_color": "#A2AAAD",
+                "country": "Finland",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4520.png",
+                "laps_completed": "19",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "30:44.642",
+                "time_behind_leader": "+1:29.597",
+                "position_change": "--",
+                "is_retired": false
+            },
+            {
+                "position": 20,
+                "driver": "Nico H\u00fclkenberg",
+                "short_name": "N. H\u00fclkenberg",
+                "team": "Audi",
+                "team_color": "#FF2D00",
+                "country": "Germany",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/4396.png",
+                "laps_completed": "0",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+19 Laps",
+                "position_change": "--",
+                "is_retired": true
+            },
+            {
+                "position": 21,
+                "driver": "Arvid Lindblad",
+                "short_name": "A. Lindblad",
+                "team": "Racing Bulls",
+                "team_color": "#6692FF",
+                "country": "Britain",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5855.png",
+                "laps_completed": "0",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "+19 Laps",
+                "position_change": "--",
+                "is_retired": true
+            },
+            {
+                "position": 22,
+                "driver": "Gabriel Bortoleto",
+                "short_name": "G. Bortoleto",
+                "team": "Audi",
+                "team_color": "#FF2D00",
+                "country": "Brazil",
+                "headshot": "https://a.espncdn.com/i/headshots/rpm/players/full/5835.png",
+                "laps_completed": "0",
+                "pits": null,
+                "fastest_lap": "--",
+                "race_time": "--",
+                "time_behind_leader": "--",
+                "position_change": "--",
+                "is_retired": false
+            }
+        ],
+        "circuit_stats": {
+            "location": "Miami, USA",
+            "length": "5.41 km",
+            "corners": 19,
+            "tags": [
+                "Good Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:31.361",
+                "driver": "Max Verstappen",
+                "year": 2023
+            },
+            "top_speed": "320 km/h"
         }
     },
     {
@@ -1607,6 +2423,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057433",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057433",
             "results": "https://www.espn.com/f1/results/_/id/600057433"
+        },
+        "circuit_stats": {
+            "location": "Montreal, Canada",
+            "length": "4.361 km",
+            "corners": 14,
+            "tags": [
+                "Excellent Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:13.078",
+                "driver": "Valtteri Bottas",
+                "year": 2019
+            },
+            "top_speed": "339 km/h"
         }
     },
     {
@@ -1629,6 +2460,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057434",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057434",
             "results": "https://www.espn.com/f1/results/_/id/600057434"
+        },
+        "circuit_stats": {
+            "location": "Monte-Carlo, Monaco",
+            "length": "3.337 km",
+            "corners": 19,
+            "tags": [
+                "Nearly Impossible Overtaking",
+                "Medium Speed"
+            ],
+            "lap_record": {
+                "time": "1:12.909",
+                "driver": "Lewis Hamilton",
+                "year": 2021
+            },
+            "top_speed": "298 km/h"
         }
     },
     {
@@ -1651,6 +2497,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057435",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057435",
             "results": "https://www.espn.com/f1/results/_/id/600057435"
+        },
+        "circuit_stats": {
+            "location": "Montmel\u00f3, Spain",
+            "length": "4.675 km",
+            "corners": 16,
+            "tags": [
+                "Difficult Overtaking",
+                "Medium-High Speed"
+            ],
+            "lap_record": {
+                "time": "1:18.149",
+                "driver": "Max Verstappen",
+                "year": 2021
+            },
+            "top_speed": "324 km/h"
         }
     },
     {
@@ -1673,6 +2534,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057436",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057436",
             "results": "https://www.espn.com/f1/results/_/id/600057436"
+        },
+        "circuit_stats": {
+            "location": "Spielberg, Austria",
+            "length": "4.318 km",
+            "corners": 10,
+            "tags": [
+                "Excellent Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:05.619",
+                "driver": "Carlos Sainz",
+                "year": 2020
+            },
+            "top_speed": "316 km/h"
         }
     },
     {
@@ -1695,6 +2571,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057437",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057437",
             "results": "https://www.espn.com/f1/results/_/id/600057437"
+        },
+        "circuit_stats": {
+            "location": "Silverstone, Great Britain",
+            "length": "5.891 km",
+            "corners": 18,
+            "tags": [
+                "Good Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:27.097",
+                "driver": "Max Verstappen",
+                "year": 2020
+            },
+            "top_speed": "322 km/h"
         }
     },
     {
@@ -1717,6 +2608,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057439",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057439",
             "results": "https://www.espn.com/f1/results/_/id/600057439"
+        },
+        "circuit_stats": {
+            "location": "Spa, Belgium",
+            "length": "7.004 km",
+            "corners": 19,
+            "tags": [
+                "Excellent Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:46.286",
+                "driver": "Valtteri Bottas",
+                "year": 2018
+            },
+            "top_speed": "355 km/h"
         }
     },
     {
@@ -1739,6 +2645,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057440",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057440",
             "results": "https://www.espn.com/f1/results/_/id/600057440"
+        },
+        "circuit_stats": {
+            "location": "Budapest, Hungary",
+            "length": "4.381 km",
+            "corners": 14,
+            "tags": [
+                "Very Difficult Overtaking",
+                "Medium Speed"
+            ],
+            "lap_record": {
+                "time": "1:16.627",
+                "driver": "Lewis Hamilton",
+                "year": 2020
+            },
+            "top_speed": "304 km/h"
         }
     },
     {
@@ -1761,6 +2682,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057441",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057441",
             "results": "https://www.espn.com/f1/results/_/id/600057441"
+        },
+        "circuit_stats": {
+            "location": "Zandvoort, Netherlands",
+            "length": "4.259 km",
+            "corners": 14,
+            "tags": [
+                "Difficult Overtaking",
+                "Medium-High Speed"
+            ],
+            "lap_record": {
+                "time": "1:11.097",
+                "driver": "Lewis Hamilton",
+                "year": 2021
+            },
+            "top_speed": "318 km/h"
         }
     },
     {
@@ -1783,6 +2719,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057442",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057442",
             "results": "https://www.espn.com/f1/results/_/id/600057442"
+        },
+        "circuit_stats": {
+            "location": "Monza, Italy",
+            "length": "5.793 km",
+            "corners": 11,
+            "tags": [
+                "Excellent Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:21.046",
+                "driver": "Rubens Barrichello",
+                "year": 2004
+            },
+            "top_speed": "372 km/h"
         }
     },
     {
@@ -1803,6 +2754,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057443",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057443",
             "results": "https://www.espn.com/f1/results/_/id/600057443"
+        },
+        "circuit_stats": {
+            "location": "Madrid, Spain",
+            "length": "5.470 km",
+            "corners": 22,
+            "tags": [
+                "Difficult Overtaking",
+                "Medium-High Speed"
+            ],
+            "lap_record": {
+                "time": "TBD",
+                "driver": "TBD",
+                "year": 2026
+            },
+            "top_speed": "320 km/h"
         }
     },
     {
@@ -1825,6 +2791,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057444",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057444",
             "results": "https://www.espn.com/f1/results/_/id/600057444"
+        },
+        "circuit_stats": {
+            "location": "Baku, Azerbaijan",
+            "length": "6.003 km",
+            "corners": 20,
+            "tags": [
+                "Good Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:43.009",
+                "driver": "Charles Leclerc",
+                "year": 2019
+            },
+            "top_speed": "358 km/h"
         }
     },
     {
@@ -1847,6 +2828,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057445",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057445",
             "results": "https://www.espn.com/f1/results/_/id/600057445"
+        },
+        "circuit_stats": {
+            "location": "Singapore, Singapore",
+            "length": "5.063 km",
+            "corners": 23,
+            "tags": [
+                "Difficult Overtaking",
+                "Medium Speed"
+            ],
+            "lap_record": {
+                "time": "1:41.905",
+                "driver": "Kevin Magnussen",
+                "year": 2018
+            },
+            "top_speed": "300 km/h"
         }
     },
     {
@@ -1869,6 +2865,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057446",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057446",
             "results": "https://www.espn.com/f1/results/_/id/600057446"
+        },
+        "circuit_stats": {
+            "location": "Austin, USA",
+            "length": "5.513 km",
+            "corners": 20,
+            "tags": [
+                "Good Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:36.169",
+                "driver": "Charles Leclerc",
+                "year": 2019
+            },
+            "top_speed": "334 km/h"
         }
     },
     {
@@ -1891,6 +2902,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057447",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057447",
             "results": "https://www.espn.com/f1/results/_/id/600057447"
+        },
+        "circuit_stats": {
+            "location": "Mexico City, Mexico",
+            "length": "4.304 km",
+            "corners": 17,
+            "tags": [
+                "Good Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:17.774",
+                "driver": "Valtteri Bottas",
+                "year": 2021
+            },
+            "top_speed": "358 km/h"
         }
     },
     {
@@ -1913,6 +2939,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057448",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057448",
             "results": "https://www.espn.com/f1/results/_/id/600057448"
+        },
+        "circuit_stats": {
+            "location": "S\u00e3o Paulo, Brazil",
+            "length": "4.309 km",
+            "corners": 15,
+            "tags": [
+                "Excellent Overtaking",
+                "Medium-High Speed"
+            ],
+            "lap_record": {
+                "time": "1:10.540",
+                "driver": "Valtteri Bottas",
+                "year": 2018
+            },
+            "top_speed": "332 km/h"
         }
     },
     {
@@ -1935,6 +2976,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057449",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057449",
             "results": "https://www.espn.com/f1/results/_/id/600057449"
+        },
+        "circuit_stats": {
+            "location": "Las Vegas, USA",
+            "length": "6.201 km",
+            "corners": 17,
+            "tags": [
+                "Excellent Overtaking",
+                "Very High Speed"
+            ],
+            "lap_record": {
+                "time": "1:35.490",
+                "driver": "Oscar Piastri",
+                "year": 2023
+            },
+            "top_speed": "350 km/h"
         }
     },
     {
@@ -1957,6 +3013,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057450",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057450",
             "results": "https://www.espn.com/f1/results/_/id/600057450"
+        },
+        "circuit_stats": {
+            "location": "Al Daayen, Qatar",
+            "length": "5.419 km",
+            "corners": 16,
+            "tags": [
+                "Good Overtaking",
+                "High Speed"
+            ],
+            "lap_record": {
+                "time": "1:23.196",
+                "driver": "Max Verstappen",
+                "year": 2023
+            },
+            "top_speed": "336 km/h"
         }
     },
     {
@@ -1979,6 +3050,21 @@
             "race_page": "https://www.espn.com/f1/race/_/id/600057451",
             "circuit_info": "https://www.espn.com/f1/circuit/_/id/600057451",
             "results": "https://www.espn.com/f1/results/_/id/600057451"
+        },
+        "circuit_stats": {
+            "location": "Abu Dhabi, UAE",
+            "length": "5.281 km",
+            "corners": 16,
+            "tags": [
+                "Good Overtaking",
+                "Medium-High Speed"
+            ],
+            "lap_record": {
+                "time": "1:26.103",
+                "driver": "Max Verstappen",
+                "year": 2021
+            },
+            "top_speed": "325 km/h"
         }
     }
 ]
