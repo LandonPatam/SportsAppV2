@@ -57,9 +57,9 @@
     "PLUS_MINUS_RANK": 12,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612737/primary/L/logo.svg",
     "bpi": 2.3,
-    "bpirank": 13,
-    "off": 0.4,
-    "def": 1.8,
+    "bpirank": 12,
+    "off": 0.5,
+    "def": 1.9,
     "pbpi": 2.3
   },
   {
@@ -122,7 +122,7 @@
     "bpi": 7.1,
     "bpirank": 5,
     "off": 3.7,
-    "def": 3.4,
+    "def": 3.5,
     "pbpi": 7.1
   },
   {
@@ -247,8 +247,8 @@
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612766/primary/L/logo.svg",
     "bpi": 6.3,
     "bpirank": 6,
-    "off": 4.0,
-    "def": 2.2,
+    "off": 4.1,
+    "def": 2.3,
     "pbpi": 6.3
   },
   {
@@ -311,7 +311,7 @@
     "bpi": -6.7,
     "bpirank": 23,
     "off": -4.2,
-    "def": -2.6,
+    "def": -2.5,
     "pbpi": -6.7
   },
   {
@@ -371,11 +371,11 @@
     "PTS_RANK": 4,
     "PLUS_MINUS_RANK": 9,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612739/primary/L/logo.svg",
-    "bpi": 4.4,
+    "bpi": 4.0,
     "bpirank": 9,
-    "off": 3.9,
-    "def": 0.6,
-    "pbpi": 4.4
+    "off": 3.5,
+    "def": 0.5,
+    "pbpi": 4.0
   },
   {
     "TEAM_ID": 1610612742,
@@ -437,7 +437,7 @@
     "bpi": -5.2,
     "bpirank": 22,
     "off": -3.8,
-    "def": -1.4,
+    "def": -1.5,
     "pbpi": -5.2
   },
   {
@@ -560,11 +560,11 @@
     "PTS_RANK": 8,
     "PLUS_MINUS_RANK": 3,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612765/primary/L/logo.svg",
-    "bpi": 8.6,
+    "bpi": 8.1,
     "bpirank": 4,
-    "off": 2.9,
-    "def": 5.7,
-    "pbpi": 8.6
+    "off": 2.7,
+    "def": 5.5,
+    "pbpi": 8.1
   },
   {
     "TEAM_ID": 1610612744,
@@ -623,11 +623,11 @@
     "PTS_RANK": 22,
     "PLUS_MINUS_RANK": 20,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612744/primary/L/logo.svg",
-    "bpi": -1.1,
+    "bpi": -1.2,
     "bpirank": 20,
-    "off": -0.6,
+    "off": -0.7,
     "def": -0.5,
-    "pbpi": -1.1
+    "pbpi": -1.2
   },
   {
     "TEAM_ID": 1610612745,
@@ -813,7 +813,7 @@
     "PLUS_MINUS_RANK": 16,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612746/primary/L/logo.svg",
     "bpi": 2.1,
-    "bpirank": 15,
+    "bpirank": 14,
     "off": 2.2,
     "def": -0.1,
     "pbpi": 2.1
@@ -877,8 +877,8 @@
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612747/primary/L/logo.svg",
     "bpi": 3.4,
     "bpirank": 10,
-    "off": 2.7,
-    "def": 0.7,
+    "off": 2.8,
+    "def": 0.6,
     "pbpi": 3.4
   },
   {
@@ -938,11 +938,11 @@
     "PTS_RANK": 20,
     "PLUS_MINUS_RANK": 24,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612763/primary/L/logo.svg",
-    "bpi": -13.3,
+    "bpi": -13.4,
     "bpirank": 30,
     "off": -6.7,
     "def": -6.6,
-    "pbpi": -13.3
+    "pbpi": -13.4
   },
   {
     "TEAM_ID": 1610612748,
@@ -1001,11 +1001,11 @@
     "PTS_RANK": 2,
     "PLUS_MINUS_RANK": 13,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612748/primary/L/logo.svg",
-    "bpi": 1.6,
+    "bpi": 1.5,
     "bpirank": 16,
     "off": 1.8,
     "def": -0.2,
-    "pbpi": 1.6
+    "pbpi": 1.5
   },
   {
     "TEAM_ID": 1610612749,
@@ -1066,7 +1066,7 @@
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612749/primary/L/logo.svg",
     "bpi": -10.1,
     "bpirank": 26,
-    "off": -5.0,
+    "off": -4.9,
     "def": -5.1,
     "pbpi": -10.1
   },
@@ -1127,11 +1127,11 @@
     "PTS_RANK": 7,
     "PLUS_MINUS_RANK": 10,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612750/primary/L/logo.svg",
-    "bpi": 2.8,
-    "bpirank": 12,
-    "off": 0.1,
-    "def": 2.7,
-    "pbpi": 2.8
+    "bpi": 2.3,
+    "bpirank": 13,
+    "off": -0.1,
+    "def": 2.4,
+    "pbpi": 2.3
   },
   {
     "TEAM_ID": 1610612740,
@@ -1190,11 +1190,11 @@
     "PTS_RANK": 16,
     "PLUS_MINUS_RANK": 21,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612740/primary/L/logo.svg",
-    "bpi": -3.0,
+    "bpi": -2.9,
     "bpirank": 21,
     "off": -0.7,
-    "def": -2.3,
-    "pbpi": -3.0
+    "def": -2.2,
+    "pbpi": -2.9
   },
   {
     "TEAM_ID": 1610612752,
@@ -1253,11 +1253,11 @@
     "PTS_RANK": 10,
     "PLUS_MINUS_RANK": 5,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg",
-    "bpi": 9.4,
+    "bpi": 10.3,
     "bpirank": 2,
-    "off": 4.7,
-    "def": 4.7,
-    "pbpi": 9.4
+    "off": 5.0,
+    "def": 5.3,
+    "pbpi": 10.3
   },
   {
     "TEAM_ID": 1610612760,
@@ -1316,11 +1316,11 @@
     "PTS_RANK": 5,
     "PLUS_MINUS_RANK": 1,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg",
-    "bpi": 11.7,
+    "bpi": 11.2,
     "bpirank": 1,
-    "off": 4.6,
-    "def": 7.1,
-    "pbpi": 11.7
+    "off": 4.4,
+    "def": 6.8,
+    "pbpi": 11.2
   },
   {
     "TEAM_ID": 1610612753,
@@ -1379,11 +1379,11 @@
     "PTS_RANK": 15,
     "PLUS_MINUS_RANK": 17,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612753/primary/L/logo.svg",
-    "bpi": 2.1,
-    "bpirank": 14,
-    "off": -0.2,
+    "bpi": 2.0,
+    "bpirank": 15,
+    "off": -0.3,
     "def": 2.3,
-    "pbpi": 2.1
+    "pbpi": 2.0
   },
   {
     "TEAM_ID": 1610612755,
@@ -1442,11 +1442,11 @@
     "PTS_RANK": 14,
     "PLUS_MINUS_RANK": 18,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612755/primary/L/logo.svg",
-    "bpi": 0.8,
+    "bpi": 0.9,
     "bpirank": 18,
-    "off": 0.7,
+    "off": 0.8,
     "def": 0.1,
-    "pbpi": 0.8
+    "pbpi": 0.9
   },
   {
     "TEAM_ID": 1610612756,
@@ -1505,11 +1505,11 @@
     "PTS_RANK": 26,
     "PLUS_MINUS_RANK": 15,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612756/primary/L/logo.svg",
-    "bpi": 1.2,
+    "bpi": 1.1,
     "bpirank": 17,
     "off": 0.5,
     "def": 0.7,
-    "pbpi": 1.2
+    "pbpi": 1.1
   },
   {
     "TEAM_ID": 1610612757,
@@ -1568,11 +1568,11 @@
     "PTS_RANK": 17,
     "PLUS_MINUS_RANK": 19,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612757/primary/L/logo.svg",
-    "bpi": 0.3,
+    "bpi": 0.4,
     "bpirank": 19,
     "off": -1.9,
-    "def": 2.2,
-    "pbpi": 0.3
+    "def": 2.3,
+    "pbpi": 0.4
   },
   {
     "TEAM_ID": 1610612758,
@@ -1633,8 +1633,8 @@
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612758/primary/L/logo.svg",
     "bpi": -11.8,
     "bpirank": 29,
-    "off": -5.4,
-    "def": -6.4,
+    "off": -5.3,
+    "def": -6.5,
     "pbpi": -11.8
   },
   {
@@ -1694,11 +1694,11 @@
     "PTS_RANK": 3,
     "PLUS_MINUS_RANK": 2,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612759/primary/L/logo.svg",
-    "bpi": 9.3,
+    "bpi": 10.1,
     "bpirank": 3,
-    "off": 4.7,
-    "def": 4.6,
-    "pbpi": 9.3
+    "off": 5.1,
+    "def": 5.0,
+    "pbpi": 10.1
   },
   {
     "TEAM_ID": 1610612761,
@@ -1757,11 +1757,11 @@
     "PTS_RANK": 21,
     "PLUS_MINUS_RANK": 11,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg",
-    "bpi": 3.4,
+    "bpi": 3.3,
     "bpirank": 11,
     "off": 1.0,
-    "def": 2.4,
-    "pbpi": 3.4
+    "def": 2.3,
+    "pbpi": 3.3
   },
   {
     "TEAM_ID": 1610612762,
@@ -1822,7 +1822,7 @@
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg",
     "bpi": -6.9,
     "bpirank": 24,
-    "off": -2.0,
+    "off": -1.9,
     "def": -4.9,
     "pbpi": -6.9
   },
@@ -1883,10 +1883,10 @@
     "PTS_RANK": 25,
     "PLUS_MINUS_RANK": 30,
     "LOGO_URL": "https://cdn.nba.com/logos/nba/1610612764/primary/L/logo.svg",
-    "bpi": -10.7,
+    "bpi": -10.6,
     "bpirank": 27,
     "off": -4.2,
     "def": -6.5,
-    "pbpi": -10.7
+    "pbpi": -10.6
   }
 ]
