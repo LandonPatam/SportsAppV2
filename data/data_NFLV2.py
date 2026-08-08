@@ -5,6 +5,7 @@ import io
 import os
 import html as htmllib
 from typing import List, Dict, Any
+from datetime import datetime
 
 # ==========================================================
 # STEP 1: PATH SETUP (Fixes Background Service Issues)
@@ -12,14 +13,32 @@ from typing import List, Dict, Any
 # This finds 'SportsAppV2' directory regardless of where the script is called from
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_JSON = os.path.join(BASE_DIR, "public", "data", "nfl_site_nfl_standings.json")
+SCHEDULE_JSON = os.path.join(BASE_DIR, "public", "data", "nfl_schedule.json")
 
 # Ensure the directory exists
 os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
 
+def get_nfl_season_year() -> int:
+    try:
+        with open(SCHEDULE_JSON, "r", encoding="utf-8") as f:
+            schedule = json.load(f)
+        dates = sorted(
+            datetime.strptime(g["date"], "%Y-%m-%d").date()
+            for g in schedule
+            if g.get("date")
+        )
+        if dates:
+            return dates[0].year
+    except Exception:
+        pass
+    return datetime.now().year
+
+SEASON_YEAR = get_nfl_season_year()
+
 # ==========================================================
 # STEP 2: SCRAPE NFL.COM STANDINGS
 # ==========================================================
-url_nfl = "https://www.nfl.com/standings/league/2025/REG"
+url_nfl = f"https://www.nfl.com/standings/league/{SEASON_YEAR}/REG"
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -30,6 +49,20 @@ soup = BeautifulSoup(response_nfl.text, "html.parser")
 table = soup.find("table", class_="d3-o-table--detailed")
 
 teams_data = []
+
+def parse_int(value, default=0):
+    try:
+        text = str(value).strip().replace(",", "")
+        return int(text) if text else default
+    except Exception:
+        return default
+
+def parse_float(value, default=0.0):
+    try:
+        text = str(value).strip()
+        return float(text) if text else default
+    except Exception:
+        return default
 
 division_map = {
     "NFC": {
@@ -45,6 +78,13 @@ division_map = {
         "AFC West": ["Denver Broncos","Kansas City Chiefs","Las Vegas Raiders","Los Angeles Chargers"]
     }
 }
+
+existing_lookup = {}
+try:
+    with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
+        existing_lookup = {t.get("name"): t for t in json.load(f)}
+except Exception:
+    existing_lookup = {}
 
 if table:
     rows = table.find("tbody").find_all("tr", recursive=False)
@@ -62,9 +102,9 @@ if table:
             team_stats = {
                 "name": full_name,
                 "conference" : '', "division" : '',
-                "wins": int(cols[1]), "losses": int(cols[2]), "ties": int(cols[3]),
-                "win_pct": float(cols[4]), "points_for": int(cols[5]), "points_against": int(cols[6]),
-                "point_diff": int(cols[7]), "Home": cols[8], "Road": cols[9],
+                "wins": parse_int(cols[1]), "losses": parse_int(cols[2]), "ties": parse_int(cols[3]),
+                "win_pct": parse_float(cols[4]), "points_for": parse_int(cols[5]), "points_against": parse_int(cols[6]),
+                "point_diff": parse_int(cols[7]), "Home": cols[8] or "0 - 0 - 0", "Road": cols[9] or "0 - 0 - 0",
                 "Div": cols[10], "DivPct": cols[11], "Conf": cols[12], "ConfPct": cols[13],
                 "NonConf": cols[14], "Strk": cols[15], "Last5": cols[16] if len(cols) > 16 else "",
                 "logo": logo_img, "link": team_link
@@ -77,6 +117,36 @@ if table:
                         team_stats["conference"], team_stats["division"] = conf, div
             
             teams_data.append(team_stats)
+
+if not teams_data:
+    print(f"[WARN] NFL.com standings table not found for {SEASON_YEAR}; writing preseason 0-0 records.")
+    for conf, divisions in division_map.items():
+        for div, names in divisions.items():
+            for full_name in names:
+                existing = existing_lookup.get(full_name, {})
+                teams_data.append({
+                    "name": full_name,
+                    "conference": conf,
+                    "division": div,
+                    "wins": 0,
+                    "losses": 0,
+                    "ties": 0,
+                    "win_pct": 0.0,
+                    "points_for": 0,
+                    "points_against": 0,
+                    "point_diff": 0,
+                    "Home": "0 - 0 - 0",
+                    "Road": "0 - 0 - 0",
+                    "Div": "0 - 0 - 0",
+                    "DivPct": "0.0",
+                    "Conf": "0 - 0 - 0",
+                    "ConfPct": "0.0",
+                    "NonConf": "0 - 0 - 0",
+                    "Strk": "",
+                    "Last5": "",
+                    "logo": existing.get("logo", ""),
+                    "link": existing.get("link", ""),
+                })
 
 # ==========================================================
 # STEP 3: SCRAPE ESPN FPI DATA

@@ -461,8 +461,8 @@ const RaceCardFooter = ({ race }: { race: F1Race }) => {
   const label = COUNTDOWN_LABELS[cd.label] ?? cd.label;
   return (
     <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.06]">
-      <span className="text-[9px] font-black tracking-widest uppercase whitespace-nowrap" style={{ color: '#2dd4bf' }}>
-        {label} -
+      <span className="text-xs font-black tracking-widest uppercase whitespace-nowrap" style={{ color: '#2dd4bf' }}>
+        {label}
       </span>
       <div className="flex items-end gap-1.5">
         {units.map(({ v, l }, i) => (
@@ -1050,6 +1050,96 @@ const PTS_TO_POS: Record<number, string> = {
   25: '1st', 18: '2nd', 15: '3rd', 12: '4th', 10: '5th',
    8: '6th',  6: '7th',  4: '8th',  2: '9th',  1: '10th',
 };
+const RACE_ABBREVS = [
+  'AUS', 'CHN', 'JPN', 'BRN', 'SAU', 'MIA', 'CAN', 'MON', 'ESP', 'AUT', 'GBR', 'BEL',
+  'HUN', 'NED', 'ITA2', 'AZB', 'SIN', 'USA', 'MEX', 'BRA', 'LAS', 'QAT', 'ARE',
+];
+const RACE_POINTS_BY_POSITION: Record<number, number> = {
+  1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1,
+};
+const SPRINT_POINTS_BY_POSITION: Record<number, number> = {
+  1: 8, 2: 7, 3: 6, 4: 5, 5: 4, 6: 3, 7: 2, 8: 1,
+};
+
+function getRaceAbbrev(race: { race_number?: number }): string | null {
+  if (!race.race_number) return null;
+  return RACE_ABBREVS[race.race_number - 1] ?? null;
+}
+
+function getCanceledRaceMap(calendarData: F1Race[]): Record<string, boolean> {
+  return calendarData.reduce((map, race: any) => {
+    const abbrev = getRaceAbbrev(race);
+    if (!abbrev) return map;
+    const sessions = Object.values(race.session_times ?? {});
+    map[abbrev] = race.start_time_west === 'Canceled' || sessions.some((session) => session === 'Canceled');
+    return map;
+  }, {} as Record<string, boolean>);
+}
+
+function driverMatchesResult(driverName: string, result: any): boolean {
+  const haystack = `${result.driver ?? ''} ${result.short_name ?? ''}`.toLowerCase();
+  return driverName
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .some((part) => haystack.includes(part));
+}
+
+function deriveTeamsFromCalendar(teamsData: F1Team[], calendarData: F1Race[]): F1Team[] {
+  const completedRaces = calendarData
+    .filter((race: any) => Array.isArray(race.results) && race.results.length > 0)
+    .sort((a, b) => a.race_number - b.race_number);
+
+  if (completedRaces.length === 0) return teamsData;
+
+  return teamsData.map((team: any) => {
+    const teamRacePoints: Record<string, number | null> = {};
+    RACE_ABBREVS.forEach((abbrev) => {
+      teamRacePoints[abbrev] = null;
+    });
+
+    const drivers = (team.drivers ?? []).map((driver: any) => {
+      const racePoints: Record<string, number | null> = {};
+      RACE_ABBREVS.forEach((abbrev) => {
+        racePoints[abbrev] = driver.race_points?.[abbrev] ?? null;
+      });
+
+      completedRaces.forEach((race: any) => {
+        const abbrev = getRaceAbbrev(race);
+        if (!abbrev) return;
+
+        const raceEntry = (race.results ?? []).find((result: any) => driverMatchesResult(driver.name, result));
+        const sprintEntry = (race.sprint_results ?? []).find((result: any) => driverMatchesResult(driver.name, result));
+        const mainPoints = raceEntry ? RACE_POINTS_BY_POSITION[raceEntry.position] ?? 0 : 0;
+        const sprintPoints = sprintEntry ? SPRINT_POINTS_BY_POSITION[sprintEntry.position] ?? 0 : 0;
+        const totalPoints = mainPoints + sprintPoints;
+
+        racePoints[abbrev] = totalPoints > 0 ? totalPoints : null;
+      });
+
+      return {
+        ...driver,
+        points: Object.values(racePoints).reduce((sum: number, points) => sum + (points ?? 0), 0),
+        race_points: racePoints,
+      };
+    });
+
+    drivers.forEach((driver: any) => {
+      Object.entries(driver.race_points ?? {}).forEach(([abbrev, points]) => {
+        if (!RACE_ABBREVS.includes(abbrev)) return;
+        teamRacePoints[abbrev] = (teamRacePoints[abbrev] ?? 0) + (points as number ?? 0);
+        if (teamRacePoints[abbrev] === 0) teamRacePoints[abbrev] = null;
+      });
+    });
+
+    return {
+      ...team,
+      drivers,
+      team_points: Object.values(teamRacePoints).reduce((sum: number, points) => sum + (points ?? 0), 0),
+      team_race_points: teamRacePoints,
+    };
+  });
+}
 // Sprint points overlap with regular points so we can't distinguish perfectly,
 // but for the main race grid this is accurate for P1-P10, anything else is P11+
 function ptsToPos(pts: number | null): string {
@@ -1063,6 +1153,15 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
   const [expandAll, setExpandAll] = useState(true);
   const [showPositions, setShowPositions] = useState(true);
   const [numCols, setNumCols] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
+  const canceledRaceMap = useMemo(() => getCanceledRaceMap(calendarData as F1Race[]), [calendarData]);
+  const completedRaceMap = useMemo(() => {
+    return (calendarData as F1Race[]).reduce<Record<string, boolean>>((map, race: any) => {
+      const abbrev = getRaceAbbrev(race);
+      if (!abbrev) return map;
+      map[abbrev] = (race.results?.length ?? 0) > 0 || (race.sprint_results?.length ?? 0) > 0;
+      return map;
+    }, {});
+  }, [calendarData]);
 
   useEffect(() => {
     const update = () => setNumCols(window.innerWidth >= 1024 ? 4 : 2);
@@ -1079,34 +1178,20 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
       .filter((r: any) => Array.isArray(r.results) && r.results.length > 0)
       .sort((a: any, b: any) => a.race_number - b.race_number);
 
-    // Get ordered race abbreviations from the first driver with race_points
-    const firstDriverWithPoints = teamsData
-      .flatMap((t: any) => t.drivers ?? [])
-      .find((d: any) => d.race_points && Object.keys(d.race_points).length > 0);
-    const raceAbbrevs: string[] = firstDriverWithPoints
-      ? Object.keys(firstDriverWithPoints.race_points)
-      : [];
-
     const map: Record<string, Record<string, { pos: number | null; sprintPos: number | null }>> = {};
 
     teamsData.flatMap((t: any) => t.drivers ?? []).forEach((driver: any) => {
       map[driver.name] = {};
-      raceAbbrevs.forEach((abbrev, i) => {
-        const calRace = completedRaces[i];
-        if (!calRace) return;
+      completedRaces.forEach((calRace: any) => {
+        const abbrev = getRaceAbbrev(calRace);
+        if (!abbrev) return;
 
         // Find this driver in main results
         const mainEntry = (calRace.results ?? []).find((r: any) => {
-          const dn = (r.driver ?? '').toLowerCase();
-          const sn = (r.short_name ?? '').toLowerCase();
-          const parts = driver.name.toLowerCase().split(' ');
-          return parts.some((p: string) => dn.includes(p) || sn.includes(p));
+          return driverMatchesResult(driver.name, r);
         });
         const sprintEntry = (calRace.sprint_results ?? []).find((r: any) => {
-          const dn = (r.driver ?? '').toLowerCase();
-          const sn = (r.short_name ?? '').toLowerCase();
-          const parts = driver.name.toLowerCase().split(' ');
-          return parts.some((p: string) => dn.includes(p) || sn.includes(p));
+          return driverMatchesResult(driver.name, r);
         });
 
         map[driver.name][abbrev] = {
@@ -1128,7 +1213,11 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
 
   const renderCard = (driver: any) => {
     const accent = driver.teamColour;
-    const raceEntries = Object.entries(driver.race_points ?? {}) as [string, number | null][];
+    const raceEntries = (Object.entries(driver.race_points ?? {}) as [string, number | null][])
+      .map(([race, pts]) => [
+        race,
+        pts ?? (!canceledRaceMap[race] && completedRaceMap[race] ? 0 : null),
+      ] as [string, number | null]);
     const isExpanded = expandAll || expandedDriver === driver.name;
     const driverPositions = positionMap[driver.name] ?? {};
 
@@ -1151,16 +1240,26 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
           </div>
           <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
             <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
-              <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+              <div
+                className="grid grid-flow-col gap-x-2 gap-y-1"
+                style={{
+                  gridTemplateRows: `repeat(${Math.ceil(raceEntries.length / 3)}, minmax(0, auto))`,
+                  gridAutoColumns: 'minmax(0, 1fr)',
+                }}
+              >
                 {raceEntries.map(([race, pts]) => {
                   const posData = driverPositions[race];
                   const hasPos = posData && posData.pos != null;
                   const hasSprint = posData && posData.sprintPos != null;
+                  const isCanceledRace = canceledRaceMap[race];
 
                   let displayValue: React.ReactNode;
                   let isActive: boolean;
 
-                  if (showPositions) {
+                  if (isCanceledRace) {
+                    displayValue = <span className="text-white/30 tracking-wider line-through decoration-white/40">CXL</span>;
+                    isActive = false;
+                  } else if (showPositions) {
                     if (hasPos) {
                       const posLabel = `P${posData!.pos}`;
                       const sprintColor = posData!.sprintPos === 1 ? '#a855f7' : posData!.sprintPos === 2 ? '#3b82f6' : posData!.sprintPos === 3 ? '#22c55e' : 'white';
@@ -1180,7 +1279,12 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
                       isActive = false;
                     }
                   } else {
-                    displayValue = pts != null ? pts : '—';
+                    const pointColor = posData?.pos === 1 ? '#a855f7' : posData?.pos === 2 ? '#3b82f6' : posData?.pos === 3 ? '#22c55e' : undefined;
+                    if (pts === 0) {
+                      displayValue = <span className="text-red-500">X</span>;
+                    } else {
+                    displayValue = pts != null ? <span style={{ color: pointColor }}>{pts}</span> : '—';
+                    }
                     isActive = pts != null && pts > 0;
                   }
 
@@ -1276,10 +1380,40 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
 // 🏆 ConstructorsTab Component
 // ============================
 
-const ConstructorsTab = ({ teamsData }: { teamsData: F1Team[] }) => {
+const ConstructorsTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; calendarData?: F1Race[] }) => {
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [expandAll, setExpandAll] = useState(true);
   const [numCols, setNumCols] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024 ? 4 : 2);
+  const canceledRaceMap = useMemo(() => getCanceledRaceMap(calendarData), [calendarData]);
+  const completedRaceMap = useMemo(() => {
+    return calendarData.reduce<Record<string, boolean>>((map, race: any) => {
+      const abbrev = getRaceAbbrev(race);
+      if (!abbrev) return map;
+      map[abbrev] = (race.results?.length ?? 0) > 0 || (race.sprint_results?.length ?? 0) > 0;
+      return map;
+    }, {});
+  }, [calendarData]);
+  const constructorRacePointColors = useMemo(() => {
+    const colors = ['#a855f7', '#3b82f6', '#22c55e'];
+    const raceTotals: Record<string, number[]> = {};
+
+    teamsData.forEach((team: any) => {
+      Object.entries(team.team_race_points ?? {}).forEach(([race, pts]) => {
+        if (typeof pts !== 'number' || pts <= 0) return;
+        if (!raceTotals[race]) raceTotals[race] = [];
+        raceTotals[race].push(pts);
+      });
+    });
+
+    return Object.entries(raceTotals).reduce<Record<string, Record<number, string>>>((map, [race, totals]) => {
+      const rankedTotals = [...new Set(totals)].sort((a, b) => b - a).slice(0, 3);
+      map[race] = {};
+      rankedTotals.forEach((total, index) => {
+        map[race][total] = colors[index];
+      });
+      return map;
+    }, {});
+  }, [teamsData]);
 
   useEffect(() => {
     const update = () => setNumCols(window.innerWidth >= 1024 ? 4 : 2);
@@ -1293,7 +1427,11 @@ const ConstructorsTab = ({ teamsData }: { teamsData: F1Team[] }) => {
 
   const renderCard = (team: any) => {
     const accent = team.colour ?? '#ffffff';
-    const raceEntries = Object.entries(team.team_race_points ?? {}) as [string, number | null][];
+    const raceEntries = (Object.entries(team.team_race_points ?? {}) as [string, number | null][])
+      .map(([race, pts]) => [
+        race,
+        pts ?? (!canceledRaceMap[race] && completedRaceMap[race] ? 'X' : null),
+      ] as [string, number | 'X' | null]);
     const isExpanded = expandAll || expandedTeam === team.name;
     return (
       <div
@@ -1314,11 +1452,22 @@ const ConstructorsTab = ({ teamsData }: { teamsData: F1Team[] }) => {
           </div>
           <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
             <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
-              <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+              <div
+                className="grid grid-flow-col gap-x-2 gap-y-1"
+                style={{
+                  gridTemplateRows: `repeat(${Math.ceil(raceEntries.length / 3)}, minmax(0, auto))`,
+                  gridAutoColumns: 'minmax(0, 1fr)',
+                }}
+              >
                 {raceEntries.map(([race, pts]) => (
                   <div key={race} className="grid grid-cols-2 items-center py-0.5 border-b border-white/5">
                     <span className="text-[10px] font-bold text-white/40 uppercase">{race}</span>
-                    <span className={`text-[11px] font-black ${pts != null && pts > 0 ? 'text-white' : 'text-white/20'}`}>{pts != null ? pts : '—'}</span>
+                    <span
+                      className={`text-[11px] font-black ${typeof pts === 'number' && pts > 0 ? 'text-white' : pts === 'X' ? 'text-red-500' : completedRaceMap[race] ? 'text-white/40' : 'text-white/20'}`}
+                      style={typeof pts === 'number' && constructorRacePointColors[race]?.[pts] ? { color: constructorRacePointColors[race][pts] } : undefined}
+                    >
+                      {canceledRaceMap[race] ? <span className="text-white/30 tracking-wider line-through decoration-white/40">CXL</span> : pts != null ? pts : '—'}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -1369,6 +1518,10 @@ const F1 = () => {
   const [teamsData, setTeamsData] = useState<F1Team[]>(() => _cachedTeams ?? []);
   const [loading, setLoading] = useState(() => _cachedCalendar === null);
   const [raceModal, setRaceModal] = useState<F1Race | null>(null);
+  const standingsTeamsData = useMemo(
+    () => deriveTeamsFromCalendar(teamsData, calendarData),
+    [teamsData, calendarData]
+  );
 
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.innerWidth < 640 && window.innerHeight > window.innerWidth
@@ -1473,7 +1626,7 @@ const F1 = () => {
         loading ? (
           <div className="flex items-center justify-center h-screen text-sm text-muted-foreground"></div>
         ) : (
-          <RaceCalendarNavigator races={calendarData} isMobile={true} teamsData={teamsData} />
+          <RaceCalendarNavigator races={calendarData} isMobile={true} teamsData={standingsTeamsData} />
         )
       ) : (
       <Tabs
@@ -1518,7 +1671,7 @@ const F1 = () => {
               {/* Bottom: Driver Standings 3x2 */}
               <div className="flex-shrink-0">
                 {(() => {
-                  const allDrivers = teamsData.flatMap((team) =>
+                  const allDrivers = standingsTeamsData.flatMap((team) =>
                     (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff' }))
                   )
                     .filter((d: any) => d.points != null)
@@ -1571,7 +1724,7 @@ const F1 = () => {
 
             {/* Right: Constructor Standings — full height */}
             <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
-              {[...teamsData]
+              {[...standingsTeamsData]
                 .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
                 .slice(0, 8)
                 .map((team, index) => {
@@ -1651,14 +1804,14 @@ const F1 = () => {
             TAB: Drivers
         ======================== */}
         <TabsContent value="drivers" className="mt-3">
-          <DriversTab teamsData={teamsData} calendarData={calendarData} />
+          <DriversTab teamsData={standingsTeamsData} calendarData={calendarData} />
         </TabsContent>
 
         {/* ========================
             TAB: Constructors
         ======================== */}
         <TabsContent value="constructors" className="mt-3">
-          <ConstructorsTab teamsData={teamsData} />
+          <ConstructorsTab teamsData={standingsTeamsData} calendarData={calendarData} />
         </TabsContent>
 
         {/* ========================

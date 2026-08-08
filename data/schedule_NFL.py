@@ -8,12 +8,13 @@ import time
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-FIND_SCHEDULE = False   # Toggle True to crawl schedule, False to skip
+FIND_SCHEDULE = os.getenv("NFL_FIND_SCHEDULE", "").lower() in {"1", "true", "yes"}   # env override to crawl schedule
 SAVE_PATH = "public/data/nfl_schedule.json"
 TEMP_PATH = SAVE_PATH + ".tmp"
 VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
-SLEEP_BETWEEN_CALLS = 1.5
+SLEEP_BETWEEN_CALLS = float(os.getenv("NFL_SCHEDULE_SLEEP", "1.5"))
 MAX_EMPTY_DAYS = 20
+ENABLE_UPCOMING_SEASON_AUTO_DETECT = True
 
 # --- Postseason auto-crawl settings ---
 POSTSEASON_SCAN_INTERVAL_HOURS = 6               # how often to re-scan during playoffs
@@ -28,6 +29,47 @@ HEADERS = {
 
 UTC = pytz.utc
 PACIFIC = pytz.timezone("America/Los_Angeles")
+
+def get_espn_schedule_url(date_obj):
+    date_str_param = date_obj.strftime("%Y%m%d")
+    return (
+        f"https://site.web.api.espn.com/apis/personalized/v2/scoreboard/header"
+        f"?sport=football&league=nfl&region=us&lang=en&contentorigin=espn"
+        f"&configuration=STREAM_MENU&platform=web&features=sfb-all%2Ccutl"
+        f"&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={date_str_param}"
+    )
+
+def fetch_espn_events_for_date(date_obj):
+    response = requests.get(get_espn_schedule_url(date_obj), headers=HEADERS, timeout=15)
+    data = response.json()
+    return (
+        data.get("sports", [])[0]
+        .get("leagues", [])[0]
+        .get("events", [])
+        if data.get("sports")
+        else []
+    )
+
+def find_first_regular_season_event_date(approx_start):
+    for offset in range(-7, 22):
+        date_obj = approx_start + timedelta(days=offset)
+        try:
+            events = fetch_espn_events_for_date(date_obj)
+        except Exception:
+            continue
+
+        regular_events = [event for event in events if str(event.get("seasonType")) == "2"]
+        if not regular_events:
+            continue
+
+        first_event = min(regular_events, key=lambda event: event.get("date", ""))
+        try:
+            dt_utc = datetime.strptime(first_event["date"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+            return dt_utc.astimezone(PACIFIC).date()
+        except Exception:
+            return date_obj
+
+    return approx_start
 
 # ==========================================================
 # SAFE ATOMIC WRITE HELPER
@@ -70,14 +112,30 @@ def get_season_dates(today: object) -> tuple:
     labor_day = get_labor_day(candidate_year)
     kickoff_thursday = labor_day + timedelta(days=3)  # Thursday after Labor Day
 
+    previous_season_end = datetime(candidate_year, 2, 16).date()
+
     if today >= kickoff_thursday:
         season_year = candidate_year
+    elif ENABLE_UPCOMING_SEASON_AUTO_DETECT and today > previous_season_end:
+        try:
+            has_published_schedule = False
+            for offset in range(0, 21):
+                if fetch_espn_events_for_date(kickoff_thursday + timedelta(days=offset)):
+                    has_published_schedule = True
+                    break
+            season_year = candidate_year if has_published_schedule else candidate_year - 1
+            if has_published_schedule:
+                print(f"[AUTO] Upcoming {candidate_year} NFL schedule is available on ESPN.")
+        except Exception as e:
+            print(f"[WARN] Could not check upcoming NFL schedule availability: {e}")
+            season_year = candidate_year - 1
     else:
         season_year = candidate_year - 1
 
     # Recalculate kickoff for the resolved season year
     labor_day = get_labor_day(season_year)
-    season_start     = labor_day + timedelta(days=3)           # Kickoff Thursday
+    estimated_start  = labor_day + timedelta(days=3)           # Traditional kickoff Thursday
+    season_start     = find_first_regular_season_event_date(estimated_start)
     postseason_start = season_start + timedelta(weeks=18)       # ~Wild Card weekend
     season_end       = datetime(season_year + 1, 2, 16).date()  # Day after latest possible Super Bowl
 

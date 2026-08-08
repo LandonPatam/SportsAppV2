@@ -6,6 +6,8 @@ import re
 from typing import List, Dict, Any
 from bs4 import BeautifulSoup
 import os
+from datetime import datetime
+from urllib.parse import urlencode
 
 
 # ==========================================================
@@ -23,9 +25,83 @@ def atomic_write_json(data, save_path: str):
     os.replace(temp_path, save_path)
 
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCHEDULE_JSON = os.path.join(BASE_DIR, "public", "data", "nba_schedule.json")
+TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_team_stats.json")
+PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_player_stats.json")
+
+def get_nba_season_year() -> int:
+    try:
+        with open(SCHEDULE_JSON, "r", encoding="utf-8") as f:
+            schedule = json.load(f)
+        dates = sorted(
+            datetime.strptime(g["date"], "%Y-%m-%d").date()
+            for g in schedule
+            if g.get("date")
+        )
+        if dates:
+            return dates[0].year
+    except Exception:
+        pass
+    today = datetime.now().date()
+    return today.year if today.month >= 7 else today.year - 1
+
+def get_nba_season_string() -> str:
+    start_year = get_nba_season_year()
+    return f"{start_year}-{str(start_year + 1)[-2:]}"
+
+NBA_SEASON = get_nba_season_string()
+print(f"NBA stats season: {NBA_SEASON}")
+
+def nba_stats_url(endpoint: str, extra_params: Dict[str, Any] = None) -> str:
+    params = {
+        "Conference": "",
+        "DateFrom": "",
+        "DateTo": "",
+        "Division": "",
+        "GameScope": "",
+        "GameSegment": "",
+        "Height": "",
+        "ISTRound": "",
+        "LastNGames": "0",
+        "LeagueID": "00",
+        "Location": "",
+        "MeasureType": "Base",
+        "Month": "0",
+        "OpponentTeamID": "0",
+        "Outcome": "",
+        "PORound": "0",
+        "PaceAdjust": "N",
+        "PerMode": "PerGame",
+        "Period": "0",
+        "PlayerExperience": "",
+        "PlayerPosition": "",
+        "PlusMinus": "N",
+        "Rank": "N",
+        "Season": NBA_SEASON,
+        "SeasonSegment": "",
+        "SeasonType": "Regular Season",
+        "ShotClockRange": "",
+        "StarterBench": "",
+        "TeamID": "0",
+        "VsConference": "",
+        "VsDivision": "",
+    }
+    if extra_params:
+        params.update(extra_params)
+    return f"https://stats.nba.com/stats/{endpoint}?{urlencode(params)}"
+
+def load_json_or_default(path: str, default):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
 # NBA Team Data
 
-url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=&DateTo=&Division=&GameScope=&GameSegment=&Height=&ISTRound=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26&SeasonSegment=&SeasonType=Regular%20Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
+url = nba_stats_url("leaguedashteamstats", {"TwoWay": "0"})
 
 payload = {}
 headers = {
@@ -44,9 +120,9 @@ headers = {
 r = requests.get(url, headers=headers, timeout=10)
 team_data = r.json()
 
-result = team_data["resultSets"][0]
-headers_list = result["headers"]
-rows = result["rowSet"]
+result = team_data.get("resultSets", [{}])[0]
+headers_list = result.get("headers", [])
+rows = result.get("rowSet", [])
 
 teams = [dict(zip(headers_list, row)) for row in rows]
 
@@ -71,19 +147,28 @@ for t in teams:
             team_dict[key] = value
     formatted_teams.append(team_dict)
 
-atomic_write_json(formatted_teams, "public/data/espn_NBA_team_stats.json")
+if formatted_teams:
+    atomic_write_json(formatted_teams, TEAM_STATS_JSON)
+else:
+    print(f"[WARN] No NBA team stats returned for {NBA_SEASON}; preserving existing team stats.")
 
 
 # NBA Player Data
 
-url = "https://stats.nba.com/stats/leaguedashplayerstats?College=&Conference=&Country=&DateFrom=&DateTo=&Division=&DraftPick=&DraftYear=&GameScope=&GameSegment=&Height=&ISTRound=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26&SeasonSegment=&SeasonType=Regular%20Season&ShotClockRange=&StarterBench=&TeamID=0&VsConference=&VsDivision=&Weight="
+url = nba_stats_url("leaguedashplayerstats", {
+    "College": "",
+    "Country": "",
+    "DraftPick": "",
+    "DraftYear": "",
+    "Weight": "",
+})
 
 d = requests.get(url, headers=headers, timeout=10)
 player_data = d.json()
 
-result = player_data["resultSets"][0]
-headers_list = result["headers"]
-rows = result["rowSet"]
+result = player_data.get("resultSets", [{}])[0]
+headers_list = result.get("headers", [])
+rows = result.get("rowSet", [])
 
 players = [dict(zip(headers_list, row)) for row in rows]
 
@@ -125,12 +210,14 @@ for p in players:
             player_dict[key] = value
     team_players[str(team_id)].append(player_dict)
 
-atomic_write_json(dict(team_players), "public/data/espn_NBA_player_stats.json")
+if team_players:
+    atomic_write_json(dict(team_players), PLAYER_STATS_JSON)
+else:
+    print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; preserving existing player stats.")
 
 
 # --- Load existing team stats ---
-with open("public/data/espn_NBA_team_stats.json", "r", encoding="utf-8") as f:
-    team_data = json.load(f)
+team_data = load_json_or_default(TEAM_STATS_JSON, formatted_teams)
 
 # --- Attach logo for each team ---
 for team in team_data:
@@ -302,4 +389,4 @@ except Exception:
     pass
 
 # --- Save updated team stats atomically ---
-atomic_write_json(team_data, "public/data/espn_NBA_team_stats.json")
+atomic_write_json(team_data, TEAM_STATS_JSON)

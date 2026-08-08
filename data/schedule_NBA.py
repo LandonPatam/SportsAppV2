@@ -13,16 +13,19 @@ import time
 # ==========================================================
 # ⚙️ CONFIGURATION
 # ==========================================================
-FIND_SCHEDULE = False   # Toggle True to force a full crawl from SEASON_START_DATE
+FIND_SCHEDULE = os.getenv("NBA_FIND_SCHEDULE", "").lower() in {"1", "true", "yes"}   # env override to force a full crawl
 SAVE_PATH = "public/data/nba_schedule.json"
 TEMP_PATH = SAVE_PATH + ".tmp"  # Path for safe swapping
 VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN", "ABC"}
-SLEEP_BETWEEN_CALLS = 1.5
+SLEEP_BETWEEN_CALLS = float(os.getenv("NBA_SCHEDULE_SLEEP", "1.5"))
 MAX_EMPTY_DAYS = 20
+ENABLE_UPCOMING_SEASON_AUTO_DETECT = True
+UPCOMING_SEASON_CHECK_INTERVAL_HOURS = 24
 
 # --- Postseason auto-crawl settings ---
 POSTSEASON_SCAN_INTERVAL_HOURS = 1               # how often to re-scan during postseason
 _STATE_PATH = "public/data/.nba_schedule_last_scan.txt"
+_UPCOMING_STATE_PATH = "public/data/.nba_upcoming_schedule_last_check.txt"
 # ==========================================================
 
 HEADERS = {
@@ -33,6 +36,70 @@ HEADERS = {
 
 UTC = pytz.utc
 PACIFIC = pytz.timezone("America/Los_Angeles")
+
+def get_espn_schedule_url(date_obj):
+    date_str_param = date_obj.strftime("%Y%m%d")
+    return (
+        f"https://site.web.api.espn.com/apis/personalized/v2/scoreboard/header"
+        f"?sport=basketball&league=nba&region=us&lang=en&contentorigin=espn"
+        f"&configuration=STREAM_MENU&platform=web&features=sfb-all%2Ccutl"
+        f"&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={date_str_param}"
+    )
+
+def fetch_espn_events_for_date(date_obj):
+    response = requests.get(get_espn_schedule_url(date_obj), headers=HEADERS, timeout=15)
+    data = response.json()
+    return (
+        data.get("sports", [])[0]
+        .get("leagues", [])[0]
+        .get("events", [])
+        if data.get("sports")
+        else []
+    )
+
+def should_check_upcoming_schedule():
+    if not os.path.exists(_UPCOMING_STATE_PATH):
+        return True
+    try:
+        with open(_UPCOMING_STATE_PATH, "r", encoding="utf-8") as f:
+            last_check = datetime.fromisoformat(f.read().strip())
+        return (datetime.now() - last_check).total_seconds() / 3600 >= UPCOMING_SEASON_CHECK_INTERVAL_HOURS
+    except Exception:
+        return True
+
+def mark_upcoming_schedule_checked():
+    os.makedirs(os.path.dirname(_UPCOMING_STATE_PATH), exist_ok=True)
+    with open(_UPCOMING_STATE_PATH, "w", encoding="utf-8") as f:
+        f.write(datetime.now().isoformat())
+
+def find_first_regular_season_event_date(approx_start, season_year, force_check=False):
+    if not force_check and not should_check_upcoming_schedule():
+        return None
+
+    try:
+        for offset in range(-30, 46):
+            date_obj = approx_start + timedelta(days=offset)
+            try:
+                events = fetch_espn_events_for_date(date_obj)
+            except Exception as e:
+                print(f"[WARN] Could not check NBA schedule for {date_obj}: {e}")
+                continue
+            regular_events = [
+                event for event in events
+                if str(event.get("seasonType")) == "2" and int(event.get("season", 0) or 0) == season_year
+            ]
+            if not regular_events:
+                continue
+
+            first_event = min(regular_events, key=lambda event: event.get("date", ""))
+            try:
+                dt_utc = datetime.strptime(first_event["date"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+                return dt_utc.astimezone(PACIFIC).date()
+            except Exception:
+                return date_obj
+        return None
+    finally:
+        mark_upcoming_schedule_checked()
 
 # ==========================================================
 # SAFE ATOMIC WRITE HELPER
@@ -76,13 +143,26 @@ def get_first_saturday_in_april(year: int):
 def get_season_dates(today):
     candidate_year = today.year
     candidate_start = get_first_tuesday_on_or_after(candidate_year, 10, 22)
+    previous_season_end = datetime(candidate_year, 6, 30).date()
 
     if today >= candidate_start:
         season_year = candidate_year
+    elif ENABLE_UPCOMING_SEASON_AUTO_DETECT and today > previous_season_end:
+        detected_start = find_first_regular_season_event_date(candidate_start, candidate_year)
+        if detected_start:
+            print(f"[AUTO] Upcoming {candidate_year} NBA schedule is available on ESPN.")
+            season_year = candidate_year
+            season_start = detected_start
+            postseason_start = get_first_saturday_in_april(season_year + 1)
+            season_end = datetime(season_year + 1, 6, 30).date()
+            return season_year, season_start, postseason_start, season_end
+        season_year = candidate_year - 1
     else:
         season_year = candidate_year - 1
 
-    season_start     = get_first_tuesday_on_or_after(season_year, 10, 22)
+    estimated_start  = get_first_tuesday_on_or_after(season_year, 10, 22)
+    detected_start   = find_first_regular_season_event_date(estimated_start, season_year, force_check=today >= estimated_start)
+    season_start     = detected_start or estimated_start
     postseason_start = get_first_saturday_in_april(season_year + 1)
     season_end       = datetime(season_year + 1, 6, 30).date()
 
@@ -134,7 +214,8 @@ def load_schedule() -> tuple:
 
 schedule, schedule_was_reset = load_schedule()
 if schedule_was_reset:
-    print("Schedule was reset. Set FIND_SCHEDULE = True to repopulate.")
+    FIND_SCHEDULE = True
+    print("[AUTO] New season detected — auto-populating schedule.")
 
 seen_ids = {g.get("game_id") for g in schedule if g.get("game_id")}
 

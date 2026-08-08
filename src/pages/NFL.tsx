@@ -2063,6 +2063,7 @@ const ScheduleNFLViewV2 = ({
   const calendarRef = React.useRef<HTMLDivElement>(null);
   const [showCalendar, setShowCalendar] = React.useState(false);
   const [calendarMonth, setCalendarMonth] = React.useState<{ year: number; month: number } | null>(null);
+  const [calendarPosition, setCalendarPosition] = React.useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const gameDateSet = useMemo(() => new Set(dateKeys), [dateKeys]);
 
   useEffect(() => {
@@ -2083,6 +2084,13 @@ const ScheduleNFLViewV2 = ({
 
   const openCalendar = () => {
     const [y, m] = currentKey.split('-').map(Number);
+    const rect = calendarRef.current?.getBoundingClientRect();
+    if (rect) {
+      setCalendarPosition({
+        top: rect.bottom + 6,
+        right: window.innerWidth - rect.right,
+      });
+    }
     setCalendarMonth({ year: y, month: m });
     setShowCalendar(true);
   };
@@ -2133,7 +2141,7 @@ const ScheduleNFLViewV2 = ({
             </svg>
           </Button>
           {showCalendar && calendarMonth && (
-            <div className="absolute top-11 right-0 z-50 rounded-2xl border border-white/10 shadow-2xl p-4 w-72" style={{ backgroundColor: '#1a1a1a' }}>
+            <div className="fixed z-50 rounded-xl border border-white/10 shadow-2xl p-4 w-72" style={{ backgroundColor: '#1a1a1a', top: calendarPosition.top, right: calendarPosition.right }}>
               <div className="flex items-center justify-between mb-3">
                 <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
                   onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m - 2, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
@@ -2145,12 +2153,12 @@ const ScheduleNFLViewV2 = ({
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-7 mb-1">
+              <div className="grid grid-cols-7 mb-0.5">
                 {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-1">{d}</div>
+                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-0.5">{d}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-y-1">
+              <div className="grid grid-cols-7 gap-1">
                 {calGrid.map((key, i) => {
                   if (!key) return <div key={`empty-${i}`} />;
                   const hasGames = gameDateSet.has(key);
@@ -2159,7 +2167,7 @@ const ScheduleNFLViewV2 = ({
                   const dayNum = parseInt(key.split('-')[2], 10);
                   return (
                     <button key={key} onClick={() => handleCalendarDayClick(key)} disabled={!hasGames}
-                      className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-8 w-full transition-all duration-150
+                      className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-[32px] w-full transition-all duration-150
                         ${isSelected ? 'bg-white text-black shadow-lg' : hasGames ? 'text-white hover:bg-white/15 cursor-pointer' : 'text-white/20 cursor-default'}`}>
                       {dayNum}
                       {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />}

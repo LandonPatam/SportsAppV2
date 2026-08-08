@@ -3,6 +3,50 @@ import json
 import re
 import os
 
+TEAMS_PATH = "public/data/f1_teams.json"
+TEAMS_BACKUP_PATH = "data/public/data/f1_teams.json"
+
+def _valid_f1_teams(teams):
+    return (
+        isinstance(teams, list)
+        and len(teams) >= 10
+        and all(isinstance(team, dict) and team.get("name") and team.get("drivers") for team in teams)
+    )
+
+def _load_valid_teams(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            teams = json.load(f)
+        return teams if _valid_f1_teams(teams) else None
+    except Exception:
+        return None
+
+def _restore_teams_from_backup():
+    backup = _load_valid_teams(TEAMS_BACKUP_PATH)
+    if not backup:
+        return None
+    os.makedirs(os.path.dirname(TEAMS_PATH), exist_ok=True)
+    with open(TEAMS_PATH, "w", encoding="utf-8") as f:
+        json.dump(backup, f, indent=4)
+    print(f"[WARN] Restored F1 teams from {TEAMS_BACKUP_PATH}; scrape/update output was invalid.")
+    return backup
+
+def _safe_write_teams(teams, label="F1 teams"):
+    if not _valid_f1_teams(teams):
+        print(f"[WARN] Refusing to overwrite {TEAMS_PATH}: {label} produced invalid/empty team data.")
+        _restore_teams_from_backup()
+        return False
+
+    os.makedirs(os.path.dirname(TEAMS_PATH), exist_ok=True)
+    with open(TEAMS_PATH, "w", encoding="utf-8") as f:
+        json.dump(teams, f, indent=4)
+
+    os.makedirs(os.path.dirname(TEAMS_BACKUP_PATH), exist_ok=True)
+    with open(TEAMS_BACKUP_PATH, "w", encoding="utf-8") as f:
+        json.dump(teams, f, indent=4)
+
+    return True
+
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -11,8 +55,13 @@ headers = {
     'Connection': 'keep-alive'
 }
 
-response = requests.get("https://www.formula1.com/en/drivers", headers=headers)
-raw_data = response.text
+try:
+    response = requests.get("https://www.formula1.com/en/drivers", headers=headers, timeout=15)
+    response.raise_for_status()
+    raw_data = response.text
+except Exception as e:
+    print(f"[WARN] Could not fetch Formula1 teams/drivers page: {e}")
+    raw_data = ""
 
 TEAM_MAP = {
     'alpine': 'Alpine',
@@ -125,10 +174,8 @@ for slug in sorted(teams):
     entry["drivers"].sort(key=lambda d: d["name"].split()[-1])
     output.append(entry)
 
-with open("public/data/f1_teams.json", "w") as f:
-    json.dump(output, f, indent=4)
-
-print(f"\n[OK] Wrote {len(output)} teams to public/data/f1_drivers/drivers.json")
+if _safe_write_teams(output, "Formula1 teams scrape"):
+    print(f"\n[OK] Wrote {len(output)} teams to {TEAMS_PATH}")
 
 
 import requests
@@ -341,9 +388,6 @@ def update_calendar():
         json.dump(calendar, f, indent=4)
 
 
-TEAMS_PATH = "public/data/f1_teams.json"
-
-
 def _normalize(name: str) -> str:
     """Lowercase + strip accents for fuzzy name matching (e.g. Hülkenberg → hulkenberg)."""
     import unicodedata
@@ -436,8 +480,12 @@ def update_driver_points():
     if not standings:
         return
 
-    with open(TEAMS_PATH, "r") as f:
-        teams = json.load(f)
+    teams = _load_valid_teams(TEAMS_PATH)
+    if teams is None:
+        teams = _restore_teams_from_backup()
+    if teams is None:
+        print(f"ERROR: {TEAMS_PATH} is invalid and no valid backup exists.")
+        return
 
     norm_map = {_normalize(k): v for k, v in standings.items()}
 
@@ -483,8 +531,8 @@ def update_driver_points():
         )
         team["team_race_points"] = {r: team_race.get(r) for r in all_races}
 
-    with open(TEAMS_PATH, "w") as f:
-        json.dump(teams, f, indent=4)
+    if not _safe_write_teams(teams, "ESPN standings update"):
+        return
 
     print(f"[OK] Points written for {updated} driver(s) in {TEAMS_PATH}.")
     if unmatched:
