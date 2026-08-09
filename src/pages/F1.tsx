@@ -10,7 +10,6 @@ import { PageNavbar } from '@/components/layout/PageNavbar';
 import {
   Card, CardContent,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Tabs, TabsContent,
 } from '@/components/ui/tabs';
@@ -165,6 +164,33 @@ function useSessionCountdown(race: F1Race) {
   return { label: next.label, days, hours, mins, secs };
 }
 
+function normalizeTrackSvgViewBox(svg: SVGSVGElement, paddingRatio = 0.1) {
+  const elements = Array.from(
+    svg.querySelectorAll<SVGGraphicsElement>('path, polyline, polygon, circle, ellipse, line')
+  ).filter((el) => !el.classList.contains('f1-teal-strip'));
+
+  if (!elements.length) return;
+
+  const boxes = elements
+    .map((el) => {
+      try { return el.getBBox(); } catch { return null; }
+    })
+    .filter((box): box is DOMRect => !!box && box.width > 0 && box.height > 0);
+
+  if (!boxes.length) return;
+
+  const minX = Math.min(...boxes.map(box => box.x));
+  const minY = Math.min(...boxes.map(box => box.y));
+  const maxX = Math.max(...boxes.map(box => box.x + box.width));
+  const maxY = Math.max(...boxes.map(box => box.y + box.height));
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const pad = Math.max(width, height) * paddingRatio;
+
+  svg.setAttribute('viewBox', `${minX - pad} ${minY - pad} ${width + pad * 2} ${height + pad * 2}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+}
+
 
 // ============================
 // 🗺️ InlineSvg — fetches SVG, strips elevation graph + labels, renders inline
@@ -172,6 +198,7 @@ function useSessionCountdown(race: F1Race) {
 
 const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
   const [svgContent, setSvgContent] = React.useState<string | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -301,9 +328,16 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
     return () => { cancelled = true; };
   }, [url]);
 
+  useEffect(() => {
+    const svg = containerRef.current?.querySelector('svg');
+    if (!svg) return;
+    normalizeTrackSvgViewBox(svg);
+  }, [svgContent]);
+
   if (!svgContent) return null;
   return (
     <div
+      ref={containerRef}
       className={className}
       dangerouslySetInnerHTML={{ __html: svgContent }}
       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', willChange: 'transform', filter: 'drop-shadow(0 0 4px #ffffff88) drop-shadow(0 0 8px #ffffff44)' }}
@@ -352,6 +386,8 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
 
     const allPaths = Array.from(svg.querySelectorAll('path'));
     if (!allPaths.length) return;
+    normalizeTrackSvgViewBox(svg);
+
     const trackPath = allPaths.reduce((longest, p) =>
       (p.getTotalLength?.() ?? 0) > (longest.getTotalLength?.() ?? 0) ? p : longest
     , allPaths[0]);
@@ -483,6 +519,236 @@ const RaceCardFooter = ({ race }: { race: F1Race }) => {
 // 🏎️ RaceCalendarNavigator — left panel of Dashboard
 // ============================
 
+const DesktopSessionPanel = ({ race }: { race: F1Race }) => {
+  const cd = useSessionCountdown(race);
+  const rows = SESSION_ORDER
+    .map((s) => {
+      const key = s.keys.find(k => race.session_times?.[k]);
+      if (!key) return null;
+      const fmt = formatSessionShort(race.session_times![key]);
+      if (!fmt) return null;
+      return { label: s.label, ...fmt };
+    })
+    .filter(Boolean) as { label: string; day: string; time: string }[];
+
+  const units = cd
+    ? [
+        { v: cd.days,  l: 'DAYS' },
+        { v: cd.hours, l: 'HRS' },
+        { v: cd.mins,  l: 'MIN' },
+        { v: cd.secs,  l: 'SEC' },
+      ]
+    : [];
+  const label = cd ? (COUNTDOWN_LABELS[cd.label] ?? cd.label) : '';
+
+  return (
+    <aside
+      className="w-[202px] flex-shrink-0 self-stretch py-4 overflow-visible"
+      style={{
+        color: '#ffffff',
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="text-[10px] font-black uppercase leading-none text-white">Session Schedule</div>
+      <div className="h-px bg-white/20 mt-2 mb-3" />
+
+      <div className="space-y-3">
+        {rows.map((row) => (
+          <div key={row.label} className="grid grid-cols-[42px_32px_1fr] items-baseline gap-2 text-[11px] leading-none">
+            <span className="font-black uppercase tracking-wide" style={{ color: '#2dd4bf' }}>{row.label}</span>
+            <span className="font-medium text-white/65">{row.day}</span>
+            <span className="font-medium text-right tabular-nums text-white">{row.time}</span>
+          </div>
+        ))}
+      </div>
+
+      {cd && (
+        <>
+          <div className="h-px bg-white/10 mt-6 mb-4" />
+          <div className="text-[11px] font-black uppercase leading-none tracking-wide" style={{ color: '#2dd4bf' }}>
+            {label}
+          </div>
+          <div className="flex items-end gap-1 mt-3">
+            {units.map(({ v, l }, i) => (
+              <React.Fragment key={l}>
+                {i > 0 && <span className="pb-[17px] text-2xl font-semibold leading-none text-white">:</span>}
+                <div className="flex flex-col items-center min-w-[26px]">
+                  <span className="text-[28px] font-semibold leading-none tabular-nums text-white">
+                    {String(v).padStart(2, '0')}
+                  </span>
+                  <span className="mt-1 text-[8px] font-medium leading-none text-white/45">{l}</span>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </>
+      )}
+    </aside>
+  );
+};
+
+function getLatestPoints(pointsByRace?: Record<string, number | null>): number | null {
+  const entries = Object.entries(pointsByRace ?? {});
+  return ([...entries].reverse().find(([, v]) => typeof v === 'number')?.[1] as number | null) ?? null;
+}
+
+function getShortTeamName(name: string): string {
+  return name
+    .replace('Red Bull Racing', 'Red Bull')
+    .replace('Haas F1 Team', 'Haas')
+    .replace('Aston Martin', 'Aston')
+    .trim();
+}
+
+function getDynamicRaceTitle(name: string): string[] {
+  return name
+    .replace(/\s+Grand Prix$/i, ' GP')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+const TeamStandingsGrid = ({ teamsData, limit = 8 }: { teamsData: F1Team[]; limit?: number }) => {
+  const sortedTeams = [...teamsData]
+    .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
+    .slice(0, limit);
+
+  if (!sortedTeams.length) return null;
+
+  return (
+    <div className="grid grid-cols-4 gap-3">
+      {sortedTeams.map((team: any, index: number) => {
+        const accent = team.colour ?? '#e10600';
+        const pts = team.team_points ?? 0;
+        const latest = getLatestPoints(team.team_race_points);
+        const featured = index < 4;
+
+        return (
+          <div
+            key={team.name}
+            className={[
+              'group relative overflow-hidden rounded-xl border cursor-pointer transition-all duration-200',
+              featured ? 'col-span-2 h-[150px]' : 'col-span-1 h-[118px]',
+            ].join(' ')}
+            style={{
+              background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+              borderColor: 'rgba(255,255,255,0.10)',
+              boxShadow: '0 14px 34px rgba(0, 0, 0, 0.28)',
+              animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
+            }}
+          >
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: featured ? -32 : -48,
+                right: featured ? 45 : -10,
+                width: featured ? 280 : 160,
+                height: featured ? 220 : 160,
+                border: `2px solid ${accent}`,
+                opacity: 0.52,
+                transform: featured ? 'rotate(30deg)' : undefined,
+              }}
+            />
+            <div
+              className="absolute rounded-full"
+              style={{
+                right: featured ? -160 : -96,
+                bottom: featured ? -48 : -4,
+                width: featured ? 340 : 190,
+                height: featured ? 250 : 190,
+                border: `18px solid ${accent}`,
+                opacity: 0.95,
+                transform: featured ? 'rotate(-30deg)' : undefined,
+              }}
+            />
+            <div
+              className="absolute left-0 top-0 h-full"
+              style={{
+                width: featured ? 122 : 76,
+                background: `linear-gradient(135deg, ${accent} 0%, ${accent} 48%, transparent 49%)`,
+                clipPath: 'polygon(0 0, 100% 0, 42% 100%, 0 100%)',
+              }}
+            />
+            <div
+              className="absolute font-black italic leading-none select-none"
+              style={{
+                top: featured ? -14 : -8,
+                left: featured ? 0 : 0,
+                color: 'rgba(255,255,255,0.92)',
+                fontSize: featured ? 112 : 82,
+                letterSpacing: 0,
+              }}
+            >
+              {index + 1}
+            </div>
+
+            {team.logo_url && (
+              <div
+                className="absolute z-20 flex items-center justify-center rounded-full"
+                style={{
+                  top: featured ? 18 : 14,
+                  right: featured ? 22 : 14,
+                  width: featured ? 42 : 34,
+                  height: featured ? 42 : 34,
+                  backgroundColor: accent,
+                  boxShadow: '0 8px 18px rgba(0,0,0,0.16)',
+                }}
+              >
+                <img
+                  src={team.logo_url}
+                  alt={`${team.name} logo`}
+                  className="max-h-[70%] max-w-[74%] object-contain"
+                  loading="lazy"
+                />
+              </div>
+            )}
+
+            <div
+              className="relative z-30 h-full"
+              style={{ padding: featured ? '12px 24px' : '8px 16px' }}
+            >
+              <div style={{ marginLeft: featured ? 150 : 72 }}>
+                <p
+                  className="font-black uppercase leading-none text-white"
+                  style={{ fontSize: featured ? 22 : 14 }}
+                >
+                  {getShortTeamName(team.name)}
+                </p>
+                <div className="flex items-center gap-2" style={{ marginTop: featured ? 5 : 3 }}>
+                  <p
+                    className="font-black leading-none tabular-nums text-white"
+                    style={{ fontSize: featured ? 38 : 28 }}
+                  >
+                    {pts}
+                  </p>
+                  {latest != null && latest > 0 && (
+                    <span className="text-xs font-black tabular-nums text-white">+{latest}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {team.car_url && (
+              <img
+                src={team.car_url}
+                alt=""
+                className="absolute z-20 object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+                style={{
+                  width: featured ? '73%' : '89%',
+                  height: featured ? 68 : 56,
+                  left: featured ? 44 : 20,
+                  bottom: featured ? -2 : -8,
+                  filter: 'drop-shadow(0 10px 8px rgba(0,0,0,0.28))',
+                }}
+                loading="lazy"
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { races: F1Race[]; isMobile?: boolean; teamsData?: F1Team[] }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -545,6 +811,15 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
   const currentKey = currentEntry.dateKey;
   const race = currentEntry.race;
   const isUpcoming = currentKey >= todayKey;
+  const raceTitleWords = getDynamicRaceTitle(race.race_name);
+  const longestRaceTitleWord = Math.max(...raceTitleWords.map(word => word.length), 0);
+  const raceTitleFontSize = raceTitleWords.length >= 5
+    ? 36
+    : raceTitleWords.length >= 4
+      ? 42
+      : longestRaceTitleWord > 8
+        ? 44
+        : 54;
 
   const openCalendar = () => {
     const [y, m] = currentKey.split('-').map(Number);
@@ -817,12 +1092,11 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
     <div className="flex flex-col h-full space-y-3">
 
       {/* ── Race info card ── */}
-      <Card className="relative overflow-hidden rounded-2xl border border-white/10 flex-shrink-0">
-        <div className="absolute inset-0" style={{ background: '#141414' }} />
+      <div className="relative flex-shrink-0">
         <div className="relative z-10 flex flex-col">
 
           {/* Header: < RACE 07 / 24 > + calendar */}
-          <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/[0.06]" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-2 py-1.5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-0.5">
               <Button variant="ghost" size="icon" onClick={() => setIndex(i => clamp(i - 1))} disabled={index <= 0} className="h-7 w-7 rounded-full hover:bg-white/10">
                 <ChevronLeft className="w-4 h-4" />
@@ -884,38 +1158,163 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
             </div>
           </div>
 
-          {/* Body: race name (left) + session times (right) */}
-          <div className="flex gap-4 px-4 py-3 cursor-pointer" onClick={() => setResultsModal(race)}>
-            <div className="flex-1 min-w-0">
-              <h2
-                className="font-black text-white uppercase leading-tight"
-                style={{ fontSize: `clamp(0.75rem, ${(2.0 - race.race_name.length * 0.05).toFixed(2)}rem, 1.25rem)` }}
-              >{race.race_name}</h2>
-              <p className="text-xs font-medium text-white/50 mt-1 truncate">{race.circuit}</p>
-              <p className="text-xs font-medium text-white/30 mt-0.5">{race.date}</p>
-            </div>
-            <div className="flex flex-col gap-0.5 flex-shrink-0 justify-center">
-              {SESSION_ORDER.map(s => {
-                const key = s.keys.find(k => race.session_times?.[k]);
-                if (!key) return null;
-                const fmt = formatSessionShort(race.session_times![key]);
-                if (!fmt) return null;
-                return (
-                  <div key={s.label} className="flex items-center gap-2">
-                    <span className="text-[10px] font-black w-8 uppercase tracking-wide" style={{ color: '#2dd4bf' }}>{s.label}</span>
-                    <span className="text-[10px] font-medium text-white/50 w-6">{fmt.day}</span>
-                    <span className="text-[10px] font-bold text-white tabular-nums">{fmt.time}</span>
+          {/* Body: dynamic race name + circuit map + session times */}
+          <div className="relative flex h-[330px] items-center gap-6 overflow-hidden px-5 pt-0 pb-16 cursor-pointer" onClick={() => setResultsModal(race)}>
+            <div className="relative h-[250px] w-[32%] min-w-0 overflow-visible self-start pt-14">
+              <div
+                className="relative h-[132px] origin-top-left overflow-visible"
+                style={{
+                  transform: 'rotate(-6deg) skewX(-8deg)',
+                  marginTop: 0,
+                  marginLeft: -2,
+                }}
+              >
+                {raceTitleWords.map((word, wordIndex) => (
+                  <div
+                    key={`${word}-${wordIndex}`}
+                    className="font-black uppercase text-white leading-[0.78] whitespace-nowrap"
+                    style={{
+                      fontSize: `${raceTitleFontSize}px`,
+                      letterSpacing: 0,
+                      textShadow: '0 10px 22px rgba(0,0,0,0.42)',
+                    }}
+                  >
+                    {word}
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              <div
+                className="absolute left-0 top-[218px]"
+              >
+                <svg
+                  className="block overflow-visible"
+                  width="280"
+                  height="16"
+                  viewBox="0 0 280 16"
+                  style={{
+                    fontFamily: 'inherit',
+                    textRendering: 'geometricPrecision',
+                  }}
+                  aria-label={race.circuit}
+                >
+                  <text
+                    x="0"
+                    y="12"
+                    fill="#2dd4bf"
+                    fontSize="12"
+                    fontWeight="800"
+                    letterSpacing="0"
+                    className="uppercase"
+                  >
+                    {race.circuit}
+                  </text>
+                </svg>
+                <p className="text-xs font-black uppercase text-white mt-1 leading-none">{race.date}</p>
+                {false && (() => {
+                  const cs = race.circuit_stats;
+                  const lap = cs?.lap_record;
+                  const hasLap = !!(lap?.time && lap.time !== 'TBD');
+                  const tags = cs?.tags ?? [];
+                  if (!hasLap && tags.length === 0 && !cs?.top_speed) return null;
+
+                  return (
+                    <div className="mt-4 flex flex-col items-start gap-2">
+                      {hasLap && (
+                        <div
+                          className="inline-flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-wide leading-none text-white">Lap Record</p>
+                            <p className="mt-1 text-lg font-black leading-none tabular-nums text-white">{lap!.time}</p>
+                            <p className="mt-1 text-[10px] font-medium leading-none text-white/60">
+                              {lap!.driver}{lap!.year ? ` · ${lap!.year}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col items-start gap-1.5">
+                        {tags.map((tag, tagIndex) => (
+                          <span
+                            key={tag}
+                            className="rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wide leading-none text-white"
+                            style={{
+                              backgroundColor: tagIndex === 0 ? '#c2410c' : '#1d4ed8',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {cs?.top_speed && (
+                          <span className="rounded-full bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-wide leading-none text-white">
+                            Top Speed {cs.top_speed}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
+            <div className="relative flex-1 h-[260px] min-w-0 translate-y-14">
+              <style>{`.f1-top-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
+              <div className="f1-top-svg-wrap absolute inset-0" style={{ transform: 'translate(-22px, -52px)', transformOrigin: 'center center' }}>
+                {race.track_svg_extracted
+                  ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
+                  : <InlineSvg url={race.track_svg} className="w-full h-full" />
+                }
+              </div>
+            </div>
+            <div className="translate-y-8">
+              <DesktopSessionPanel race={race} />
+            </div>
+            {(() => {
+              const cs = race.circuit_stats;
+              const lap = cs?.lap_record;
+              const hasLap = !!(lap?.time && lap.time !== 'TBD');
+              const tags = cs?.tags ?? [];
+              if (!hasLap && tags.length === 0 && !cs?.top_speed) return null;
+
+              return (
+                <div className="absolute bottom-5 left-5 right-[224px] flex items-center gap-2 overflow-visible whitespace-nowrap">
+                  {hasLap && (
+                    <div
+                      className="inline-flex h-11 items-center gap-2 rounded-full border border-white/10 px-3"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+                    >
+                      <span className="flex flex-col leading-none">
+                        <span className="text-[8px] font-black uppercase tracking-wide text-white/70">Lap Record</span>
+                        <span className="mt-0.5 text-sm font-black tabular-nums text-white">{lap!.time}</span>
+                      </span>
+                      <span className="text-[10px] font-medium text-white/55">
+                        {lap!.driver}{lap!.year ? ` - ${lap!.year}` : ''}
+                      </span>
+                    </div>
+                  )}
+                  {tags.map((tag, tagIndex) => (
+                    <span
+                      key={tag}
+                      className="rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-wide leading-none text-white"
+                      style={{
+                        backgroundColor: tagIndex === 0 ? '#c2410c' : '#1d4ed8',
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {cs?.top_speed && (
+                    <span className="rounded-full bg-white/10 px-3 py-2 text-[9px] font-black uppercase tracking-wide leading-none text-white">
+                      Top Speed {cs.top_speed}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Countdown footer */}
-          <RaceCardFooter race={race} />
-
         </div>
-      </Card>
+      </div>
 
       {/* ── Bottom Card (3/4): Track SVG ── */}
       <Card
@@ -924,7 +1323,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
       >
         <div className="absolute inset-0" style={{ background: '#141414' }} />
         <style>{`.f1-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
-        <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'translateY(8%)', transformOrigin: 'center center' }}>
+        <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'translate(-22px, -52px)', transformOrigin: 'center center' }}>
           {race.track_svg_extracted
             ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
             : <InlineSvg url={race.track_svg} className="w-full h-full" />
@@ -1224,22 +1623,59 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
     return (
       <div
         key={driver.name}
-        className="relative rounded-xl cursor-pointer mb-4"
-        style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px', animation: `slideUp 0.4s ease-out ${driver.globalIndex * 0.04}s both` }}
+        className="group relative rounded-2xl cursor-pointer mb-4 overflow-hidden border border-white/10 transition-all duration-200 hover:scale-[1.01]"
+        style={{
+          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
+          animation: `slideUp 0.4s ease-out ${driver.globalIndex * 0.04}s both`,
+        }}
         onClick={() => setExpandedDriver(isExpanded && !expandAll ? null : driver.name)}
       >
-        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+        <div
+          className="absolute left-0 top-0 h-[70px]"
+          style={{
+            width: 66,
+            background: `linear-gradient(135deg, ${accent} 0%, ${accent} 56%, transparent 57%)`,
+          }}
+        />
+        <div
+          className="absolute font-black italic leading-none select-none"
+          style={{
+            left: 8,
+            top: 3,
+            color: 'rgba(255,255,255,0.92)',
+            fontSize: 52,
+            letterSpacing: 0,
+          }}
+        >
+          {driver.globalIndex + 1}
+        </div>
+
         <div className="relative z-10 p-4 text-white">
-          <div className="flex items-center gap-2">
-            {driver.teamLogo && <img src={driver.teamLogo} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />}
-            <span className="text-m font-black text-white">#{driver.globalIndex + 1}</span>
-            <span className="text-base font-bold text-white">{driver.name}</span>
-            <span className="ml-auto text-3xl font-black text-white leading-none">
-              {driver.points}<span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
-            </span>
+          <div className="flex items-center gap-4 min-h-[78px]">
+            <div className="w-[36px] shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                {driver.teamLogo && (
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: accent }}
+                  >
+                    <img src={driver.teamLogo} alt="team logo" className="max-h-[68%] max-w-[72%] object-contain" loading="lazy" />
+                  </span>
+                )}
+                <span className="truncate text-xl font-black uppercase leading-none text-white">
+                  {driver.name}
+                </span>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-end gap-1">
+              <span className="text-4xl font-black text-white leading-none tabular-nums">{driver.points}</span>
+              <span className="pb-1 text-[10px] font-bold text-white/45 leading-none">PTS</span>
+            </div>
           </div>
           <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
+            <div className="rounded-xl p-3 mt-3 border border-white/10" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
               <div
                 className="grid grid-flow-col gap-x-2 gap-y-1"
                 style={{
@@ -1436,22 +1872,58 @@ const ConstructorsTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]
     return (
       <div
         key={team.name}
-        className="relative rounded-xl cursor-pointer mb-4"
-        style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px', animation: `slideUp 0.4s ease-out ${team.globalIndex * 0.04}s both` }}
+        className="group relative rounded-2xl cursor-pointer mb-4 overflow-hidden border border-white/10 transition-all duration-200 hover:scale-[1.01]"
+        style={{
+          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
+          animation: `slideUp 0.4s ease-out ${team.globalIndex * 0.04}s both`,
+        }}
         onClick={() => setExpandedTeam(isExpanded && !expandAll ? null : team.name)}
       >
-        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
+        <div
+          className="absolute left-0 top-0 h-[70px]"
+          style={{
+            width: 66,
+            background: `linear-gradient(135deg, ${accent} 0%, ${accent} 56%, transparent 57%)`,
+          }}
+        />
+        <div
+          className="absolute font-black italic leading-none select-none"
+          style={{
+            left: 8,
+            top: 3,
+            color: 'rgba(255,255,255,0.92)',
+            fontSize: 52,
+            letterSpacing: 0,
+          }}
+        >
+          {team.globalIndex + 1}
+        </div>
         <div className="relative z-10 p-4 text-white">
-          <div className="flex items-center gap-2">
-            {team.logo_url && <img src={team.logo_url} alt="team logo" className="w-8 h-8 object-contain" loading="lazy" />}
-            <span className="text-m font-black text-white">#{team.globalIndex + 1}</span>
-            <span className="text-base font-bold text-white">{team.name}</span>
-            <span className="ml-auto text-3xl font-black text-white leading-none">
-              {team.team_points ?? 0}<span className="text-xs font-semibold text-white/40 ml-1">PTS</span>
-            </span>
+          <div className="flex items-center gap-4 min-h-[78px]">
+            <div className="w-[36px] shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                {team.logo_url && (
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: accent }}
+                  >
+                    <img src={team.logo_url} alt="team logo" className="max-h-[68%] max-w-[72%] object-contain" loading="lazy" />
+                  </span>
+                )}
+                <span className="truncate text-2xl font-black uppercase leading-none text-white">
+                  {team.name}
+                </span>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-end gap-1">
+              <span className="text-4xl font-black text-white leading-none tabular-nums">{team.team_points ?? 0}</span>
+              <span className="pb-1 text-[10px] font-bold text-white/45 leading-none">PTS</span>
+            </div>
           </div>
           <div style={{ maxHeight: isExpanded ? '600px' : '0px', overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            <div className="rounded-xl p-3 mt-4" style={{ backgroundColor: '#0000004c' }}>
+            <div className="rounded-xl p-3 mt-3 border border-white/10" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
               <div
                 className="grid grid-flow-col gap-x-2 gap-y-1"
                 style={{
@@ -1650,13 +2122,13 @@ const F1 = () => {
         {/* ========================
             TAB: Dashboard
         ======================== */}
-        <TabsContent value="dashboard" className="mt-3">
+        <TabsContent value="dashboard" className="mt-0">
           <div
-            className="flex gap-4"
-            style={{ height: 'calc(100vh - 6rem)' }}
+            className="overflow-hidden flex flex-col gap-4 pr-1 pt-0"
+            style={{ height: 'calc(100vh - 4.5rem)' }}
           >
             {/* Left column: Calendar + Driver grid stacked */}
-            <div className="flex flex-col gap-4 flex-shrink-0 min-h-0" style={{ width: '40%' }}>
+            <div className="flex flex-col gap-8 flex-shrink-0 min-h-0" style={{ width: '100%', minHeight: '340px' }}>
 
               {/* Calendar */}
               <div className="flex-1 min-h-0">
@@ -1668,7 +2140,7 @@ const F1 = () => {
                 )}
               </div>
 
-              {/* Bottom: Driver Standings 3x2 */}
+              {/* Bottom: Driver Standings */}
               <div className="flex-shrink-0">
                 {(() => {
                   const allDrivers = standingsTeamsData.flatMap((team) =>
@@ -1679,38 +2151,60 @@ const F1 = () => {
                     .slice(0, 6);
 
                   return (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-6 gap-3">
                       {allDrivers.map((driver: any, index: number) => {
                         const accent = driver.teamColour;
                         const lastName = driver.name.split(' ').slice(1).join(' ') || driver.name;
+                        const latest = getLatestPoints(driver.race_points);
                         return (
                           <div
                             key={driver.name}
-                            className="relative rounded-xl overflow-hidden cursor-pointer hover:scale-[1.015] transition-all duration-200"
+                            className="relative h-[82px] rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] transition-all duration-200"
                             style={{
-                              backgroundColor: '#141414',
-                              border: '1px solid rgba(255,255,255,0.06)',
-                              borderLeft: `4px solid ${accent}`,
+                              background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+                              border: '1px solid rgba(255,255,255,0.10)',
+                              boxShadow: '0 12px 28px rgba(18,18,18,0.11)',
                               animation: `slideUp 0.35s ease-out ${index * 0.04}s both`,
                             }}
                           >
-                            <div className="relative z-10 flex items-center justify-between px-3 h-12">
-                              <span className="text-sm font-black text-white uppercase tracking-wide">{lastName}</span>
-                              {(() => {
-                                const entries = Object.entries(driver.race_points ?? {});
-                                const latest = [...entries].reverse().find(([, v]) => v != null)?.[1] as number | null;
-                                return (
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-lg font-black text-white leading-none tabular-nums">{driver.points}</span>
-                                    <div className="flex items-baseline gap-1">
-                                      {latest != null && latest > 0 && (
-                                        <span className="text-[11px] font-black tabular-nums" style={{ color: '#2dd4bf' }}>+{latest}</span>
-                                      )}
-                                      <span className="text-[10px] font-semibold text-white/40 leading-none">PTS</span>
-                                    </div>
+                            <div
+                              className="absolute inset-y-0 left-0"
+                              style={{
+                                width: 30,
+                                background: `linear-gradient(135deg, ${accent} 0%, ${accent} 54%, transparent 55%)`,
+                              }}
+                            />
+                            <div
+                              className="absolute font-black italic leading-none select-none"
+                              style={{
+                                left: 5,
+                                top: 6,
+                                color: 'rgba(255,255,255,0.96)',
+                                fontSize: 24,
+                                letterSpacing: 0,
+                              }}
+                            >
+                              {index + 1}
+                            </div>
+                            <div className="relative z-10 h-full flex items-center justify-between gap-2 pl-[38px] pr-4">
+                              <div className="min-w-0">
+                                <p className="text-xs font-black uppercase leading-none truncate text-white">
+                                  {lastName}
+                                </p>
+                                <div className="mt-2">
+                                  <span className="text-[28px] font-black leading-none tabular-nums text-white">
+                                    {driver.points}
+                                  </span>
+                                  <div className="flex items-baseline gap-1 mt-1">
+                                  {latest != null && latest > 0 && (
+                                    <span className="text-xs font-black tabular-nums leading-none" style={{ color: '#089f98' }}>
+                                      +{latest}
+                                    </span>
+                                  )}
+                                    <span className="text-[10px] font-bold text-white/45 leading-none">PTS</span>
                                   </div>
-                                );
-                              })()}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1723,7 +2217,10 @@ const F1 = () => {
             </div>
 
             {/* Right: Constructor Standings — full height */}
-            <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
+            <div className="flex-shrink-0 pb-4">
+              <TeamStandingsGrid teamsData={standingsTeamsData} />
+              {false && (
+              <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
               {[...standingsTeamsData]
                 .sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0))
                 .slice(0, 8)
@@ -1780,14 +2277,11 @@ const F1 = () => {
                           const entries = Object.entries(team.team_race_points ?? {});
                           const latest = [...entries].reverse().find(([, v]) => v != null)?.[1] as number | null;
                           return (
-                            <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-2">
                               <span className="text-3xl font-black text-white leading-none tabular-nums">{pts}</span>
-                              <div className="flex items-baseline gap-1">
-                                {latest != null && latest > 0 && (
-                                  <span className="text-[11px] font-black tabular-nums" style={{ color: '#2dd4bf' }}>+{latest}</span>
-                                )}
-                                <span className="text-[10px] font-semibold text-white/40 leading-none">PTS</span>
-                              </div>
+                              {latest != null && latest > 0 && (
+                                <span className="text-[11px] font-black tabular-nums text-white">+{latest}</span>
+                              )}
                             </div>
                           );
                         })()}
@@ -1795,6 +2289,8 @@ const F1 = () => {
                     </div>
                   );
                 })}
+              </div>
+              )}
             </div>
 
           </div>
@@ -1828,6 +2324,7 @@ const F1 = () => {
                   const hasDate = !!race.date && race.date.trim().length > 0 && race.date.trim().toUpperCase() !== 'TBD';
                   const isCanceled = race.start_time_west === 'Canceled';
                   const isUpcoming = !isCanceled && hasDate && raceKey >= todayKey;
+                  const statusColor = isCanceled ? '#ef4444' : isUpcoming ? '#a855f7' : '#22c55e';
                   return (
                     <div
                       key={race.race_number}
@@ -1842,6 +2339,25 @@ const F1 = () => {
                       }}
                       onClick={() => !isCanceled && setRaceModal(race)}
                     >
+                      <div
+                        className="absolute left-0 top-0 z-20 h-[72px]"
+                        style={{
+                          width: 68,
+                          background: `linear-gradient(135deg, ${statusColor} 0%, ${statusColor} 56%, transparent 57%)`,
+                        }}
+                      />
+                      <div
+                        className="absolute z-30 font-black italic leading-none select-none text-white"
+                        style={{
+                          left: 8,
+                          top: 7,
+                          fontSize: 42,
+                          letterSpacing: 0,
+                        }}
+                      >
+                        {race.race_number}
+                      </div>
+
                       {/* Canceled diagonal stripe overlay */}
                       {isCanceled && (
                         <div className="absolute inset-0 z-20 pointer-events-none rounded-2xl overflow-hidden">
@@ -1852,32 +2368,25 @@ const F1 = () => {
                         </div>
                       )}
                       {/* Text */}
-                      <div className="relative z-10 p-4 pb-2 flex-shrink-0">
-                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: isCanceled ? '#666' : '#2dd4bf' }}>
-                          Race {race.race_number}
-                        </span>
-                        <div className="flex items-start gap-2 mt-0.5">
-                          <h2 className="text-lg font-extrabold leading-tight flex-1" style={{ color: isCanceled ? 'rgba(255,255,255,0.4)' : 'white' }}>
+                      <div className="relative z-10 p-4 pl-[76px] pb-2 flex-shrink-0">
+                        <div className="mt-1">
+                          <h2
+                            className="text-xl font-black uppercase leading-[0.9] flex-1"
+                            style={{
+                              color: isCanceled ? 'rgba(255,255,255,0.4)' : 'white',
+                              letterSpacing: 0,
+                              textShadow: isCanceled ? undefined : '0 8px 18px rgba(0,0,0,0.38)',
+                            }}
+                          >
                             {race.race_name}
                           </h2>
-                          <Badge
-                            className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 mt-0.5"
-                            style={isCanceled
-                              ? { backgroundColor: '#3a1a1a', color: '#ff4444', border: '1px solid #ff444433' }
-                              : isUpcoming
-                              ? { backgroundColor: 'rgba(130,50,200,0.30)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.2)' }
-                              : { backgroundColor: 'rgba(10,120,40,0.30)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}
-                          >
-                            {isCanceled ? 'Canceled' : isUpcoming ? 'Upcoming' : 'Completed'}
-                          </Badge>
                         </div>
-                        <p className="text-xs mt-0.5" style={{ color: isCanceled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)' }}>{race.circuit}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[11px] font-semibold" style={{ color: isCanceled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.6)' }}>{race.date}</span>
-                          {!isCanceled && (
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className="text-[11px] font-black uppercase leading-none" style={{ color: isCanceled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.75)', letterSpacing: 0 }}>{race.date}</span>
+                          {false && !isCanceled && (
                             <>
                               <span className="text-white/20 text-xs">·</span>
-                              <span className="text-[11px] font-semibold text-white/60">{race.start_time_west}</span>
+                              <span className="text-[11px] font-black uppercase leading-none text-white/75">{race.start_time_west}</span>
                             </>
                           )}
                         </div>
@@ -1885,7 +2394,7 @@ const F1 = () => {
 
                       {/* Track SVG */}
                       <style>{`.f1-races-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
-                      <div className="f1-races-svg-wrap absolute z-10" style={{ top: '45%', left: '5%', right: '5%', bottom: '-10%' }}>
+                      <div className="f1-races-svg-wrap absolute z-10" style={{ top: '34%', left: '5%', right: '5%', bottom: '1%' }}>
                         {race.track_svg_extracted
                           ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
                           : <InlineSvg url={race.track_svg} className="w-full h-full" />
