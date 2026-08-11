@@ -327,7 +327,7 @@ const teamColors: Record<string, { primary: string; secondary: string }> = {
   SAC: { primary: '#5A2D81', secondary: '#63727A' }, // Purple, Silver
   SAS: { primary: '#C4CED4', secondary: '#000000' }, // Silver, Black
   TOR: { primary: '#000000', secondary: '#CE1141' }, // Red, Black
-  UTA: { primary: '#ffffff', secondary: '#753BBD' }, // Navy, Gold
+  UTA: { primary: '#753BBD', secondary: '#ffffff' }, // Purple, White
   WAS: { primary: '#002B5C', secondary: '#E31837' }, // Navy, Red
 };
 
@@ -1364,7 +1364,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full hover:bg-white/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
-        <div className="text-lg font-semibold">{formatLabel(currentKey)}</div>
+        <div className="text-lg font-black tracking-wide text-white">{formatLabel(currentKey)}</div>
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full hover:bg-white/10">
           <ChevronRight className="w-5 h-5" />
         </Button>
@@ -1402,7 +1402,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+                <span className="text-sm font-black text-white tracking-wide">{calMonthLabel}</span>
                 <button
                   className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
                   onClick={() => setCalendarMonth(({ year: y, month: m }) => {
@@ -1417,7 +1417,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
               {/* Day-of-week headers */}
               <div className="grid grid-cols-7 mb-0.5">
                 {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-0.5">{d}</div>
+                  <div key={d} className="text-center text-[10px] font-black tracking-wide text-white/30 py-0.5">{d}</div>
                 ))}
               </div>
 
@@ -1435,7 +1435,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                       onClick={() => handleCalendarDayClick(key)}
                       disabled={!hasGames}
                       className={`
-                        relative flex items-center justify-center rounded-lg text-xs font-bold h-[32px] w-full transition-all duration-150
+                        relative flex items-center justify-center rounded-lg text-xs font-black tabular-nums h-[32px] w-full transition-all duration-150
                         ${isSelected
                           ? 'bg-white text-black shadow-lg'
                           : hasGames
@@ -1464,7 +1464,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
       <div className={isMobile ? 'flex-1 overflow-y-auto no-scrollbar pb-4 pr-2' : undefined}>
       {games.length === 0 ? (
         <Card className="bg-card/60 backdrop-blur-sm border">
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
+          <CardContent className="py-8 text-center text-sm font-black tracking-wide text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
         <div key={currentKey} className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
@@ -1605,7 +1605,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                         style = { backgroundColor: '#000000', color: '#ffffff' };
                       }
                       return (
-                        <Badge key={p} className="font-semibold" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
+                        <Badge key={p} className="font-black tracking-wide" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
                           {p}
                         </Badge>
                       );
@@ -1615,7 +1615,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
 
                 <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
                 {isPlayoff && seriesNote && (
-                  <div className="absolute left-0 right-0 text-white/50 font-medium truncate text-center px-2 z-20" style={{ top: '2px', fontSize: recordFontSize }}>
+                  <div className="absolute left-0 right-0 text-white/50 font-black tracking-wide truncate text-center px-2 z-20" style={{ top: '2px', fontSize: recordFontSize }}>
                     {seriesNote.replace(/\s*if necessary/i, '*')}
                   </div>
                 )}
@@ -1638,7 +1638,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                               loading="eager"
                             />
                             {isPlayoff && seriesWins ? (
-                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                              <div className="relative text-white/80 font-black text-center tabular-nums" style={{ fontSize: recordFontSize }}>
                                 {awayDisplayStreak && awayDisplayStreak.count >= 3 && (
                                   <span className="absolute right-full pr-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
                                     {awayDisplayStreak.count}
@@ -1652,7 +1652,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                 )}
                               </div>
                             ) : awayAbbr && awayDisplayRecord && (
-                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                              <div className="relative text-white/80 font-black text-center tabular-nums" style={{ fontSize: recordFontSize }}>
                                 {awayDisplayStreak && awayDisplayStreak.count >= 3 && (
                                   <span className="absolute right-full pr-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
                                     {awayDisplayStreak.count}
@@ -1674,13 +1674,13 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                       <div className="flex items-center justify-center relative">
                         {hasScores ? (
                           <>
-                            <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: scoreFontSize }}>
+                            <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
                               <span className={awayScoreClass}>{aScore}</span>
                               <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                               <span className={homeScoreClass}>{hScore}</span>
                             </div>
                             {isLiveGame && (g.period || g.clock) && (
-                              <div className="absolute top-full text-white/90 font-semibold text-center whitespace-nowrap" style={{ fontSize: liveFontSize, marginTop: "0.2cqi" }}>
+                              <div className="absolute top-full text-white/90 font-black tracking-wide text-center whitespace-nowrap" style={{ fontSize: liveFontSize, marginTop: "0.2cqi" }}>
                                 {(() => {
                                   const parts: string[] = [];
                                   if (g.period) {
@@ -1701,7 +1701,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                             )}
                           </>
                         ) : (
-                          <div className="font-bold text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
+                          <div className="font-black tracking-wide text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
                             {g.time || 'TBA'}
                           </div>
                         )}
@@ -1723,7 +1723,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                               loading="eager"
                             />
                             {isPlayoff && seriesWins ? (
-                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                              <div className="relative text-white/80 font-black text-center tabular-nums" style={{ fontSize: recordFontSize }}>
                                 {homeDisplayStreak && homeDisplayStreak.count >= 3 && (
                                   <span className="absolute right-full pr-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
                                     {homeDisplayStreak.count}
@@ -1737,7 +1737,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                 )}
                               </div>
                             ) : homeAbbr && homeDisplayRecord && (
-                              <div className="relative text-white/80 font-bold text-center" style={{ fontSize: recordFontSize }}>
+                              <div className="relative text-white/80 font-black text-center tabular-nums" style={{ fontSize: recordFontSize }}>
                                 {homeDisplayStreak && homeDisplayStreak.count >= 3 && (
                                   <span className="absolute right-full pr-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800, whiteSpace: 'nowrap' }}>
                                     {homeDisplayStreak.count}
@@ -1782,8 +1782,8 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
               onClick={cycleToNextPage}
               className="flex-[2] flex flex-col items-center justify-center h-16 border-x border-white/10 active:bg-white/10 transition-colors"
             >
-              <span className="text-white font-bold text-base tracking-wider">NBA</span>
-              <span className="text-white/40 text-[11px] mt-0.5">{formatLabel(currentKey)}</span>
+              <span className="text-white font-black text-base tracking-wider">NBA</span>
+              <span className="text-white/40 text-[11px] font-black tracking-wide mt-0.5">{formatLabel(currentKey)}</span>
             </button>
             <button
               onClick={() => setIndex(i => clamp(i + 1))}
@@ -2738,41 +2738,52 @@ const getHighlight = (statKey: TeamStatKey) => {
 
 
 
+  const accent = teamGradientColors[teamAbbr]?.start || teamColor?.primary || '#1e40af';
+
 return (
   <div
-    className="relative rounded-xl overflow-hidden"
+    className={`group relative overflow-hidden rounded-2xl border border-white/10 transition-all duration-200 ${
+      onClick ? 'cursor-pointer hover:scale-[1.01]' : ''
+    }`}
     style={{
-      backgroundImage: `linear-gradient(300deg, ${
-        teamGradientColors[teamAbbr]?.start || '#1e40af'
-      }, ${teamGradientColors[teamAbbr]?.end || '#dc2626'})`,
-      padding: '3px',
+      background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+      boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
     }}
+    onClick={onClick}
   >
-    {/* === Dark inner fill (creates the gradient border effect) === */}
     <div
-      className="absolute inset-1 rounded-xl"
-      style={{ backgroundColor: '#141414', opacity: 1 }}
-      aria-hidden
+      className="absolute left-0 top-0 h-[82px]"
+      style={{
+        width: 82,
+        background: `linear-gradient(135deg, ${accent} 0%, ${accent} 56%, transparent 57%)`,
+      }}
     />
+    <div
+      className="absolute font-black italic leading-none select-none"
+      style={{
+        left: 8,
+        top: 4,
+        color: 'rgba(255,255,255,0.92)',
+        fontSize: 56,
+        letterSpacing: 0,
+      }}
+    >
+      {team.rank}
+    </div>
 
-    {/* === Foreground content (sits above dark fill) === */}
     <div className="relative z-10 p-4 text-white">
-      {/* === Ranking in top right corner === */}
-      <div className="absolute top-4 right-4 text-2xl font-bold text-white">
-        #{team.rank}
-      </div>
-
-      {/* === Team header on top of gradient === */}
-      <div className="flex items-center gap-2 mb-3 relative">
+      <div className="flex items-center gap-4 min-h-[82px]">
+        <div className="w-[48px] shrink-0" />
         {team.LOGO_URL && (
           <img
             src={team.LOGO_URL}
             alt={`${team.TEAM_NAME} logo`}
-            className="w-16 h-16 rounded-sm"
+            className="h-20 w-20 shrink-0 object-contain"
+            loading="lazy"
           />
         )}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <h3 className="text-2xl font-bold truncate">{team.TEAM_NAME}</h3>
+          <h3 className="truncate text-2xl font-black uppercase leading-none text-white">{team.TEAM_NAME}</h3>
           {onToggleFavorite && (
             <button
               type="button"
@@ -2781,7 +2792,7 @@ return (
                 e.preventDefault();
                 onToggleFavorite(team);
               }}
-              className={`p-1 rounded-full transition-colors ${
+              className={`shrink-0 rounded-full p-1 transition-colors ${
                 isFavorite ? 'text-yellow-300' : 'text-white/40 hover:text-white/70'
               }`}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -2795,71 +2806,51 @@ return (
             </button>
           )}
         </div>
-        {/* === Record in bottom right of header === */}
-        <div className="absolute bottom-0 right-0 text-3xl font-bold text-white">
-          {team.W} - {team.L}
+        <div className="flex shrink-0 items-end gap-1">
+          <span className="text-4xl font-black text-white leading-none tabular-nums">{team.W}-{team.L}</span>
         </div>
       </div>
 
-      {/* === White stats card === */}
- 
-      <Card
-        onClick={onClick}
-        className={`overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full ${
-          onClick ? 'cursor-pointer' : ''
-        }`}
-        style={{
-        backgroundColor: '#0000004c',
-        opacity: 1,
-      }}
- 
-      >
-        <CardHeader className="pb-0">
-          
-        </CardHeader>
-
-        <CardContent className="pt-0 pb-6 px-6">
-          {/* 4-column stat grid with increased spacing */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="space-y-3">
-              <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} bold />
-              <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} bold />
-              <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} bold />
-              <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} bold />
-            </div>
-            <div className="space-y-3">
-              <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} bold />
-              <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} bold />
-              <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} bold />
-              <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} bold />
-            </div>
-            <div className="space-y-3">
-              <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} bold />
-              <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} bold />
-              <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} bold />
-              <StatRow label="BPI" value={typeof (team as any).bpi === 'number' ? (team as any).bpi.toFixed(1) : ((team as any).bpi ?? '-')}
-                highlight={getBpiHighlight('bpi')}
-                bold
-              />
-            </div>
-            <div className="space-y-3">
-              <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')}
-                highlight={getBpiHighlight('off')}
-                bold
-              />
-              <StatRow label="DEF" value={typeof (team as any).def === 'number' ? (team as any).def.toFixed(1) : ((team as any).def ?? '-')}
-                highlight={getBpiHighlight('def')}
-                bold
-              />
-              <StatRow label="PBPI" value={typeof (team as any).pbpi === 'number' ? (team as any).pbpi.toFixed(1) : ((team as any).pbpi ?? '-')}
-                highlight={getBpiHighlight('pbpi')}
-                bold
-              />
-              <StatRow label="BPI RK" value={(team as any).bpirank ?? '-'} bold />
-            </div>
+      <div className="mt-3 rounded-xl border border-white/10 p-4" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="space-y-3">
+            <StatRow label="Win " value={`${winPercentage}%`} highlight={getHighlight('WIN_PCT')} bold />
+            <StatRow label="PPG" value={team.PTS.toFixed(1)} highlight={getHighlight('PTS')} bold />
+            <StatRow label="RPG" value={team.REB.toFixed(1)} highlight={getHighlight('REB')} bold />
+            <StatRow label="FT%" value={`${(team.FT_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FT_PCT')} bold />
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-3">
+            <StatRow label="TOV" value={team.TOV.toFixed(1)} highlight={getHighlight('TOV')} bold />
+            <StatRow label="OREB" value={team.OREB.toFixed(1)} highlight={getHighlight('OREB')} bold />
+            <StatRow label="DREB" value={team.DREB.toFixed(1)} highlight={getHighlight('DREB')} bold />
+            <StatRow label="STL" value={team.STL.toFixed(1)} highlight={getHighlight('STL')} bold />
+          </div>
+          <div className="space-y-3">
+            <StatRow label="BLK" value={team.BLK.toFixed(1)} highlight={getHighlight('BLK')} bold />
+            <StatRow label="FG%" value={`${(team.FG_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG_PCT')} bold />
+            <StatRow label="3P%" value={`${(team.FG3_PCT * 100).toFixed(1)}%`} highlight={getHighlight('FG3_PCT')} bold />
+            <StatRow label="BPI" value={typeof (team as any).bpi === 'number' ? (team as any).bpi.toFixed(1) : ((team as any).bpi ?? '-')}
+              highlight={getBpiHighlight('bpi')}
+              bold
+            />
+          </div>
+          <div className="space-y-3">
+            <StatRow label="OFF" value={typeof (team as any).off === 'number' ? (team as any).off.toFixed(1) : ((team as any).off ?? '-')}
+              highlight={getBpiHighlight('off')}
+              bold
+            />
+            <StatRow label="DEF" value={typeof (team as any).def === 'number' ? (team as any).def.toFixed(1) : ((team as any).def ?? '-')}
+              highlight={getBpiHighlight('def')}
+              bold
+            />
+            <StatRow label="PBPI" value={typeof (team as any).pbpi === 'number' ? (team as any).pbpi.toFixed(1) : ((team as any).pbpi ?? '-')}
+              highlight={getBpiHighlight('pbpi')}
+              bold
+            />
+            <StatRow label="BPI RK" value={(team as any).bpirank ?? '-'} bold />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 );
@@ -3951,7 +3942,12 @@ useEffect(() => {
                   suggestedMax: 100,
                   angleLines: { color: 'rgba(255,255,255,0.1)' },
                   grid: { color: 'rgba(255,255,255,0.1)' },
-                  pointLabels: { color: 'currentColor', font: { size: 10, weight: 'bold' } },
+                  pointLabels: {
+                    color: '#ffffff',
+                    backdropColor: 'transparent',
+                    padding: 8,
+                    font: { size: 11, weight: 'bold' },
+                  },
                   ticks: { display: false },
                 },
               },
@@ -4001,49 +3997,73 @@ useEffect(() => {
                 <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
                   {topTeamPlayers.map((p, pIdx) => {
                     const primary = teamGradientColors[p.TEAM_ABBREVIATION]?.start || '#1e40af';
-                    const secondary = teamGradientColors[p.TEAM_ABBREVIATION]?.end || '#dc2626';
                     return (
                       <div
                         key={p.PLAYER_ID}
-                        className="relative rounded-xl overflow-hidden snap-start"
+                        className="group relative rounded-2xl overflow-hidden snap-start border border-white/10 transition-all duration-200 hover:scale-[1.01]"
                         style={{
-                          backgroundImage: `linear-gradient(300deg, ${primary}, ${secondary})`,
-                          padding: '3px',
+                          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+                          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
                           scrollMarginTop: '16px',
                           scrollMarginBottom: '16px',
                           animation: `slideUp 0.4s ease-out ${pIdx * 0.05}s both`,
                         }}
                       >
                         <div
-                          className="absolute inset-1 rounded-xl"
-                          style={{ backgroundColor: '#141414', opacity: 1 }}
-                          aria-hidden
+                          className="absolute left-0 top-0 h-[64px]"
+                          style={{
+                            width: 62,
+                            background: `linear-gradient(135deg, ${primary} 0%, ${primary} 56%, transparent 57%)`,
+                          }}
                         />
-                        <div className="relative z-10 rounded-[16px] bg-[#111]/85 p-3 text-white">
-                          <div className="flex items-center gap-3">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold truncate">{p.PLAYER_NAME}</div>
+                        <div
+                          className="absolute font-black italic leading-none select-none"
+                          style={{
+                            left: 7,
+                            top: 4,
+                            color: 'rgba(255,255,255,0.92)',
+                            fontSize: 40,
+                            letterSpacing: 0,
+                          }}
+                        >
+                          {pIdx + 1}
+                        </div>
+
+                        <div className="relative z-10 p-3 text-white">
+                          <div className="flex items-center gap-3 min-h-[54px]">
+                            <div className="w-[52px] shrink-0" />
+                            {abbrToLogo[p.TEAM_ABBREVIATION] && (
+                              <img
+                                src={abbrToLogo[p.TEAM_ABBREVIATION]}
+                                alt={`${p.TEAM_ABBREVIATION} logo`}
+                                className="h-12 w-12 shrink-0 object-contain"
+                                loading="lazy"
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-base font-black uppercase leading-none text-white">{p.PLAYER_NAME}</div>
+                              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-white/40">{p.TEAM_ABBREVIATION}</div>
                             </div>
-                            <Badge className="ml-auto text-[10px] font-semibold bg-white text-black hover:bg-white hover:text-black">
-                              Value {getPlayerValueScore(p).toFixed(1)}
-                            </Badge>
+                            <div className="flex shrink-0 items-end gap-1">
+                              <span className="text-2xl font-black text-white leading-none tabular-nums">{getPlayerValueScore(p).toFixed(1)}</span>
+                            </div>
                           </div>
                           {/* Key stats (match previous fields) */}
-                          <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
-                            <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground font-bold">PPG</div>
+                          <div className="mt-3 grid grid-cols-4 gap-2 rounded-xl border border-white/10 p-2 text-xs" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
+                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                              <div className="font-bold text-white/40">PPG</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'PTS')==='high' ? 'text-green-400' : getTeammateHighlight(p,'PTS')==='low' ? 'text-red-400' : ''}`}>{p.PTS.toFixed(1)}</div>
                             </div>
-                            <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground font-bold">RPG</div>
+                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                              <div className="font-bold text-white/40">RPG</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'REB')==='high' ? 'text-green-400' : getTeammateHighlight(p,'REB')==='low' ? 'text-red-400' : ''}`}>{p.REB.toFixed(1)}</div>
                             </div>
-                            <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground font-bold">APG</div>
+                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                              <div className="font-bold text-white/40">APG</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'AST')==='high' ? 'text-green-400' : getTeammateHighlight(p,'AST')==='low' ? 'text-red-400' : ''}`}>{p.AST.toFixed(1)}</div>
                             </div>
-                            <div className="bg-background/40 rounded px-2 py-1 text-center">
-                              <div className="text-muted-foreground font-bold">FG%</div>
+                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                              <div className="font-bold text-white/40">FG%</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'FG_PCT')==='high' ? 'text-green-400' : getTeammateHighlight(p,'FG_PCT')==='low' ? 'text-red-400' : ''}`}>{(p.FG_PCT * 100).toFixed(1)}</div>
                             </div>
                           </div>
@@ -4085,7 +4105,7 @@ useEffect(() => {
   <div className="grid grid-cols-2 gap-4">
     {/* Western Conference */}
     <div>
-      <h2 className="text-xl mb-3 font-semibold text-white text-center">WESTERN CONFERENCE</h2>
+      <h2 className="text-xl mb-3 font-black uppercase tracking-wide text-white text-center">WESTERN CONFERENCE</h2>
       <div className="grid grid-cols-1 gap-3">
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Western')
@@ -4110,17 +4130,17 @@ useEffect(() => {
                   {/* Left side - Ranking and Record */}
                   <div className="flex flex-col items-start justify-between h-16">
                     {/* Ranking number at top */}
-                    <div 
-                      className="text-lg font-black text-white"
-                      style={{ lineHeight: '1' }}
+                    <div
+                      className="text-lg font-black italic text-white"
+                      style={{ lineHeight: '1', letterSpacing: 0 }}
                     >
                       #{index + 1}
                     </div>
-                    
+
                     {/* Record at bottom */}
                     <div 
-                      className="text-4xl font-bold text-white"
-                      style={{ lineHeight: '1' }}
+                      className="text-4xl font-black text-white tabular-nums"
+                      style={{ lineHeight: '1', letterSpacing: 0 }}
                     >
                       {team.W} - {team.L}
                     </div>
@@ -4144,7 +4164,7 @@ useEffect(() => {
 
     {/* Eastern Conference */}
     <div>
-      <h2 className="text-xl mb-3 font-semibold text-white text-center">EASTERN CONFERENCE</h2>
+      <h2 className="text-xl mb-3 font-black uppercase tracking-wide text-white text-center">EASTERN CONFERENCE</h2>
       <div className="grid grid-cols-1 gap-3">
         {nbaTeams
           .filter(team => teamConferences[team.TEAM_NAME]?.conference === 'Eastern')
@@ -4179,17 +4199,17 @@ useEffect(() => {
                   {/* Right side - Ranking and Record */}
                   <div className="flex flex-col items-end justify-between h-16">
                     {/* Ranking number at top */}
-                    <div 
-                      className="text-lg font-black text-white"
-                      style={{ lineHeight: '1' }}
+                    <div
+                      className="text-lg font-black italic text-white"
+                      style={{ lineHeight: '1', letterSpacing: 0 }}
                     >
                       #{index + 1}
                     </div>
-                    
+
                     {/* Record at bottom */}
                     <div 
-                      className="text-4xl font-bold text-white"
-                      style={{ lineHeight: '1' }}
+                      className="text-4xl font-black text-white tabular-nums"
+                      style={{ lineHeight: '1', letterSpacing: 0 }}
                     >
                       {team.W} - {team.L}
                     </div>
@@ -4282,52 +4302,69 @@ useEffect(() => {
   {/* === Player Grid === */}
 
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-16">
-  {sortedTopPlayersWithMeta.map(({ player, valueScore, highlights }, index) => (
+  {sortedTopPlayersWithMeta.map(({ player, valueScore, highlights }, index) => {
+    const primary = teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af';
+    const rankedValue = playerSortField === 'VALUE_SCORE'
+      ? valueScore.toFixed(1)
+      : getPlayerStat(player, playerSortField).toFixed(1);
+    const rankedLabel = playerSortField === 'VALUE_SCORE'
+      ? 'VALUE'
+      : playerSortField.replace('_', ' ');
+
+    return (
       <div
         key={`${player.PLAYER_ID}-${playerSortField}`}
-        className="relative rounded-xl overflow-hidden"
+        className="group relative overflow-hidden rounded-2xl border border-white/10 transition-all duration-200 hover:scale-[1.01]"
         style={{
-          backgroundImage: `linear-gradient(300deg, ${
-            teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af'
-          }, ${teamColors[player.TEAM_ABBREVIATION]?.secondary || '#dc2626'})`,
-          padding: '3px',
+          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
           animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
         }}
       >
         <div
-          className="absolute inset-1 rounded-xl"
-          style={{ backgroundColor: '#141414', opacity: 1 }}
-          aria-hidden
+          className="absolute left-0 top-0 h-[70px]"
+          style={{
+            width: 66,
+            background: `linear-gradient(135deg, ${primary} 0%, ${primary} 56%, transparent 57%)`,
+          }}
         />
+        <div
+          className="absolute font-black italic leading-none select-none"
+          style={{
+            left: 8,
+            top: 3,
+            color: 'rgba(255,255,255,0.92)',
+            fontSize: 52,
+            letterSpacing: 0,
+          }}
+        >
+          {index + 1}
+        </div>
 
         <div className="relative z-10 p-4 text-white">
           {/* Header with team logo and player name */}
-          <div className="flex items-start gap-2 mb-4">
+          <div className="flex items-center gap-3 mb-4 min-h-[62px]">
+            <div className="w-[56px] shrink-0" />
             {abbrToLogo[player.TEAM_ABBREVIATION] && (
               <img
                 src={abbrToLogo[player.TEAM_ABBREVIATION]}
                 alt={`${player.TEAM_ABBREVIATION} logo`}
-                className="w-8 h-8 rounded-sm shrink-0"
+                className="h-12 w-12 shrink-0 object-contain"
                 loading="lazy"
-                width={32}
-                height={32}
               />
             )}
-            <h3 className="text-lg font-bold min-w-0 flex-1">#{index + 1} {player.PLAYER_NAME}</h3>
-
-            {/* Stat badge on the right */}
-            <Badge
-              className="shrink-0 self-start text-xs font-semibold bg-white text-black hover:bg-white hover:text-black whitespace-nowrap"
-              style={{ letterSpacing: '0.3px', padding: '0.25rem 0.5rem' }}
-            >
-              {playerSortField === 'VALUE_SCORE'
-                ? `Value: ${valueScore.toFixed(1)}`
-                : `${playerSortField.replace('_', ' ')}: ${getPlayerStat(player, playerSortField).toFixed(1)}`}
-            </Badge>
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-base font-black uppercase leading-none text-white">{player.PLAYER_NAME}</h3>
+              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-white/40">{player.TEAM_ABBREVIATION}</div>
+            </div>
+            <div className="flex shrink-0 flex-col items-end leading-none">
+              <span className="text-3xl font-black text-white tabular-nums">{rankedValue}</span>
+              <span className="mt-1 text-[9px] font-bold uppercase tracking-wide text-white/45">{rankedLabel}</span>
+            </div>
           </div>
 
           {/* Stats grid — plain divs, no Radix overhead */}
-          <div className="rounded-lg p-6" style={{ backgroundColor: '#0000004c' }}>
+          <div className="rounded-xl border border-white/10 p-4" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
             <div className="grid grid-cols-2 gap-x-4">
               <div className="space-y-2">
                 {([
@@ -4340,7 +4377,7 @@ useEffect(() => {
                   ['BLK', player.BLK.toFixed(1),                        highlights.BLK  ],
                 ] as [string, string, string | undefined][]).map(([lbl, val, hl]) => (
                   <div key={lbl} className="flex items-center gap-8 text-sm">
-                    <span className="text-muted-foreground w-10 font-bold">{lbl}</span>
+                    <span className="text-white/40 w-10 font-bold">{lbl}</span>
                     <span className={hl === 'best' ? 'text-yellow-300 font-bold' : hl === 'high' ? 'text-green-400 font-bold' : hl === 'low' ? 'text-red-400 font-bold' : 'text-white font-bold'}>{val}</span>
                   </div>
                 ))}
@@ -4356,7 +4393,7 @@ useEffect(() => {
                   ['FT%', (player.FT_PCT * 100).toFixed(1) + '%',       highlights.FT_PCT  ],
                 ] as [string, string, string | undefined][]).map(([lbl, val, hl]) => (
                   <div key={lbl} className="flex items-center gap-8 text-sm">
-                    <span className="text-muted-foreground w-10 font-bold">{lbl}</span>
+                    <span className="text-white/40 w-10 font-bold">{lbl}</span>
                     <span className={hl === 'best' ? 'text-yellow-300 font-bold' : hl === 'high' ? 'text-green-400 font-bold' : hl === 'low' ? 'text-red-400 font-bold' : 'text-white font-bold'}>{val}</span>
                   </div>
                 ))}
@@ -4365,7 +4402,8 @@ useEffect(() => {
           </div>
         </div>
       </div>
-    ))}
+    );
+  })}
 </div>
 </TabsContent>
 
