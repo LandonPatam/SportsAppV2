@@ -49,6 +49,47 @@ interface F1Team {
   [key: string]: any;
 }
 
+function getCircuitTagStyle(tag: string): React.CSSProperties {
+  const tl = tag.toLowerCase();
+  const base: React.CSSProperties = {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.10)',
+    color: 'rgba(255,255,255,0.65)',
+  };
+
+  if (tl.includes('overtaking')) {
+    if (tl.includes('nearly impossible')) {
+      return { ...base, backgroundColor: 'rgba(127,29,29,0.38)', borderColor: 'rgba(248,113,113,0.30)', color: '#f87171' };
+    }
+    if (tl.includes('very difficult')) {
+      return { ...base, backgroundColor: 'rgba(153,27,27,0.34)', borderColor: 'rgba(252,165,165,0.28)', color: '#fca5a5' };
+    }
+    if (tl.includes('difficult')) {
+      return { ...base, backgroundColor: 'rgba(194,65,12,0.34)', borderColor: 'rgba(251,146,60,0.30)', color: '#fb923c' };
+    }
+    if (tl.includes('excellent')) {
+      return { ...base, backgroundColor: 'rgba(21,128,61,0.34)', borderColor: 'rgba(74,222,128,0.30)', color: '#4ade80' };
+    }
+    if (tl.includes('good')) {
+      return { ...base, backgroundColor: 'rgba(29,78,216,0.32)', borderColor: 'rgba(96,165,250,0.28)', color: '#60a5fa' };
+    }
+  }
+
+  if (tl.includes('speed')) {
+    if (tl.includes('very high')) {
+      return { ...base, backgroundColor: 'rgba(124,58,237,0.32)', borderColor: 'rgba(196,181,253,0.28)', color: '#c4b5fd' };
+    }
+    if (tl.includes('medium-high')) {
+      return { ...base, backgroundColor: 'rgba(8,145,178,0.30)', borderColor: 'rgba(103,232,249,0.28)', color: '#67e8f9' };
+    }
+    if (tl.includes('high')) {
+      return { ...base, backgroundColor: 'rgba(13,148,136,0.30)', borderColor: 'rgba(94,234,212,0.28)', color: '#5eead4' };
+    }
+  }
+
+  return base;
+}
+
 // ============================
 // 🗓️ Date parsing helpers
 // ============================
@@ -1235,13 +1276,11 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
                       )}
 
                       <div className="flex flex-col items-start gap-1.5">
-                        {tags.map((tag, tagIndex) => (
+                        {tags.map((tag) => (
                           <span
                             key={tag}
-                            className="rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wide leading-none text-white"
-                            style={{
-                              backgroundColor: tagIndex === 0 ? '#c2410c' : '#1d4ed8',
-                            }}
+                            className="rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wide leading-none"
+                            style={getCircuitTagStyle(tag)}
                           >
                             {tag}
                           </span>
@@ -1292,13 +1331,11 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
                       </span>
                     </div>
                   )}
-                  {tags.map((tag, tagIndex) => (
+                  {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-wide leading-none text-white"
-                      style={{
-                        backgroundColor: tagIndex === 0 ? '#c2410c' : '#1d4ed8',
-                      }}
+                      className="rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-wide leading-none"
+                      style={getCircuitTagStyle(tag)}
                     >
                       {tag}
                     </span>
@@ -1364,23 +1401,11 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
                 {cs?.tags && cs.tags.length > 0 && (
                   <div className="flex flex-wrap justify-end gap-1">
                     {cs.tags.map(tag => {
-                      const tl = tag.toLowerCase();
-                      let bg = 'rgba(255,255,255,0.06)', color = 'rgba(255,255,255,0.45)';
-                      if (tl.includes('nearly impossible')) { bg = 'rgba(120,0,0,0.35)';    color = '#f87171'; }
-                      else if (tl.includes('very difficult'))  { bg = 'rgba(180,20,20,0.30)';  color = '#fca5a5'; }
-                      else if (tl.includes('difficult'))       { bg = 'rgba(180,70,10,0.30)';  color = '#fb923c'; }
-                      else if (tl.includes('excellent'))       { bg = 'rgba(10,120,40,0.30)';  color = '#4ade80'; }
-                      else if (tl.includes('good'))            { bg = 'rgba(20,80,180,0.30)';  color = '#60a5fa'; }
-                      else if (tl.includes('very high'))   { bg = 'rgba(10,120,40,0.30)';  color = '#4ade80'; }
-                      else if (tl.includes('medium-high')) { bg = 'rgba(20,80,180,0.30)';  color = '#60a5fa'; }
-                      else if (tl.includes('high'))        { bg = 'rgba(180,70,10,0.30)';  color = '#fb923c'; }
-                      else if (tl.includes('medium'))      { bg = 'rgba(180,20,20,0.30)';  color = '#fca5a5'; }
-                      else if (tl.includes('low'))         { bg = 'rgba(120,0,0,0.35)';    color = '#f87171'; }
                       return (
                         <span
                           key={tag}
                           className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                          style={{ background: bg, color }}
+                          style={getCircuitTagStyle(tag)}
                         >
                           {tag}
                         </span>
