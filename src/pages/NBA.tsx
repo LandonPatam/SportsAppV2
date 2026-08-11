@@ -3994,7 +3994,7 @@ useEffect(() => {
                 className="snap-y snap-mandatory pt-0 pb-4"
                 style={{ scrollPaddingTop: '16px', scrollPaddingBottom: '16px' }}
               >
-                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
                   {topTeamPlayers.map((p, pIdx) => {
                     const primary = teamGradientColors[p.TEAM_ABBREVIATION]?.start || '#1e40af';
                     return (
@@ -4029,40 +4029,31 @@ useEffect(() => {
                           {pIdx + 1}
                         </div>
 
-                        <div className="relative z-10 p-3 text-white">
-                          <div className="flex items-center gap-3 min-h-[54px]">
-                            <div className="w-[52px] shrink-0" />
-                            {abbrToLogo[p.TEAM_ABBREVIATION] && (
-                              <img
-                                src={abbrToLogo[p.TEAM_ABBREVIATION]}
-                                alt={`${p.TEAM_ABBREVIATION} logo`}
-                                className="h-12 w-12 shrink-0 object-contain"
-                                loading="lazy"
-                              />
-                            )}
+                        <div className="relative z-10 px-3 py-2 text-white">
+                          <div className="flex items-center gap-3 min-h-[42px]">
+                            <div className="w-[38px] shrink-0" />
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-base font-black uppercase leading-none text-white">{p.PLAYER_NAME}</div>
-                              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-white/40">{p.TEAM_ABBREVIATION}</div>
                             </div>
                             <div className="flex shrink-0 items-end gap-1">
-                              <span className="text-2xl font-black text-white leading-none tabular-nums">{getPlayerValueScore(p).toFixed(1)}</span>
+                              <span className="text-xl font-black text-white leading-none tabular-nums">{getPlayerValueScore(p).toFixed(1)}</span>
                             </div>
                           </div>
                           {/* Key stats (match previous fields) */}
-                          <div className="mt-3 grid grid-cols-4 gap-2 rounded-xl border border-white/10 p-2 text-xs" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
-                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                          <div className="mt-2 grid grid-cols-4 gap-1.5 text-xs">
+                            <div className="rounded-md bg-white/[0.04] px-2 py-0.5 text-center">
                               <div className="font-bold text-white/40">PPG</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'PTS')==='high' ? 'text-green-400' : getTeammateHighlight(p,'PTS')==='low' ? 'text-red-400' : ''}`}>{p.PTS.toFixed(1)}</div>
                             </div>
-                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                            <div className="rounded-md bg-white/[0.04] px-2 py-0.5 text-center">
                               <div className="font-bold text-white/40">RPG</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'REB')==='high' ? 'text-green-400' : getTeammateHighlight(p,'REB')==='low' ? 'text-red-400' : ''}`}>{p.REB.toFixed(1)}</div>
                             </div>
-                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                            <div className="rounded-md bg-white/[0.04] px-2 py-0.5 text-center">
                               <div className="font-bold text-white/40">APG</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'AST')==='high' ? 'text-green-400' : getTeammateHighlight(p,'AST')==='low' ? 'text-red-400' : ''}`}>{p.AST.toFixed(1)}</div>
                             </div>
-                            <div className="rounded-md bg-white/[0.04] px-2 py-1 text-center">
+                            <div className="rounded-md bg-white/[0.04] px-2 py-0.5 text-center">
                               <div className="font-bold text-white/40">FG%</div>
                               <div className={`font-bold ${getTeammateHighlight(p,'FG_PCT')==='high' ? 'text-green-400' : getTeammateHighlight(p,'FG_PCT')==='low' ? 'text-red-400' : ''}`}>{(p.FG_PCT * 100).toFixed(1)}</div>
                             </div>
@@ -4131,7 +4122,7 @@ useEffect(() => {
                   <div className="flex flex-col items-start justify-between h-16">
                     {/* Ranking number at top */}
                     <div
-                      className="text-lg font-black italic text-white"
+                      className="text-lg font-black text-white"
                       style={{ lineHeight: '1', letterSpacing: 0 }}
                     >
                       #{index + 1}
@@ -4200,7 +4191,7 @@ useEffect(() => {
                   <div className="flex flex-col items-end justify-between h-16">
                     {/* Ranking number at top */}
                     <div
-                      className="text-lg font-black italic text-white"
+                      className="text-lg font-black text-white"
                       style={{ lineHeight: '1', letterSpacing: 0 }}
                     >
                       #{index + 1}
@@ -4341,21 +4332,20 @@ useEffect(() => {
           {index + 1}
         </div>
 
-        <div className="relative z-10 p-4 text-white">
+        <div className="relative z-10 px-4 py-3 text-white">
           {/* Header with team logo and player name */}
-          <div className="flex items-center gap-3 mb-4 min-h-[62px]">
-            <div className="w-[56px] shrink-0" />
+          <div className="flex items-center gap-3 mb-3 min-h-[48px]">
+            <div className="w-[58px] shrink-0" />
             {abbrToLogo[player.TEAM_ABBREVIATION] && (
               <img
                 src={abbrToLogo[player.TEAM_ABBREVIATION]}
                 alt={`${player.TEAM_ABBREVIATION} logo`}
-                className="h-12 w-12 shrink-0 object-contain"
+                className="h-11 w-11 shrink-0 object-contain"
                 loading="lazy"
               />
             )}
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-base font-black uppercase leading-none text-white">{player.PLAYER_NAME}</h3>
-              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-white/40">{player.TEAM_ABBREVIATION}</div>
             </div>
             <div className="flex shrink-0 flex-col items-end leading-none">
               <span className="text-3xl font-black text-white tabular-nums">{rankedValue}</span>
@@ -4364,9 +4354,9 @@ useEffect(() => {
           </div>
 
           {/* Stats grid — plain divs, no Radix overhead */}
-          <div className="rounded-xl border border-white/10 p-4" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
+          <div className="rounded-xl border border-white/10 p-3" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
             <div className="grid grid-cols-2 gap-x-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {([
                   ['GP',  player.GP.toFixed(0),                        undefined       ],
                   ['MIN', player.MIN.toFixed(1),                        highlights.MIN  ],
@@ -4382,7 +4372,7 @@ useEffect(() => {
                   </div>
                 ))}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {([
                   ['TOV', player.TOV.toFixed(1),                        highlights.TOV     ],
                   ['FGA', player.FGA.toFixed(1),                        highlights.FGA     ],

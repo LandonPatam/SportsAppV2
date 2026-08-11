@@ -603,143 +603,52 @@ const TeamCard = ({
   if (compact) {
     return (
       <div
-        className="relative rounded-xl overflow-hidden"
+        className="group relative overflow-hidden rounded-2xl border border-white/10 transition-all duration-200 hover:scale-[1.01]"
         style={{
-          backgroundImage: `linear-gradient(300deg, ${gradientColors.start}, ${gradientColors.end})`,
-          padding: '3px',
+          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
         }}
       >
         <div
-          className="absolute inset-1 rounded-xl"
-          style={{ backgroundColor: '#141414' }}
-          aria-hidden
+          className="absolute left-0 top-0 h-[66px]"
+          style={{
+            width: 64,
+            background: `linear-gradient(135deg, ${gradientColors.start} 0%, ${gradientColors.start} 56%, transparent 57%)`,
+          }}
         />
-        <div className="relative z-10 text-white p-2">
-          <div className="flex items-center gap-2">
+        <div
+          className="absolute font-black italic leading-none select-none"
+          style={{
+            left: 8,
+            top: 4,
+            color: 'rgba(255,255,255,0.92)',
+            fontSize: 42,
+            letterSpacing: 0,
+          }}
+        >
+          {(team as any).rank || '—'}
+        </div>
+
+        <div className="relative z-10 p-3 text-white">
+          <div className="flex items-center gap-3 min-h-[62px]">
+            <div className="w-[42px] shrink-0" />
             {team.logo && (
               <img
                 src={team.logo}
                 alt={`${team.name} logo`}
-                className="w-12 h-12 rounded-sm flex-shrink-0"
+                className="h-14 w-14 shrink-0 object-contain"
+                loading="lazy"
               />
             )}
-            <h3 className="text-lg font-bold truncate flex-1 min-w-0">{team.name}</h3>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="text-xl font-bold whitespace-nowrap">
+            <h3 className="truncate text-lg font-black uppercase leading-none text-white flex-1 min-w-0">{team.name}</h3>
+            <div className="shrink-0">
+              <div className="text-2xl font-black whitespace-nowrap text-white tabular-nums leading-none">
                 {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
-              </div>
-              <div className="text-xl font-bold whitespace-nowrap text-white/50">
-                #{(team as any).rank || '—'}
               </div>
             </div>
           </div>
 
-          <Card
-            className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
-            style={{
-            backgroundColor: '#0000004c',
-            opacity: 1,
-          }}
-          >
-            <CardHeader className="pb-0">
-            </CardHeader>
-
-            <CardContent>
-              {(() => {
-                const fpi = Number((team as any).fpi ?? NaN);
-                const epaOff = Number((team as any).epa_offense ?? NaN);
-                const epaDef = Number((team as any).epa_defense ?? NaN);
-                const epaST = Number((team as any).epa_special ?? NaN);
-                const ppg = totalGames > 0 ? (team.points_for / totalGames) : 0;
-                const streakVal = parseStreakValue(team.Strk);
-                const fpiRank = Number((team as any).fpirank);
-                const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' | 'best' }[] = [
-                  { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
-                  { label: 'PPG', value: ppg.toFixed(1), highlight: getHighlight('PPG') },
-                  { label: 'FPI', value: Number.isFinite(fpi) ? fpi.toFixed(1) : '-', highlight: getHighlight('FPI') },
-                  {
-                    label: 'Streak',
-                    value: team.Strk || '-',
-                    highlight: streakVal && streakVal > 0 ? leagueBestHighlight('STREAK', streakVal) : undefined,
-                  },
-                  { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
-                  { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
-                  { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
-                  { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
-                  { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
-                  { label: 'C', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
-                  {
-                    label: 'FPI Rank',
-                    value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
-                    highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
-                  },
-                  { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
-                ];
-
-                return (
-                  <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-                    {items.map((it) => (
-                      <StatRow key={it.label} label={it.label} value={it.value} highlight={it.highlight as any} bold />
-                    ))}
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Full variant (used in Team Stats tab) — NBA style ──
-  return (
-    <div
-      className="relative rounded-xl overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(300deg, ${gradientColors.start}, ${gradientColors.end})`,
-        padding: '3px',
-      }}
-    >
-      {/* Dark inner fill — creates the gradient border illusion */}
-      <div
-        className="absolute inset-1 rounded-xl"
-        style={{ backgroundColor: '#141414' }}
-        aria-hidden
-      />
-
-      {/* Foreground content */}
-      <div className="relative z-10 p-4 text-white">
-        {/* Rank badge top-right */}
-        <div className="absolute top-4 right-4 text-2xl font-bold text-white">
-          #{(team as any).rank || '—'}
-        </div>
-
-        {/* Team header */}
-        <div className="flex items-center gap-2 mb-3 relative">
-          {team.logo && (
-            <img
-              src={team.logo}
-              alt={`${team.name} logo`}
-              className="w-16 h-16 rounded-sm"
-            />
-          )}
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <h3 className="text-2xl font-bold truncate">{team.name}</h3>
-          </div>
-          <div className="absolute bottom-0 right-0 text-3xl font-bold text-white">
-            {team.wins}-{team.losses}
-            {team.ties > 0 ? `-${team.ties}` : ''}
-          </div>
-        </div>
-
-        {/* Stats inner card — dark semi-transparent like NBA */}
-        <Card
-          className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
-          style={{ backgroundColor: '#0000004c', opacity: 1 }}
-        >
-          <CardHeader className="pb-0" />
-
-          <CardContent>
+          <div className="mt-2 rounded-xl border border-white/10 p-3" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
             {(() => {
               const fpi = Number((team as any).fpi ?? NaN);
               const epaOff = Number((team as any).epa_offense ?? NaN);
@@ -747,7 +656,6 @@ const TeamCard = ({
               const epaST = Number((team as any).epa_special ?? NaN);
               const ppg = totalGames > 0 ? (team.points_for / totalGames) : 0;
               const streakVal = parseStreakValue(team.Strk);
-
               const fpiRank = Number((team as any).fpirank);
               const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' | 'best' }[] = [
                 { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
@@ -773,15 +681,112 @@ const TeamCard = ({
               ];
 
               return (
-                <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+                <div className="grid grid-cols-3 gap-x-4 gap-y-2">
                   {items.map((it) => (
                     <StatRow key={it.label} label={it.label} value={it.value} highlight={it.highlight as any} bold />
                   ))}
                 </div>
               );
             })()}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Full variant (used in Team Stats tab) — NBA style ──
+  return (
+    <div
+      className="group relative overflow-hidden rounded-2xl border border-white/10 transition-all duration-200"
+      style={{
+        background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+        boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
+      }}
+    >
+      <div
+        className="absolute left-0 top-0 h-[82px]"
+        style={{
+          width: 82,
+          background: `linear-gradient(135deg, ${gradientColors.start} 0%, ${gradientColors.start} 56%, transparent 57%)`,
+        }}
+      />
+      <div
+        className="absolute font-black italic leading-none select-none"
+        style={{
+          left: 8,
+          top: 4,
+          color: 'rgba(255,255,255,0.92)',
+          fontSize: 56,
+          letterSpacing: 0,
+        }}
+      >
+        {(team as any).rank || '—'}
+      </div>
+
+      <div className="relative z-10 p-4 text-white">
+        <div className="flex items-center gap-4 min-h-[82px]">
+          <div className="w-[48px] shrink-0" />
+          {team.logo && (
+            <img
+              src={team.logo}
+              alt={`${team.name} logo`}
+              className="h-20 w-20 shrink-0 object-contain"
+              loading="lazy"
+            />
+          )}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h3 className="truncate text-2xl font-black uppercase leading-none text-white">{team.name}</h3>
+          </div>
+          <div className="flex shrink-0 items-end gap-1">
+            <span className="text-4xl font-black text-white leading-none tabular-nums">
+              {team.wins}-{team.losses}
+              {team.ties > 0 ? `-${team.ties}` : ''}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-white/10 p-4" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
+          {(() => {
+            const fpi = Number((team as any).fpi ?? NaN);
+            const epaOff = Number((team as any).epa_offense ?? NaN);
+            const epaDef = Number((team as any).epa_defense ?? NaN);
+            const epaST = Number((team as any).epa_special ?? NaN);
+            const ppg = totalGames > 0 ? (team.points_for / totalGames) : 0;
+            const streakVal = parseStreakValue(team.Strk);
+
+            const fpiRank = Number((team as any).fpirank);
+            const items: { label: string; value: string | number; highlight?: 'high' | 'low' | 'neutral' | 'best' }[] = [
+              { label: 'Win %', value: `${(team.win_pct * 100).toFixed(1)}%`, highlight: getHighlight('WIN_PCT') },
+              { label: 'PPG', value: ppg.toFixed(1), highlight: getHighlight('PPG') },
+              { label: 'FPI', value: Number.isFinite(fpi) ? fpi.toFixed(1) : '-', highlight: getHighlight('FPI') },
+              {
+                label: 'Streak',
+                value: team.Strk || '-',
+                highlight: streakVal && streakVal > 0 ? leagueBestHighlight('STREAK', streakVal) : undefined,
+              },
+              { label: 'PA', value: team.points_against, highlight: getHighlight('PA') },
+              { label: 'OFF', value: Number.isFinite(epaOff) ? epaOff.toFixed(1) : '-', highlight: getHighlight('EPA_OFF') },
+              { label: 'D', value: team.Div || '-' , highlight: getConfHighlight('DIV') },
+              { label: 'PF', value: team.points_for, highlight: getHighlight('PF') },
+              { label: 'DEF', value: Number.isFinite(epaDef) ? epaDef.toFixed(1) : '-', highlight: getHighlight('EPA_DEF') },
+              { label: 'C', value: team.Conf || '-', highlight: getConfHighlight('CONF') },
+              {
+                label: 'FPI Rank',
+                value: Number.isFinite(fpiRank) ? `${fpiRank}` : '—',
+                highlight: leagueBestHighlight('FPI_RANK', Number.isFinite(fpiRank) ? fpiRank : null),
+              },
+              { label: 'ST', value: Number.isFinite(epaST) ? epaST.toFixed(1) : '-', highlight: getHighlight('EPA_ST') },
+            ];
+
+            return (
+              <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+                {items.map((it) => (
+                  <StatRow key={it.label} label={it.label} value={it.value} highlight={it.highlight as any} bold />
+                ))}
+              </div>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
@@ -1453,7 +1458,12 @@ const NFL = () => {
                                     suggestedMax: 100,
                                     angleLines: { color: 'rgba(255,255,255,0.1)' },
                                     grid: { color: 'rgba(255,255,255,0.1)' },
-                                    pointLabels: { color: 'currentColor', font: { size: 10 } },
+                                    pointLabels: {
+                                      color: '#ffffff',
+                                      backdropColor: 'transparent',
+                                      padding: 8,
+                                      font: { size: 11, weight: 'bold' },
+                                    },
                                     ticks: { display: false },
                                   },
                                 },
@@ -1517,7 +1527,7 @@ const NFL = () => {
 
               return (
                 <div key={`${conference}-${division}`} className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-white">
+                  <h3 className="text-lg font-black uppercase tracking-wide mb-3 text-white">
                     {conference} {division}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -1656,7 +1666,6 @@ const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; in
   const posRaw = (player?.position || '').toString();
   const pos = posRaw.toUpperCase();
   const teamColorPrimary = teamName ? (teamColors[teamName]?.primary || '#1e40af') : '#1e40af';
-  const teamColorSecondary = teamName ? (teamColors[teamName]?.secondary || '#dc2626') : '#dc2626';
 
   const posColor: Record<string, { bg: string; color?: string }> = {
     'QB': { bg: '#2563eb' },
@@ -1678,27 +1687,22 @@ const PlayerCardNFL = React.memo(({ player, index, teamName }: { player: any; in
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden snap-start"
+      className="group relative rounded-2xl overflow-hidden snap-start border border-white/10 transition-all duration-200 hover:scale-[1.01]"
       style={{
-        backgroundImage: `linear-gradient(300deg, ${teamColorPrimary}, ${teamColorSecondary})`,
-        padding: '3px',
+        background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+        boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
         scrollMarginTop: '16px',
         scrollMarginBottom: '16px',
         animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
       }}
     >
-      <div
-        className="absolute inset-1 rounded-xl"
-        style={{ backgroundColor: '#1f1f1f', opacity: 1 }}
-        aria-hidden
-      />
-      <div className="relative z-10 rounded-[16px] bg-[#111]/85 p-3 text-white">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold truncate">{name}</div>
+      <div className="relative z-10 px-3 py-2 text-white">
+        <div className="flex items-center gap-3 min-h-[42px]">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-black uppercase leading-none text-white">{name}</div>
           </div>
           {pos && (
-            <Badge className="ml-auto text-[10px] font-semibold" style={badgeSty}>
+            <Badge className="ml-auto px-3 py-1 text-xs font-black uppercase tracking-wide" style={badgeSty}>
               {pos}
             </Badge>
           )}
@@ -1928,7 +1932,7 @@ const DashboardTodayScheduleNFL = ({
                         />
                         {awayRecord && (
                           <span
-                            className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-semibold' : 'absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
+                            className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-black tabular-nums' : 'absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-black tabular-nums'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
                             style={compactRecordLayout ? { fontSize: recordFont } : { fontSize: recordFont, marginLeft: recordOffset }}
                           >
                             ({formatRecord(awayRecord)})
@@ -1941,15 +1945,15 @@ const DashboardTodayScheduleNFL = ({
                   {/* Center */}
                   <div className="text-center">
                     {isLive ? (
-                      <Badge className="bg-red-600 text-white animate-pulse font-bold px-3 py-1 text-xs">LIVE</Badge>
+                      <Badge className="bg-red-600 text-white animate-pulse font-black tracking-wide px-3 py-1 text-xs">LIVE</Badge>
                     ) : showScore ? (
-                      <div className="font-extrabold tracking-wide" style={{ fontSize: scoreFont }}>
+                      <div className="font-black tracking-wide tabular-nums" style={{ fontSize: scoreFont }}>
                         <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                         <span className="mx-2 text-muted-foreground">-</span>
                         <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
                       </div>
                     ) : (
-                      <div className="font-bold" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
+                      <div className="font-black tracking-wide" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
                     )}
                     {g.tv && (
                       <div className="text-[10px] text-muted-foreground truncate mx-auto" style={{ maxWidth: Math.round(120 * scale) }}>{String(g.tv)}</div>
@@ -1971,7 +1975,7 @@ const DashboardTodayScheduleNFL = ({
                         />
                         {homeRecord && (
                           <span
-                            className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-semibold' : 'absolute right-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-semibold text-right'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
+                            className={`${compactRecordLayout ? 'relative block text-center mt-1 text-white/80 font-black tabular-nums' : 'absolute right-full top-1/2 -translate-y-1/2 whitespace-nowrap text-white/90 font-black tabular-nums text-right'} drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]`}
                             style={compactRecordLayout ? { fontSize: recordFont } : { fontSize: recordFont, marginRight: recordOffset }}
                           >
                             ({formatRecord(homeRecord)})
@@ -2125,7 +2129,7 @@ const ScheduleNFLViewV2 = ({
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i - 1))} disabled={index <= 0} className="rounded-full hover:bg-white/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
-        <div className="text-lg font-semibold">{formatLabel(currentKey)}</div>
+        <div className="text-lg font-black tracking-wide text-white">{formatLabel(currentKey)}</div>
         <Button variant="ghost" size="icon" onClick={() => setIndex((i) => clamp(i + 1))} disabled={index >= dateKeys.length - 1} className="rounded-full hover:bg-white/10">
           <ChevronRight className="w-5 h-5" />
         </Button>
@@ -2147,7 +2151,7 @@ const ScheduleNFLViewV2 = ({
                   onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m - 2, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-bold text-white tracking-wide">{calMonthLabel}</span>
+                <span className="text-sm font-black text-white tracking-wide">{calMonthLabel}</span>
                 <button className="p-1 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white"
                   onClick={() => setCalendarMonth(({ year: y, month: m }) => { const d = new Date(y, m, 1); return { year: d.getFullYear(), month: d.getMonth() + 1 }; })}>
                   <ChevronRight className="w-4 h-4" />
@@ -2155,7 +2159,7 @@ const ScheduleNFLViewV2 = ({
               </div>
               <div className="grid grid-cols-7 mb-0.5">
                 {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-bold text-white/30 py-0.5">{d}</div>
+                  <div key={d} className="text-center text-[10px] font-black tracking-wide text-white/30 py-0.5">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -2167,7 +2171,7 @@ const ScheduleNFLViewV2 = ({
                   const dayNum = parseInt(key.split('-')[2], 10);
                   return (
                     <button key={key} onClick={() => handleCalendarDayClick(key)} disabled={!hasGames}
-                      className={`relative flex items-center justify-center rounded-lg text-xs font-bold h-[32px] w-full transition-all duration-150
+                      className={`relative flex items-center justify-center rounded-lg text-xs font-black tabular-nums h-[32px] w-full transition-all duration-150
                         ${isSelected ? 'bg-white text-black shadow-lg' : hasGames ? 'text-white hover:bg-white/15 cursor-pointer' : 'text-white/20 cursor-default'}`}>
                       {dayNum}
                       {isToday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/70" />}
@@ -2185,7 +2189,7 @@ const ScheduleNFLViewV2 = ({
       <div className={isMobile ? 'flex-1 overflow-y-auto no-scrollbar pb-4 pr-2' : undefined}>
       {games.length === 0 ? (
         <Card className="bg-card/60 backdrop-blur-sm border">
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">No games</CardContent>
+          <CardContent className="py-8 text-center text-sm font-black tracking-wide text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
         <>
@@ -2263,7 +2267,7 @@ const ScheduleNFLViewV2 = ({
                       else if (name.includes('espn')) style = { backgroundColor: '#C8102E', color: '#ffffff' };
                       else if (name.includes('nfl') || name.includes('network')) style = { backgroundColor: '#013369', color: '#ffffff' };
                       return (
-                        <Badge key={p} className="font-semibold" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
+                        <Badge key={p} className="font-black tracking-wide" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
                           {p}
                         </Badge>
                       );
@@ -2286,7 +2290,7 @@ const ScheduleNFLViewV2 = ({
                           />
                         )}
                         {awayRecord && (
-                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: recordFontSize }}>
+                          <span className="whitespace-nowrap text-white/80 font-black tabular-nums drop-shadow-md" style={{ fontSize: recordFontSize }}>
                             ({awayRecord.replace(/-/g, ' - ')})
                           </span>
                         )}
@@ -2298,7 +2302,7 @@ const ScheduleNFLViewV2 = ({
                           const s = String(g.status || '').toLowerCase();
                           if (s === 'final') {
                             return (
-                              <div className="font-extrabold tracking-wide flex items-center justify-center" style={{ fontSize: scoreFontSize }}>
+                              <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
                                 <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
                                 <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
                                 <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
@@ -2308,9 +2312,9 @@ const ScheduleNFLViewV2 = ({
                           if (s.includes('live')) {
                             return (
                               <div className="flex flex-col items-center gap-0.5">
-                                <Badge className="bg-red-600 text-white animate-pulse font-bold px-2.5 py-0.5 text-[10px]">LIVE</Badge>
+                                <Badge className="bg-red-600 text-white animate-pulse font-black tracking-wide px-2.5 py-0.5 text-[10px]">LIVE</Badge>
                                 {(period || clock) && (
-                                  <span className="text-white/90 font-bold" style={{ fontSize: liveFontSize }}>
+                                  <span className="text-white/90 font-black tracking-wide" style={{ fontSize: liveFontSize }}>
                                     {period ? `Q${period}` : ''}{period && clock ? ' · ' : ''}{clock || ''}
                                   </span>
                                 )}
@@ -2318,7 +2322,7 @@ const ScheduleNFLViewV2 = ({
                             );
                           }
                           return (
-                            <div className="font-bold text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
+                            <div className="font-black tracking-wide text-white whitespace-nowrap" style={{ fontSize: timeFontSize }}>
                               {g.time || 'TBA'}
                             </div>
                           );
@@ -2338,7 +2342,7 @@ const ScheduleNFLViewV2 = ({
                           />
                         )}
                         {homeRecord && (
-                          <span className="whitespace-nowrap text-white/80 font-bold drop-shadow-md" style={{ fontSize: recordFontSize }}>
+                          <span className="whitespace-nowrap text-white/80 font-black tabular-nums drop-shadow-md" style={{ fontSize: recordFontSize }}>
                             ({homeRecord.replace(/-/g, ' - ')})
                           </span>
                         )}
@@ -2372,8 +2376,8 @@ const ScheduleNFLViewV2 = ({
               onClick={cycleToNextPage}
               className="flex-[2] flex flex-col items-center justify-center h-16 border-x border-white/10 active:bg-white/10 transition-colors"
             >
-              <span className="text-white font-bold text-base tracking-wider">NFL</span>
-              <span className="text-white/40 text-[11px] mt-0.5">{formatLabel(currentKey)}</span>
+              <span className="text-white font-black text-base tracking-wider">NFL</span>
+              <span className="text-white/40 text-[11px] font-black tracking-wide mt-0.5">{formatLabel(currentKey)}</span>
             </button>
             <button
               onClick={() => setIndex(i => clamp(i + 1))}

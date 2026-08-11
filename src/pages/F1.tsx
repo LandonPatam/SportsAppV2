@@ -1657,9 +1657,9 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
         onClick={() => setExpandedDriver(isExpanded && !expandAll ? null : driver.name)}
       >
         <div
-          className="absolute left-0 top-0 h-[70px]"
+          className="absolute left-0 top-0 h-[62px]"
           style={{
-            width: 66,
+            width: 60,
             background: `linear-gradient(135deg, ${accent} 0%, ${accent} 56%, transparent 57%)`,
           }}
         />
@@ -1669,15 +1669,15 @@ const DriversTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]; cal
             left: 8,
             top: 3,
             color: 'rgba(255,255,255,0.92)',
-            fontSize: 52,
+            fontSize: 46,
             letterSpacing: 0,
           }}
         >
           {driver.globalIndex + 1}
         </div>
 
-        <div className="relative z-10 p-4 text-white">
-          <div className="flex items-center gap-4 min-h-[78px]">
+        <div className="relative z-10 px-4 py-3 text-white">
+          <div className="flex items-center gap-4 min-h-[58px]">
             <div className="w-[36px] shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -1906,9 +1906,9 @@ const ConstructorsTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]
         onClick={() => setExpandedTeam(isExpanded && !expandAll ? null : team.name)}
       >
         <div
-          className="absolute left-0 top-0 h-[70px]"
+          className="absolute left-0 top-0 h-[62px]"
           style={{
-            width: 66,
+            width: 60,
             background: `linear-gradient(135deg, ${accent} 0%, ${accent} 56%, transparent 57%)`,
           }}
         />
@@ -1918,14 +1918,14 @@ const ConstructorsTab = ({ teamsData, calendarData = [] }: { teamsData: F1Team[]
             left: 8,
             top: 3,
             color: 'rgba(255,255,255,0.92)',
-            fontSize: 52,
+            fontSize: 46,
             letterSpacing: 0,
           }}
         >
           {team.globalIndex + 1}
         </div>
-        <div className="relative z-10 p-4 text-white">
-          <div className="flex items-center gap-4 min-h-[78px]">
+        <div className="relative z-10 px-4 py-3 text-white">
+          <div className="flex items-center gap-4 min-h-[58px]">
             <div className="w-[36px] shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
