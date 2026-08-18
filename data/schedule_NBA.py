@@ -72,10 +72,15 @@ def mark_upcoming_schedule_checked():
     with open(_UPCOMING_STATE_PATH, "w", encoding="utf-8") as f:
         f.write(datetime.now().isoformat())
 
+def get_espn_season_value(season_start_year: int):
+    # ESPN stores NBA season by ending year: 2026-27 is returned as season 2027.
+    return season_start_year + 1
+
 def find_first_regular_season_event_date(approx_start, season_year, force_check=False):
     if not force_check and not should_check_upcoming_schedule():
         return None
 
+    espn_season = get_espn_season_value(season_year)
     try:
         for offset in range(-30, 46):
             date_obj = approx_start + timedelta(days=offset)
@@ -86,7 +91,7 @@ def find_first_regular_season_event_date(approx_start, season_year, force_check=
                 continue
             regular_events = [
                 event for event in events
-                if str(event.get("seasonType")) == "2" and int(event.get("season", 0) or 0) == season_year
+                if str(event.get("seasonType")) == "2" and int(event.get("season", 0) or 0) == espn_season
             ]
             if not regular_events:
                 continue
@@ -148,7 +153,7 @@ def get_season_dates(today):
     if today >= candidate_start:
         season_year = candidate_year
     elif ENABLE_UPCOMING_SEASON_AUTO_DETECT and today > previous_season_end:
-        detected_start = find_first_regular_season_event_date(candidate_start, candidate_year)
+        detected_start = find_first_regular_season_event_date(candidate_start, candidate_year, force_check=FIND_SCHEDULE)
         if detected_start:
             print(f"[AUTO] Upcoming {candidate_year} NBA schedule is available on ESPN.")
             season_year = candidate_year
