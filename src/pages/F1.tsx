@@ -852,6 +852,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
   const currentKey = currentEntry.dateKey;
   const race = currentEntry.race;
   const isUpcoming = currentKey >= todayKey;
+  const totalRaceCount = races.length;
   const raceTitleWords = getDynamicRaceTitle(race.race_name);
   const longestRaceTitleWord = Math.max(...raceTitleWords.map(word => word.length), 0);
   const raceTitleFontSize = raceTitleWords.length >= 5
@@ -1143,7 +1144,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <span className="text-[11px] font-black tracking-[0.15em] text-white/60 uppercase px-1">
-                Race {String(race.race_number).padStart(2, '0')} / {String(racesWithKeys.length).padStart(2, '0')}
+                Race {String(race.race_number).padStart(2, '0')} / {String(totalRaceCount).padStart(2, '0')}
               </span>
               <Button variant="ghost" size="icon" onClick={() => setIndex(i => clamp(i + 1))} disabled={index >= racesWithKeys.length - 1} className="h-7 w-7 rounded-full hover:bg-white/10">
                 <ChevronRight className="w-4 h-4" />
@@ -1298,7 +1299,7 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
             </div>
             <div className="relative flex-1 h-[260px] min-w-0 translate-y-14">
               <style>{`.f1-top-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
-              <div className="f1-top-svg-wrap absolute inset-0" style={{ transform: 'translate(-22px, -52px)', transformOrigin: 'center center' }}>
+              <div className="f1-top-svg-wrap f1-dashboard-track-wrap absolute inset-0">
                 {race.track_svg_extracted
                   ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
                   : <InlineSvg url={race.track_svg} className="w-full h-full" />
@@ -2492,6 +2493,15 @@ const F1 = () => {
           .f1-team-car {
             bottom: 0px;
             left: 50px;
+          }
+        }
+        .f1-dashboard-track-wrap {
+          transform: translate(-22px, -52px);
+          transform-origin: center center;
+        }
+        @media (min-width: 1280px) {
+          .f1-dashboard-track-wrap {
+            transform: translate(-22px, -28px) scale(1.39);
           }
         }
       `}</style>
