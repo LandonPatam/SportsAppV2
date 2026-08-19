@@ -1,0 +1,21 @@
+{
+  "current": "2026-27",
+  "seasons": [
+    {
+      "id": "2026-27",
+      "label": "2026-27",
+      "start_year": 2026,
+      "schedule": "nba_schedule_2026-27.json",
+      "team_stats": "espn_NBA_team_stats_2026-27.json",
+      "player_stats": "espn_NBA_player_stats_2026-27.json"
+    },
+    {
+      "id": "2025-26",
+      "label": "2025-26",
+      "start_year": 2025,
+      "schedule": "nba_schedule_2025-26.json",
+      "team_stats": "espn_NBA_team_stats_2025-26.json",
+      "player_stats": "espn_NBA_player_stats_2025-26.json"
+    }
+  ]
+}

@@ -16,7 +16,8 @@ import time
 FIND_SCHEDULE = os.getenv("NBA_FIND_SCHEDULE", "").lower() in {"1", "true", "yes"}   # env override to force a full crawl
 SAVE_PATH = "public/data/nba_schedule.json"
 TEMP_PATH = SAVE_PATH + ".tmp"  # Path for safe swapping
-VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN", "ABC"}
+SEASONS_MANIFEST_PATH = "public/data/nba_seasons.json"
+VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN", "ABC", "NBC"}
 SLEEP_BETWEEN_CALLS = float(os.getenv("NBA_SCHEDULE_SLEEP", "1.5"))
 MAX_EMPTY_DAYS = 20
 ENABLE_UPCOMING_SEASON_AUTO_DETECT = True
@@ -129,6 +130,42 @@ def atomic_write_json(data, save_path: str, temp_path: str):
         except OSError:
             pass
 
+def season_label_for_year(season_year: int) -> str:
+    return f"{season_year}-{str(season_year + 1)[-2:]}"
+
+def update_seasons_manifest(season_label: str, season_year: int):
+    manifest = {"current": season_label, "seasons": []}
+    if os.path.exists(SEASONS_MANIFEST_PATH):
+        try:
+            with open(SEASONS_MANIFEST_PATH, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                manifest.update(loaded)
+        except Exception:
+            pass
+
+    seasons = [
+        s for s in manifest.get("seasons", [])
+        if isinstance(s, dict) and s.get("id") != season_label
+    ]
+    seasons.append({
+        "id": season_label,
+        "label": season_label,
+        "start_year": season_year,
+        "schedule": f"nba_schedule_{season_label}.json",
+        "team_stats": f"espn_NBA_team_stats_{season_label}.json",
+        "player_stats": f"espn_NBA_player_stats_{season_label}.json",
+    })
+    seasons.sort(key=lambda s: int(s.get("start_year", 0) or 0), reverse=True)
+    manifest["current"] = season_label
+    manifest["seasons"] = seasons
+    atomic_write_json(manifest, SEASONS_MANIFEST_PATH, SEASONS_MANIFEST_PATH + ".tmp")
+
+def write_schedule_json(data):
+    atomic_write_json(data, SEASON_SAVE_PATH, SEASON_SAVE_PATH + ".tmp")
+    atomic_write_json(data, SAVE_PATH, TEMP_PATH)
+    update_seasons_manifest(SEASON_LABEL, SEASON_YEAR)
+
 
 # ==========================================================
 # DYNAMIC SEASON DATE CALCULATION
@@ -145,6 +182,26 @@ def get_first_saturday_in_april(year: int):
     offset = (5 - apr1.weekday()) % 7
     return apr1 + timedelta(days=offset)
 
+def find_existing_schedule_start_for_year(season_year: int):
+    if not os.path.exists(SAVE_PATH):
+        return None
+    try:
+        with open(SAVE_PATH, "r", encoding="utf-8-sig") as f:
+            schedule = json.load(f)
+        dates = [
+            datetime.strptime(g["date"], "%Y-%m-%d").date()
+            for g in schedule
+            if g.get("date")
+        ]
+    except Exception:
+        return None
+
+    season_dates = [
+        d for d in dates
+        if d.year == season_year and d.month >= 9
+    ]
+    return min(season_dates) if season_dates else None
+
 def get_season_dates(today):
     candidate_year = today.year
     candidate_start = get_first_tuesday_on_or_after(candidate_year, 10, 22)
@@ -153,6 +210,13 @@ def get_season_dates(today):
     if today >= candidate_start:
         season_year = candidate_year
     elif ENABLE_UPCOMING_SEASON_AUTO_DETECT and today > previous_season_end:
+        existing_start = find_existing_schedule_start_for_year(candidate_year)
+        if existing_start:
+            season_year = candidate_year
+            season_start = existing_start
+            postseason_start = get_first_saturday_in_april(season_year + 1)
+            season_end = datetime(season_year + 1, 6, 30).date()
+            return season_year, season_start, postseason_start, season_end
         detected_start = find_first_regular_season_event_date(candidate_start, candidate_year, force_check=FIND_SCHEDULE)
         if detected_start:
             print(f"[AUTO] Upcoming {candidate_year} NBA schedule is available on ESPN.")
@@ -175,6 +239,8 @@ def get_season_dates(today):
 
 today = datetime.now().date()
 SEASON_YEAR, SEASON_START_DATE, POSTSEASON_START, SEASON_END_DATE = get_season_dates(today)
+SEASON_LABEL = season_label_for_year(SEASON_YEAR)
+SEASON_SAVE_PATH = f"public/data/nba_schedule_{SEASON_LABEL}.json"
 print(f"Active season: {SEASON_YEAR} | Start: {SEASON_START_DATE} | "
       f"Postseason: {POSTSEASON_START} | End: {SEASON_END_DATE}")
 
@@ -182,10 +248,11 @@ print(f"Active season: {SEASON_YEAR} | Start: {SEASON_START_DATE} | "
 # 📂 Load Existing Schedule (with new-season auto-reset)
 # ==========================================================
 def load_schedule() -> tuple:
-    if not os.path.exists(SAVE_PATH):
+    load_path = SEASON_SAVE_PATH if os.path.exists(SEASON_SAVE_PATH) else SAVE_PATH
+    if not os.path.exists(load_path):
         return [], False
 
-    with open(SAVE_PATH, "r", encoding="utf-8") as f:
+    with open(load_path, "r", encoding="utf-8-sig") as f:
         try:
             data = json.load(f)
         except json.JSONDecodeError:
@@ -210,7 +277,7 @@ def load_schedule() -> tuple:
     if earliest is not None and earliest < SEASON_START_DATE:
         print(f"[NEW SEASON DETECTED] Earliest game in JSON is {earliest}, "
               f"but current season starts {SEASON_START_DATE}. Resetting schedule.")
-        atomic_write_json([], SAVE_PATH, TEMP_PATH)
+        write_schedule_json([])
         if os.path.exists(_STATE_PATH):
             os.remove(_STATE_PATH)
         return [], True
@@ -412,7 +479,7 @@ if FIND_SCHEDULE:
                 print(f"Error parsing event: {e}")
 
         schedule.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")))
-        atomic_write_json(schedule, SAVE_PATH, TEMP_PATH)
+        write_schedule_json(schedule)
 
         current_date += timedelta(days=1)
         time.sleep(SLEEP_BETWEEN_CALLS)
@@ -427,8 +494,8 @@ if FIND_SCHEDULE:
 # ==========================================================
 # 🧾 PART 2 — UPDATE GAME RESULTS + SCORES
 # ==========================================================
-if os.path.exists(SAVE_PATH):
-    with open(SAVE_PATH, "r", encoding="utf-8") as f:
+if os.path.exists(SEASON_SAVE_PATH) or os.path.exists(SAVE_PATH):
+    with open(SEASON_SAVE_PATH if os.path.exists(SEASON_SAVE_PATH) else SAVE_PATH, "r", encoding="utf-8-sig") as f:
         try:
             schedule = json.load(f)
         except json.JSONDecodeError:
@@ -622,6 +689,6 @@ else:
     print(f"\nUpdate complete: {updated_count} games finalized, {live_count} games live, {total_checked} total checked")
 
     schedule.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")))
-    atomic_write_json(schedule, SAVE_PATH, TEMP_PATH)
+    write_schedule_json(schedule)
 
-    print(f"Schedule saved to {SAVE_PATH}")
+    print(f"Schedule saved to {SEASON_SAVE_PATH} and {SAVE_PATH}")

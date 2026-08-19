@@ -106,6 +106,8 @@ interface PageNavbarProps {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tab: string) => void;
+  afterTabsSlot?: React.ReactNode;
+  rightSlot?: React.ReactNode;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -334,7 +336,7 @@ function TabBar({ tabs, activeTab, onTabChange, activePath }: TabBarProps) {
   }, [activePath]);
 
   return (
-    <div ref={containerRef} className="relative flex flex-1 items-center gap-5 mx-3">
+    <div ref={containerRef} className="relative flex items-center gap-5 mx-3">
       {tabs.map(({ value, label }, i) => (
         <button
           key={value}
@@ -364,7 +366,7 @@ function TabBar({ tabs, activeTab, onTabChange, activePath }: TabBarProps) {
 
 // ── PageNavbar ────────────────────────────────────────────────────────────────
 
-export function PageNavbar({ tabs, activeTab, onTabChange }: PageNavbarProps) {
+export function PageNavbar({ tabs, activeTab, onTabChange, afterTabsSlot, rightSlot }: PageNavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const activePath = PAGES.find(p => location.pathname.startsWith(p.path))?.path ?? '/f1';
@@ -395,10 +397,23 @@ export function PageNavbar({ tabs, activeTab, onTabChange }: PageNavbarProps) {
       </div>
 
       {/* Center: page-specific underline tabs */}
-      <TabBar tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} activePath={activePath} />
+      <div className="flex min-w-0 shrink-0 items-center">
+        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} activePath={activePath} />
 
-      {/* Right: next upcoming event countdown */}
-      <NextEventCountdown />
+        {afterTabsSlot && (
+          <div className="ml-3 flex shrink-0 items-center">
+            {afterTabsSlot}
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1" />
+
+      {/* Right: page controls + next upcoming event countdown */}
+      <div className="flex items-center gap-3 shrink-0">
+        {rightSlot}
+        <NextEventCountdown />
+      </div>
     </div>
   );
 }

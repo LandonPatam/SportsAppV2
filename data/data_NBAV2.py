@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import os
 from datetime import datetime
 from urllib.parse import urlencode
+import time
 
 
 # ==========================================================
@@ -29,10 +30,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEDULE_JSON = os.path.join(BASE_DIR, "public", "data", "nba_schedule.json")
 TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_team_stats.json")
 PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_player_stats.json")
+SEASONS_MANIFEST_JSON = os.path.join(BASE_DIR, "public", "data", "nba_seasons.json")
 
 def get_nba_season_year() -> int:
     try:
-        with open(SCHEDULE_JSON, "r", encoding="utf-8") as f:
+        with open(SCHEDULE_JSON, "r", encoding="utf-8-sig") as f:
             schedule = json.load(f)
         dates = sorted(
             datetime.strptime(g["date"], "%Y-%m-%d").date()
@@ -52,6 +54,64 @@ def get_nba_season_string() -> str:
 
 NBA_SEASON = get_nba_season_string()
 print(f"NBA stats season: {NBA_SEASON}")
+SEASON_START_YEAR = int(NBA_SEASON.split("-")[0])
+SEASON_TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", f"espn_NBA_team_stats_{NBA_SEASON}.json")
+SEASON_PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", f"espn_NBA_player_stats_{NBA_SEASON}.json")
+
+NBA_TEAM_ABBREVIATIONS = {
+    "Atlanta Hawks": "ATL",
+    "Boston Celtics": "BOS",
+    "Brooklyn Nets": "BKN",
+    "Charlotte Hornets": "CHA",
+    "Chicago Bulls": "CHI",
+    "Cleveland Cavaliers": "CLE",
+    "Dallas Mavericks": "DAL",
+    "Denver Nuggets": "DEN",
+    "Detroit Pistons": "DET",
+    "Golden State Warriors": "GSW",
+    "Houston Rockets": "HOU",
+    "Indiana Pacers": "IND",
+    "LA Clippers": "LAC",
+    "Los Angeles Clippers": "LAC",
+    "Los Angeles Lakers": "LAL",
+    "Memphis Grizzlies": "MEM",
+    "Miami Heat": "MIA",
+    "Milwaukee Bucks": "MIL",
+    "Minnesota Timberwolves": "MIN",
+    "New Orleans Pelicans": "NOP",
+    "New York Knicks": "NYK",
+    "Oklahoma City Thunder": "OKC",
+    "Orlando Magic": "ORL",
+    "Philadelphia 76ers": "PHI",
+    "Phoenix Suns": "PHX",
+    "Portland Trail Blazers": "POR",
+    "Sacramento Kings": "SAC",
+    "San Antonio Spurs": "SAS",
+    "Toronto Raptors": "TOR",
+    "Utah Jazz": "UTA",
+    "Washington Wizards": "WAS",
+}
+
+ZERO_PLAYER_STATS = {
+    "GP": 0,
+    "MIN": 0,
+    "PTS": 0,
+    "REB": 0,
+    "AST": 0,
+    "STL": 0,
+    "BLK": 0,
+    "TOV": 0,
+    "FG_PCT": 0,
+    "FG3_PCT": 0,
+    "FT_PCT": 0,
+    "FGA": 0,
+    "FG3A": 0,
+    "FTA": 0,
+    "OFF_RATING": None,
+    "DEF_RATING": None,
+    "NET_RATING": None,
+    "VALUE_SCORE": None,
+}
 
 def nba_stats_url(endpoint: str, extra_params: Dict[str, Any] = None) -> str:
     params = {
@@ -91,12 +151,157 @@ def nba_stats_url(endpoint: str, extra_params: Dict[str, Any] = None) -> str:
         params.update(extra_params)
     return f"https://stats.nba.com/stats/{endpoint}?{urlencode(params)}"
 
+def nba_roster_url(team_id: int) -> str:
+    params = {
+        "LeagueID": "00",
+        "Season": NBA_SEASON,
+        "TeamID": str(team_id),
+    }
+    return f"https://stats.nba.com/stats/commonteamroster?{urlencode(params)}"
+
 def load_json_or_default(path: str, default):
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             return json.load(f)
     except Exception:
         return default
+
+def update_seasons_manifest():
+    manifest = {"current": NBA_SEASON, "seasons": []}
+    if os.path.exists(SEASONS_MANIFEST_JSON):
+        try:
+            with open(SEASONS_MANIFEST_JSON, "r", encoding="utf-8-sig") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                manifest.update(loaded)
+        except Exception:
+            pass
+
+    seasons = [
+        s for s in manifest.get("seasons", [])
+        if isinstance(s, dict) and s.get("id") != NBA_SEASON
+    ]
+    seasons.append({
+        "id": NBA_SEASON,
+        "label": NBA_SEASON,
+        "start_year": SEASON_START_YEAR,
+        "schedule": f"nba_schedule_{NBA_SEASON}.json",
+        "team_stats": f"espn_NBA_team_stats_{NBA_SEASON}.json",
+        "player_stats": f"espn_NBA_player_stats_{NBA_SEASON}.json",
+    })
+    seasons.sort(key=lambda s: int(s.get("start_year", 0) or 0), reverse=True)
+    manifest["current"] = NBA_SEASON
+    manifest["seasons"] = seasons
+    atomic_write_json(manifest, SEASONS_MANIFEST_JSON)
+
+def write_team_stats(data):
+    atomic_write_json(data, SEASON_TEAM_STATS_JSON)
+    atomic_write_json(data, TEAM_STATS_JSON)
+    update_seasons_manifest()
+
+def write_player_stats(data):
+    atomic_write_json(data, SEASON_PLAYER_STATS_JSON)
+    atomic_write_json(data, PLAYER_STATS_JSON)
+    update_seasons_manifest()
+
+def create_blank_team_stats(team_source: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    blank_teams = []
+    for team in team_source:
+        team_id = team.get("TEAM_ID")
+        team_name = team.get("TEAM_NAME")
+        if not team_id or not team_name:
+            continue
+        blank = {}
+        for key, value in team.items():
+            if key in {"TEAM_ID", "TEAM_NAME", "LOGO_URL"}:
+                blank[key] = value
+            elif isinstance(value, (int, float)):
+                blank[key] = 0
+            else:
+                blank[key] = value
+        blank.setdefault("GP", 0)
+        blank.setdefault("W", 0)
+        blank.setdefault("L", 0)
+        blank.setdefault("WIN_PCT", 0)
+        blank.setdefault("W_PCT", 0)
+        blank_teams.append(blank)
+    return blank_teams
+
+def format_player_stats_row(p: Dict[str, Any]) -> Dict[str, Any]:
+    player_dict = {
+        "PLAYER_ID": p["PLAYER_ID"],
+        "PLAYER_NAME": p["PLAYER_NAME"],
+        "TEAM_ID": p["TEAM_ID"],
+        "TEAM_ABBREVIATION": p["TEAM_ABBREVIATION"],
+        "JERSEY_NUMBER": p.get("JERSEY", ""),
+        "POSITION": p.get("POSITION", ""),
+        "GP": p["GP"],
+        "MIN": p["MIN"],
+        "PTS": p["PTS"],
+        "REB": p["REB"],
+        "AST": p["AST"],
+        "STL": p["STL"],
+        "BLK": p["BLK"],
+        "TOV": p["TOV"],
+        "FG_PCT": p["FG_PCT"],
+        "FG3_PCT": p["FG3_PCT"],
+        "FT_PCT": p["FT_PCT"],
+        "FGA": p["FGA"],
+        "FG3A": p["FG3A"],
+        "FTA": p["FTA"],
+        "OFF_RATING": p.get("OFF_RATING"),
+        "DEF_RATING": p.get("DEF_RATING"),
+        "NET_RATING": p.get("NET_RATING"),
+        "VALUE_SCORE": p.get("VALUE_SCORE"),
+    }
+    for key, value in p.items():
+        if key not in player_dict:
+            player_dict[key] = value
+    return player_dict
+
+def format_roster_row(row: Dict[str, Any], team_name: str) -> Dict[str, Any]:
+    team_id = row.get("TeamID")
+    player_dict = {
+        "PLAYER_ID": row.get("PLAYER_ID"),
+        "PLAYER_NAME": row.get("PLAYER"),
+        "TEAM_ID": team_id,
+        "TEAM_ABBREVIATION": NBA_TEAM_ABBREVIATIONS.get(team_name, ""),
+        "JERSEY_NUMBER": row.get("NUM") or "",
+        "POSITION": row.get("POSITION") or "",
+        "NICKNAME": row.get("NICKNAME") or "",
+        "AGE": row.get("AGE"),
+        "HEIGHT": row.get("HEIGHT") or "",
+        "WEIGHT": row.get("WEIGHT") or "",
+        "SCHOOL": row.get("SCHOOL") or "",
+        "EXP": row.get("EXP") or "",
+        "PLAYER_SLUG": row.get("PLAYER_SLUG") or "",
+        "ROSTER_ONLY": True,
+    }
+    player_dict.update(ZERO_PLAYER_STATS)
+    return player_dict
+
+def fetch_roster_players(team_source: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    roster_players = defaultdict(list)
+    for team in team_source:
+        team_id = team.get("TEAM_ID")
+        team_name = team.get("TEAM_NAME", "")
+        if not team_id:
+            continue
+        try:
+            resp = requests.get(nba_roster_url(team_id), headers=headers, timeout=20)
+            roster_data = resp.json()
+            result = roster_data.get("resultSets", [{}])[0]
+            roster_headers = result.get("headers", [])
+            roster_rows = result.get("rowSet", [])
+            for row in roster_rows:
+                player = format_roster_row(dict(zip(roster_headers, row)), team_name)
+                if player.get("PLAYER_ID") and player.get("PLAYER_NAME"):
+                    roster_players[str(team_id)].append(player)
+            print(f"[ROSTER] {team_name}: {len(roster_rows)} players")
+        except Exception as e:
+            print(f"[WARN] Could not fetch roster for {team_name} ({team_id}): {e}")
+        time.sleep(0.2)
+    return dict(roster_players)
 
 
 # NBA Team Data
@@ -148,9 +353,9 @@ for t in teams:
     formatted_teams.append(team_dict)
 
 if formatted_teams:
-    atomic_write_json(formatted_teams, TEAM_STATS_JSON)
+    write_team_stats(formatted_teams)
 else:
-    print(f"[WARN] No NBA team stats returned for {NBA_SEASON}; preserving existing team stats.")
+    print(f"[WARN] No NBA team stats returned for {NBA_SEASON}; creating blank current-season team stats.")
 
 
 # NBA Player Data
@@ -179,45 +384,28 @@ for p in players:
     if not team_id or team_id == "null":
         continue
 
-    player_dict = {
-        "PLAYER_ID": p["PLAYER_ID"],
-        "PLAYER_NAME": p["PLAYER_NAME"],
-        "TEAM_ID": team_id,
-        "TEAM_ABBREVIATION": p["TEAM_ABBREVIATION"],
-        "JERSEY_NUMBER": p.get("JERSEY", ""),
-        "POSITION": p.get("POSITION", ""),
-        "GP": p["GP"],
-        "MIN": p["MIN"],
-        "PTS": p["PTS"],
-        "REB": p["REB"],
-        "AST": p["AST"],
-        "STL": p["STL"],
-        "BLK": p["BLK"],
-        "TOV": p["TOV"],
-        "FG_PCT": p["FG_PCT"],
-        "FG3_PCT": p["FG3_PCT"],
-        "FT_PCT": p["FT_PCT"],
-        "FGA": p["FGA"],
-        "FG3A": p["FG3A"],
-        "FTA": p["FTA"],
-        "OFF_RATING": p.get("OFF_RATING"),
-        "DEF_RATING": p.get("DEF_RATING"),
-        "NET_RATING": p.get("NET_RATING"),
-        "VALUE_SCORE": p.get("VALUE_SCORE"),
-    }
-    for key, value in p.items():
-        if key not in player_dict:
-            player_dict[key] = value
-    team_players[str(team_id)].append(player_dict)
+    team_players[str(team_id)].append(format_player_stats_row(p))
 
 if team_players:
-    atomic_write_json(dict(team_players), PLAYER_STATS_JSON)
+    write_player_stats(dict(team_players))
 else:
-    print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; preserving existing player stats.")
+    print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; fetching current rosters.")
+    roster_team_source = formatted_teams or load_json_or_default(SEASON_TEAM_STATS_JSON, []) or load_json_or_default(TEAM_STATS_JSON, [])
+    roster_players = fetch_roster_players(roster_team_source)
+    if roster_players:
+        write_player_stats(roster_players)
+        print(f"[OK] Saved roster fallback for {sum(len(v) for v in roster_players.values())} players.")
+    else:
+        print(f"[WARN] No NBA rosters returned for {NBA_SEASON}; preserving existing player stats.")
 
 
 # --- Load existing team stats ---
-team_data = load_json_or_default(TEAM_STATS_JSON, formatted_teams)
+if formatted_teams:
+    team_data = formatted_teams
+else:
+    team_data = load_json_or_default(SEASON_TEAM_STATS_JSON, [])
+    if not team_data:
+        team_data = create_blank_team_stats(load_json_or_default(TEAM_STATS_JSON, []))
 
 # --- Attach logo for each team ---
 for team in team_data:
@@ -389,4 +577,4 @@ except Exception:
     pass
 
 # --- Save updated team stats atomically ---
-atomic_write_json(team_data, TEAM_STATS_JSON)
+write_team_stats(team_data)

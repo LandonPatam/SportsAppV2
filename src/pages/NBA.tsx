@@ -3,7 +3,7 @@
 // Displays NBA team standings and top player stats
 // ============================
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageNavbar } from '@/components/layout/PageNavbar';
@@ -242,6 +242,20 @@ interface ScheduleGameAny {
 type NBAScheduleData =
   | { teams?: Record<string, string>; games?: ScheduleGameAny[] }
   | ScheduleGameAny[];
+
+interface NBASeasonOption {
+  id: string;
+  label: string;
+  start_year: number;
+  schedule: string;
+  team_stats: string;
+  player_stats: string;
+}
+
+interface NBASeasonManifest {
+  current: string;
+  seasons: NBASeasonOption[];
+}
 
 // ============================
 // Stronger stat key types to fix TS
@@ -1799,6 +1813,682 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
   );
 };
 
+type PlayoffRoundKey = 'first' | 'semis' | 'finals' | 'nbaFinals';
+
+interface PlayoffSeries {
+  id: string;
+  conference: 'West' | 'East' | 'NBA';
+  round: PlayoffRoundKey;
+  roundLabel: string;
+  teams: string[];
+  wins: Record<string, number>;
+  winner?: string;
+  lastDate: string;
+}
+
+const getPlayoffRoundInfo = (note?: string): { conference: 'West' | 'East' | 'NBA'; round: PlayoffRoundKey; label: string } | null => {
+  const text = (note || '').toLowerCase();
+  if (!text || text.includes('cup') || text.includes('all-star')) return null;
+  if (text.includes('nba finals')) return { conference: 'NBA', round: 'nbaFinals', label: 'NBA Finals' };
+  if (text.includes('west 1st round')) return { conference: 'West', round: 'first', label: '1st Round' };
+  if (text.includes('east 1st round')) return { conference: 'East', round: 'first', label: '1st Round' };
+  if (text.includes('west semifinals')) return { conference: 'West', round: 'semis', label: 'Semifinals' };
+  if (text.includes('east semifinals')) return { conference: 'East', round: 'semis', label: 'Semifinals' };
+  if (text.includes('west finals')) return { conference: 'West', round: 'finals', label: 'Conference Finals' };
+  if (text.includes('east finals')) return { conference: 'East', round: 'finals', label: 'Conference Finals' };
+  return null;
+};
+
+const buildPlayoffSeries = (scheduleData: NBAScheduleData | null): PlayoffSeries[] => {
+  const games = Array.isArray(scheduleData)
+    ? (scheduleData as ScheduleGameAny[])
+    : (scheduleData?.games || []);
+  const seriesMap: Record<string, PlayoffSeries> = {};
+
+  games.forEach((game) => {
+    if (!game.is_playoff || !game.matchup) return;
+    const roundInfo = getPlayoffRoundInfo(game.series_note);
+    if (!roundInfo) return;
+    const parts = game.matchup.split('@').map((part) => part.trim()).filter(Boolean);
+    if (parts.length !== 2) return;
+    const pair = [...parts].sort();
+    const id = [roundInfo.conference, roundInfo.round, ...pair].join('|');
+    if (!seriesMap[id]) {
+      seriesMap[id] = {
+        id,
+        conference: roundInfo.conference,
+        round: roundInfo.round,
+        roundLabel: roundInfo.label,
+        teams: pair,
+        wins: {},
+        lastDate: game.date || '',
+      };
+    }
+
+    const series = seriesMap[id];
+    series.lastDate = [series.lastDate, game.date || ''].sort().pop() || series.lastDate;
+    const winner = (game as any).winner as string | undefined;
+    if (winner) {
+      series.wins[winner] = (series.wins[winner] || 0) + 1;
+      if (!series.winner || series.wins[winner] > (series.wins[series.winner] || 0)) {
+        series.winner = winner;
+      }
+    }
+  });
+
+  return Object.values(seriesMap).sort((a, b) => {
+    const roundOrder: Record<PlayoffRoundKey, number> = { first: 1, semis: 2, finals: 3, nbaFinals: 4 };
+    return roundOrder[a.round] - roundOrder[b.round] || a.lastDate.localeCompare(b.lastDate);
+  });
+};
+
+const getPlayoffSeriesLeader = (series?: PlayoffSeries): string | undefined => {
+  if (!series) return undefined;
+  if (series.winner) return series.winner;
+  return [...series.teams].sort((a, b) => (series.wins[b] || 0) - (series.wins[a] || 0) || a.localeCompare(b))[0];
+};
+
+const getPlayoffTeamAbbr = (teamName?: string): string => (teamName ? teamAbbreviations[teamName] || teamName.slice(0, 3).toUpperCase() : 'TBD');
+const PLAYOFF_CARD_WIDTH = 300;
+const PLAYOFF_CARD_HEIGHT = 76;
+const PLAYOFF_CARD_MID = PLAYOFF_CARD_HEIGHT / 2;
+
+const orderFirstRoundBySemis = (firstRound: PlayoffSeries[], semis: PlayoffSeries[]): PlayoffSeries[] => {
+  const ordered: PlayoffSeries[] = [];
+  const used = new Set<string>();
+
+  semis.forEach((semi) => {
+    semi.teams.forEach((teamName) => {
+      const matchingFirst = firstRound.find((seriesItem) => (
+        !used.has(seriesItem.id)
+        && (seriesItem.teams.includes(teamName) || getPlayoffSeriesLeader(seriesItem) === teamName)
+      ));
+      if (matchingFirst) {
+        ordered.push(matchingFirst);
+        used.add(matchingFirst.id);
+      }
+    });
+  });
+
+  firstRound.forEach((seriesItem) => {
+    if (!used.has(seriesItem.id)) ordered.push(seriesItem);
+  });
+
+  return ordered;
+};
+
+const PlayoffTeamPill = ({
+  teamName,
+  wins,
+  winner,
+  logoMap,
+  side,
+  muted = false,
+}: {
+  teamName?: string;
+  wins?: number;
+  winner?: boolean;
+  logoMap: Record<string, string>;
+  side: 'west' | 'east' | 'center';
+  muted?: boolean;
+}) => {
+  const abbr = getPlayoffTeamAbbr(teamName);
+  const colors = teamColors[abbr] || { primary: '#27272a', secondary: '#52525b' };
+  const logo = logoMap[abbr];
+
+  return (
+    <div
+      className={`relative z-20 flex items-center overflow-hidden border border-white/15 shadow-lg ${muted ? 'opacity-55' : 'opacity-100'}`}
+      style={{
+        width: PLAYOFF_CARD_WIDTH,
+        height: PLAYOFF_CARD_HEIGHT,
+        backgroundColor: colors.primary,
+        boxShadow: winner ? `0 0 0 1px ${colors.secondary}99 inset, 0 7px 16px rgba(0,0,0,0.38)` : '0 7px 16px rgba(0,0,0,0.30)',
+      }}
+    >
+      {(side === 'east' || side === 'center') && (
+        <div className="flex h-full w-32 shrink-0 items-center justify-center">
+          {logo ? <img src={logo} alt="" className="h-36 w-36 object-contain" loading="lazy" /> : <span className="text-lg font-black text-white">{abbr}</span>}
+        </div>
+      )}
+      <div className={`min-w-0 flex-1 px-2 ${side === 'west' ? 'text-left' : 'text-right'}`}>
+        <div className="truncate text-[22px] font-black uppercase leading-none text-white drop-shadow">{abbr}</div>
+      </div>
+      {typeof wins === 'number' && (
+        <div className="w-10 shrink-0 text-center text-[22px] font-black tabular-nums text-white/90">{wins}</div>
+      )}
+      {side === 'west' && (
+        <div className="flex h-full w-32 shrink-0 items-center justify-center">
+          {logo ? <img src={logo} alt="" className="h-36 w-36 object-contain" loading="lazy" /> : <span className="text-lg font-black text-white">{abbr}</span>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PlayoffTeamRow = ({ teamName, wins, winner, logoMap }: { teamName: string; wins: number; winner: boolean; logoMap: Record<string, string> }) => {
+  const abbr = teamAbbreviations[teamName] || 'UNK';
+  const colors = teamColors[abbr] || { primary: '#27272a', secondary: '#52525b' };
+  const logo = logoMap[abbr];
+
+  return (
+    <div
+      className={`flex h-12 items-center overflow-hidden rounded-sm border ${winner ? 'border-white/35' : 'border-white/10'} shadow-md`}
+      style={{
+        backgroundColor: colors.primary,
+        opacity: winner ? 1 : 0.78,
+        boxShadow: winner ? `0 0 0 1px ${colors.secondary}66 inset, 0 8px 18px rgba(0,0,0,0.35)` : undefined,
+      }}
+    >
+      <div className="flex h-full w-16 shrink-0 items-center justify-center">
+        {logo ? <img src={logo} alt="" className="h-14 w-14 object-contain" /> : <span className="text-[10px] font-black text-white">{abbr}</span>}
+      </div>
+      <div className="min-w-0 flex-1 px-2">
+        <div className="truncate text-sm font-black uppercase leading-none text-white drop-shadow">{abbr}</div>
+      </div>
+      <div className="w-9 shrink-0 text-center text-base font-black tabular-nums text-white drop-shadow">{wins}</div>
+    </div>
+  );
+};
+
+const PlayoffSeriesCard = ({ series, logoMap, connector = 'none' }: { series: PlayoffSeries; logoMap: Record<string, string>; connector?: 'none' | 'left' | 'right' | 'both' }) => {
+  const teams = [...series.teams].sort((a, b) => (series.wins[b] || 0) - (series.wins[a] || 0) || a.localeCompare(b));
+  const showLeft = connector === 'left' || connector === 'both';
+  const showRight = connector === 'right' || connector === 'both';
+  return (
+    <div className="relative min-w-[208px] p-1">
+      {showLeft && <div className="absolute left-[-24px] top-1/2 h-px w-6 bg-white/25" />}
+      {showRight && <div className="absolute right-[-24px] top-1/2 h-px w-6 bg-white/25" />}
+      {(series.round === 'semis' || series.round === 'finals') && (
+        <div
+          className={`absolute top-1/2 h-[132px] w-px -translate-y-1/2 bg-white/20 ${
+            showLeft ? 'left-[-24px]' : showRight ? 'right-[-24px]' : 'hidden'
+          }`}
+        />
+      )}
+      <div className="space-y-2">
+        {teams.map((teamName) => (
+          <PlayoffTeamRow
+            key={teamName}
+            teamName={teamName}
+            wins={series.wins[teamName] || 0}
+            winner={series.winner === teamName}
+            logoMap={logoMap}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PlayoffBracketView = ({ scheduleData, logoMap, seasonLabel }: { scheduleData: NBAScheduleData | null; logoMap: Record<string, string>; seasonLabel?: string }) => {
+  const series = useMemo(() => buildPlayoffSeries(scheduleData), [scheduleData]);
+  const bracketContainerRef = useRef<HTMLDivElement | null>(null);
+  const [bracketScale, setBracketScale] = useState(0.85);
+  const [compactBracket, setCompactBracket] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1500 : false);
+  const [compactOffsetX, setCompactOffsetX] = useState(0);
+  const byConference = (conference: 'West' | 'East', round: PlayoffRoundKey) =>
+    series.filter((item) => item.conference === conference && item.round === round);
+  const finals = series.find((item) => item.conference === 'NBA' && item.round === 'nbaFinals');
+  const bracketBaseWidth = 2520;
+  const bracketBaseHeight = 1040;
+  const compactBracketBaseWidth = 1284;
+  const compactBracketBaseHeight = 1340;
+
+  useLayoutEffect(() => {
+    const node = bracketContainerRef.current;
+    if (!node) return;
+
+    const updateScale = () => {
+      const availableWidth = Math.max(320, node.clientWidth - 8);
+      const availableHeight = Math.max(420, node.clientHeight - 16);
+      const compact = availableWidth < 1500;
+      setCompactBracket(compact);
+      const nextScale = compact
+        ? Math.min(0.85, availableWidth / compactBracketBaseWidth, availableHeight / compactBracketBaseHeight)
+        : Math.min(0.85, availableWidth / bracketBaseWidth);
+      const resolvedScale = Math.max(0.48, Number(nextScale.toFixed(3)));
+      setBracketScale(resolvedScale);
+      setCompactOffsetX(compact ? Math.max(0, (availableWidth - compactBracketBaseWidth * resolvedScale) / 2) : 0);
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(node);
+    window.addEventListener('resize', updateScale);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateScale);
+    };
+  }, [seasonLabel, series.length]);
+
+  if (!series.length) {
+    return (
+      <div className="flex min-h-[360px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-sm font-bold text-white/45">
+        No playoff bracket data for this season yet.
+      </div>
+    );
+  }
+
+  const lineStyle = 'absolute z-10';
+  const lineColor = 'rgba(255,255,255,0.42)';
+  const firstTops = [12, 122, 260, 370, 508, 618, 756, 866];
+  const semiTops = [
+    ((12 + PLAYOFF_CARD_MID + 122 + PLAYOFF_CARD_MID) / 2) - PLAYOFF_CARD_MID,
+    ((260 + PLAYOFF_CARD_MID + 370 + PLAYOFF_CARD_MID) / 2) - PLAYOFF_CARD_MID,
+    ((508 + PLAYOFF_CARD_MID + 618 + PLAYOFF_CARD_MID) / 2) - PLAYOFF_CARD_MID,
+    ((756 + PLAYOFF_CARD_MID + 866 + PLAYOFF_CARD_MID) / 2) - PLAYOFF_CARD_MID,
+  ];
+  const confFinalTops = [
+    ((semiTops[0] + PLAYOFF_CARD_MID + semiTops[1] + PLAYOFF_CARD_MID) / 2) - PLAYOFF_CARD_MID,
+    ((semiTops[2] + PLAYOFF_CARD_MID + semiTops[3] + PLAYOFF_CARD_MID) / 2) - PLAYOFF_CARD_MID,
+  ];
+  const confFinalUpperCenter = confFinalTops[0] + PLAYOFF_CARD_MID;
+  const confFinalLowerCenter = confFinalTops[1] + PLAYOFF_CARD_MID;
+  const finalsVerticalGap = (confFinalLowerCenter - confFinalUpperCenter) / 3;
+  const finalsWestCenterY = confFinalUpperCenter + finalsVerticalGap;
+  const finalsEastCenterY = confFinalUpperCenter + finalsVerticalGap * 2;
+  const finalsWestTop = finalsWestCenterY - PLAYOFF_CARD_MID;
+  const finalsEastTop = finalsEastCenterY - PLAYOFF_CARD_MID;
+
+  const ConferenceBracket = ({ conference }: { conference: 'West' | 'East' }) => {
+    const isWest = conference === 'West';
+    const semis = byConference(conference, 'semis').slice(0, 2);
+    const first = orderFirstRoundBySemis(byConference(conference, 'first'), semis).slice(0, 4);
+    const confFinal = byConference(conference, 'finals')[0];
+    const conferenceWinner = getPlayoffSeriesLeader(confFinal);
+    const side = isWest ? 'west' : 'east';
+    const x = isWest ? { first: 0, semi: 330, final: 660, v1: 318, v2: 648 } : { first: 660, semi: 330, final: 0, v1: 648, v2: 318 };
+    const from = (left: number, top: number, width: number) => ({ left, top, width });
+    const hLine = (key: string, left: number, top: number, width: number, highlighted = false) => <div key={key} className={lineStyle} style={{ ...from(left, top, width), height: 2, backgroundColor: highlighted ? '#ffffff' : lineColor }} />;
+    const vLine = (key: string, left: number, top: number, height: number, highlighted = false) => <div key={key} className={lineStyle} style={{ left, top, height, width: 2, backgroundColor: highlighted ? '#ffffff' : lineColor }} />;
+    const teamSlot = (teamName: string | undefined, seriesItem: PlayoffSeries | undefined, top: number, left: number, index: number) => (
+      <PlayoffTeamPill
+        key={`${conference}-${left}-${top}-${teamName || index}`}
+        teamName={teamName}
+        wins={teamName && seriesItem ? seriesItem.wins[teamName] || 0 : undefined}
+        winner={!!teamName && seriesItem?.winner === teamName}
+        muted={!teamName}
+        logoMap={logoMap}
+        side={side}
+      />
+    );
+
+    const firstTeams = first.flatMap((item) => item.teams);
+    const semiTeams = semis.flatMap((item) => item.teams.length ? item.teams : [getPlayoffSeriesLeader(first[0]), getPlayoffSeriesLeader(first[1])]).slice(0, 4);
+    const semiWinners = semis.map((item) => getPlayoffSeriesLeader(item)).filter(Boolean) as string[];
+    const finalTeams = confFinal?.teams.length
+      ? [
+          ...semiWinners.filter((teamName) => confFinal.teams.includes(teamName)),
+          ...confFinal.teams.filter((teamName) => !semiWinners.includes(teamName)),
+        ].slice(0, 2)
+      : semiWinners;
+
+    return (
+      <div className="relative h-[1020px] w-[960px] shrink-0">
+        <h2 className="absolute left-0 right-0 top-[-76px] z-30 text-center text-2xl font-black uppercase leading-none text-white">{isWest ? 'Western Conference' : 'Eastern Conference'}</h2>
+
+        {firstTops.map((top, index) => {
+          const seriesItem = first[Math.floor(index / 2)];
+          const teamName = firstTeams[index];
+          return (
+            <div key={`${conference}-first-${index}`} style={{ position: 'absolute', top, left: x.first }}>
+              {teamSlot(teamName, seriesItem, top, x.first, index)}
+            </div>
+          );
+        })}
+
+        {semiTops.map((top, index) => {
+          const seriesItem = semis[Math.floor(index / 2)];
+          const teamName = semiTeams[index] || getPlayoffSeriesLeader(first[index]);
+          return (
+            <div key={`${conference}-semi-${index}`} style={{ position: 'absolute', top, left: x.semi }}>
+              {teamSlot(teamName, seriesItem, top, x.semi, index)}
+            </div>
+          );
+        })}
+
+        {confFinalTops.map((top, index) => {
+          const teamName = finalTeams[index] || getPlayoffSeriesLeader(semis[index]);
+          return (
+            <div key={`${conference}-final-${index}`} style={{ position: 'absolute', top, left: x.final }}>
+              {teamSlot(teamName, confFinal, top, x.final, index)}
+            </div>
+          );
+        })}
+
+        {[0, 1, 2, 3].map((pairIndex) => {
+          const seriesItem = first[pairIndex];
+          const advancingTeam = getPlayoffSeriesLeader(seriesItem);
+          const isWinnerPath = !!advancingTeam && advancingTeam === conferenceWinner;
+          const target = semiTops[pairIndex] + PLAYOFF_CARD_MID;
+          const cardEdge = isWest ? x.first + PLAYOFF_CARD_WIDTH : x.first;
+          const semiEdge = isWest ? x.semi : x.semi + PLAYOFF_CARD_WIDTH;
+          const left = Math.min(cardEdge, semiEdge);
+          return hLine(`${conference}-r1-out-${pairIndex}`, left, target, Math.abs(semiEdge - cardEdge), isWinnerPath);
+        })}
+
+        {[0, 1].map((pairIndex) => {
+          const topTeam = semiTeams[pairIndex * 2];
+          const bottomTeam = semiTeams[pairIndex * 2 + 1];
+          const winnerTeam = getPlayoffSeriesLeader(semis[pairIndex]);
+          const isWinnerPath = !!winnerTeam && winnerTeam === conferenceWinner;
+          const topCardBottom = semiTops[pairIndex * 2] + PLAYOFF_CARD_HEIGHT;
+          const bottomCardTop = semiTops[pairIndex * 2 + 1];
+          const target = confFinalTops[pairIndex] + PLAYOFF_CARD_MID;
+          const cardCenter = x.semi + PLAYOFF_CARD_WIDTH / 2;
+          const finalEdge = isWest ? x.final : x.final + PLAYOFF_CARD_WIDTH;
+          const left = Math.min(cardCenter, finalEdge);
+          const upperPath = isWinnerPath && winnerTeam === topTeam;
+          const lowerPath = isWinnerPath && winnerTeam === bottomTeam;
+          return [
+            vLine(`${conference}-r2-v-upper-${pairIndex}`, cardCenter, topCardBottom, target - topCardBottom, upperPath),
+            vLine(`${conference}-r2-v-lower-${pairIndex}`, cardCenter, target, bottomCardTop - target, lowerPath),
+            hLine(`${conference}-r2-out-${pairIndex}`, left, target, Math.abs(finalEdge - cardCenter), isWinnerPath),
+          ];
+        })}
+
+        {(() => {
+          const isWinnerPath = !!conferenceWinner && finalsTeams.includes(conferenceWinner);
+          const upperFinalTeam = finalTeams[0];
+          const lowerFinalTeam = finalTeams[1];
+          const topCardBottom = confFinalTops[0] + PLAYOFF_CARD_HEIGHT;
+          const bottomCardTop = confFinalTops[1];
+          const cardCenter = x.final + PLAYOFF_CARD_WIDTH / 2;
+          const boundaryX = isWest ? 960 : 0;
+          const left = Math.min(cardCenter, boundaryX);
+          const targetY = isWest ? finalsWestCenterY : finalsEastCenterY;
+          const upperPath = isWinnerPath && conferenceWinner === upperFinalTeam;
+          const lowerPath = isWinnerPath && conferenceWinner === lowerFinalTeam;
+          return [
+            vLine(`${conference}-finals-feed-v-upper`, cardCenter, topCardBottom, targetY - topCardBottom, upperPath),
+            vLine(`${conference}-finals-feed-v-lower`, cardCenter, targetY, bottomCardTop - targetY, lowerPath),
+            hLine(`${conference}-finals-feed-out`, left, targetY, Math.abs(boundaryX - cardCenter), isWinnerPath),
+          ];
+        })()}
+      </div>
+    );
+  };
+
+  const compactPairX = [0, 328, 656, 984];
+  const compactRoundFinalX = [164, 820];
+  const getOrderedConferenceFinalTeams = (conference: 'West' | 'East') => {
+    const semis = byConference(conference, 'semis').slice(0, 2);
+    const confFinal = byConference(conference, 'finals')[0];
+    const semiWinners = semis.map((item) => getPlayoffSeriesLeader(item)).filter(Boolean) as string[];
+    return confFinal?.teams.length
+      ? [
+          ...semiWinners.filter((teamName) => confFinal.teams.includes(teamName)),
+          ...confFinal.teams.filter((teamName) => !semiWinners.includes(teamName)),
+        ].slice(0, 2)
+      : semiWinners;
+  };
+
+  const CompactConferenceBracket = ({ conference }: { conference: 'West' | 'East' }) => {
+    const isWest = conference === 'West';
+    const semis = byConference(conference, 'semis').slice(0, 2);
+    const first = orderFirstRoundBySemis(byConference(conference, 'first'), semis).slice(0, 4);
+    const confFinal = byConference(conference, 'finals')[0];
+    const conferenceWinner = getPlayoffSeriesLeader(confFinal);
+    const side = isWest ? 'west' : 'east';
+    const firstTeams = first.flatMap((item) => item.teams);
+    const semiTeams = semis.flatMap((item) => item.teams.length ? item.teams : [getPlayoffSeriesLeader(first[0]), getPlayoffSeriesLeader(first[1])]).slice(0, 4);
+    const semiWinners = semis.map((item) => getPlayoffSeriesLeader(item)).filter(Boolean) as string[];
+    const finalTeams = confFinal?.teams.length
+      ? [
+          ...semiWinners.filter((teamName) => confFinal.teams.includes(teamName)),
+          ...confFinal.teams.filter((teamName) => !semiWinners.includes(teamName)),
+        ].slice(0, 2)
+      : semiWinners;
+    const y = isWest
+      ? { first: 0, semi: 210, final: 360 }
+      : { final: 0, semi: 170, first: 330 };
+    const compactPairGap = 98;
+    const hLineCompact = (key: string, left: number, top: number, width: number, highlighted = false) => (
+      <div key={key} className={lineStyle} style={{ left, top, width, height: 2, backgroundColor: highlighted ? '#ffffff' : lineColor }} />
+    );
+    const vLineCompact = (key: string, left: number, top: number, height: number, highlighted = false) => (
+      <div key={key} className={lineStyle} style={{ left, top, height, width: 2, backgroundColor: highlighted ? '#ffffff' : lineColor }} />
+    );
+
+    return (
+      <div className="relative h-[430px] w-[1284px]">
+        {first.map((seriesItem, pairIndex) => {
+          const teams = seriesItem.teams;
+          return teams.map((teamName, teamIndex) => (
+            <div key={`${conference}-compact-first-${teamName}`} className="absolute z-20" style={{ left: compactPairX[pairIndex], top: y.first + teamIndex * compactPairGap }}>
+              <PlayoffTeamPill
+                teamName={teamName}
+                wins={seriesItem.wins[teamName] || 0}
+                winner={seriesItem.winner === teamName}
+                logoMap={logoMap}
+                side={side}
+              />
+            </div>
+          ));
+        })}
+
+        {semiTops.slice(0, 4).map((_, index) => {
+          const seriesItem = semis[Math.floor(index / 2)];
+          const teamName = semiTeams[index] || getPlayoffSeriesLeader(first[index]);
+          return (
+            <div key={`${conference}-compact-semi-${teamName || index}`} className="absolute z-20" style={{ left: compactPairX[index], top: y.semi }}>
+              <PlayoffTeamPill
+                teamName={teamName}
+                wins={teamName && seriesItem ? seriesItem.wins[teamName] || 0 : undefined}
+                winner={!!teamName && seriesItem?.winner === teamName}
+                muted={!teamName}
+                logoMap={logoMap}
+                side={side}
+              />
+            </div>
+          );
+        })}
+
+        {finalTeams.slice(0, 2).map((teamName, index) => (
+          <div key={`${conference}-compact-final-${teamName || index}`} className="absolute z-20" style={{ left: compactRoundFinalX[index], top: y.final }}>
+            <PlayoffTeamPill
+              teamName={teamName}
+              wins={teamName && confFinal ? confFinal.wins[teamName] || 0 : undefined}
+              winner={!!teamName && confFinal?.winner === teamName}
+              muted={!teamName}
+              logoMap={logoMap}
+              side={side}
+            />
+          </div>
+        ))}
+
+        {first.map((seriesItem, pairIndex) => {
+          const advancingTeam = getPlayoffSeriesLeader(seriesItem);
+          const isWinnerPath = !!advancingTeam && advancingTeam === conferenceWinner;
+          const x = compactPairX[pairIndex] + PLAYOFF_CARD_WIDTH / 2;
+          const firstMid = y.first + PLAYOFF_CARD_HEIGHT + ((compactPairGap - PLAYOFF_CARD_HEIGHT) / 2);
+          const semiMid = y.semi + PLAYOFF_CARD_MID;
+          const top = Math.min(firstMid, semiMid);
+          return vLineCompact(`${conference}-compact-r1-${pairIndex}`, x, top, Math.abs(semiMid - firstMid), isWinnerPath);
+        })}
+
+        {[0, 1].map((pairIndex) => {
+          const topTeam = semiTeams[pairIndex * 2];
+          const bottomTeam = semiTeams[pairIndex * 2 + 1];
+          const winnerTeam = getPlayoffSeriesLeader(semis[pairIndex]);
+          const isWinnerPath = !!winnerTeam && winnerTeam === conferenceWinner;
+          const leftCardCenter = compactPairX[pairIndex * 2] + PLAYOFF_CARD_WIDTH / 2;
+          const rightCardCenter = compactPairX[pairIndex * 2 + 1] + PLAYOFF_CARD_WIDTH / 2;
+          const targetX = compactRoundFinalX[pairIndex] + PLAYOFF_CARD_WIDTH / 2;
+          const joinY = isWest ? y.semi + PLAYOFF_CARD_HEIGHT + 34 : y.semi - 34;
+          const semiCenterY = y.semi + PLAYOFF_CARD_MID;
+          const finalCenterY = y.final + PLAYOFF_CARD_MID;
+          return [
+            vLineCompact(`${conference}-compact-r2-left-${pairIndex}`, leftCardCenter, Math.min(semiCenterY, joinY), Math.abs(joinY - semiCenterY), isWinnerPath && winnerTeam === topTeam),
+            vLineCompact(`${conference}-compact-r2-right-${pairIndex}`, rightCardCenter, Math.min(semiCenterY, joinY), Math.abs(joinY - semiCenterY), isWinnerPath && winnerTeam === bottomTeam),
+            hLineCompact(`${conference}-compact-r2-join-${pairIndex}`, Math.min(leftCardCenter, rightCardCenter), joinY, Math.abs(rightCardCenter - leftCardCenter), isWinnerPath),
+            vLineCompact(`${conference}-compact-r2-out-${pairIndex}`, targetX, Math.min(joinY, finalCenterY), Math.abs(finalCenterY - joinY), isWinnerPath),
+          ];
+        })}
+      </div>
+    );
+  };
+
+  const westFinalTeam = getPlayoffSeriesLeader(byConference('West', 'finals')[0]);
+  const eastFinalTeam = getPlayoffSeriesLeader(byConference('East', 'finals')[0]);
+  const finalsTeams = finals?.teams || [];
+  const westFinalsTeam = westFinalTeam && finalsTeams.includes(westFinalTeam) ? westFinalTeam : westFinalTeam || finalsTeams[0];
+  const eastFinalsTeam = eastFinalTeam && finalsTeams.includes(eastFinalTeam) ? eastFinalTeam : eastFinalTeam || finalsTeams.find((team) => team !== westFinalsTeam);
+  const compactFinalCardCenterX = compactBracketBaseWidth / 2;
+  const compactFinalCardX = compactFinalCardCenterX - PLAYOFF_CARD_WIDTH / 2;
+  const compactWestFinalTeams = getOrderedConferenceFinalTeams('West');
+  const compactEastFinalTeams = getOrderedConferenceFinalTeams('East');
+  const compactWestWinnerIndex = Math.max(0, compactWestFinalTeams.indexOf(westFinalTeam || ''));
+  const compactEastWinnerIndex = Math.max(0, compactEastFinalTeams.indexOf(eastFinalTeam || ''));
+  const compactWestWinnerCenterX = compactRoundFinalX[compactWestWinnerIndex] + PLAYOFF_CARD_WIDTH / 2;
+  const compactEastWinnerCenterX = compactRoundFinalX[compactEastWinnerIndex] + PLAYOFF_CARD_WIDTH / 2;
+  const compactLaneHeight = 200;
+  const compactConferenceHeight = 430;
+  const compactStackGap = 80;
+  const compactWestFinalTopY = 4;
+  const compactEastFinalTopY = compactLaneHeight - 4 - PLAYOFF_CARD_HEIGHT;
+  const compactEastFinalBottomY = compactEastFinalTopY + PLAYOFF_CARD_HEIGHT;
+  const compactWestWinnerCardBottomY = 360 + PLAYOFF_CARD_HEIGHT - compactConferenceHeight - compactStackGap;
+  const compactEastWinnerCardTopY = compactLaneHeight + compactStackGap;
+  const compactWestConnectorY = Math.round((compactWestWinnerCardBottomY + compactWestFinalTopY) / 2);
+  const compactEastConnectorY = Math.round((compactEastFinalBottomY + compactEastWinnerCardTopY) / 2);
+  return (
+    <div ref={bracketContainerRef} className="h-[calc(100vh-5rem)] overflow-hidden pb-0 pr-2">
+      {compactBracket ? (
+        <div
+          className="relative ml-0 mt-8 overflow-visible"
+          style={{ width: compactBracketBaseWidth * bracketScale, height: compactBracketBaseHeight * bracketScale }}
+        >
+          <div
+            className="relative flex w-[1284px] flex-col items-center gap-20"
+            style={{ transform: `translateX(${compactOffsetX}px) scale(${bracketScale})`, transformOrigin: 'top left' }}
+          >
+            <CompactConferenceBracket conference="West" />
+            <div className="relative h-[200px] w-[1284px]">
+              <div
+                className="absolute w-0.5"
+                style={{
+                  left: compactWestWinnerCenterX,
+                  top: compactWestWinnerCardBottomY,
+                  height: Math.abs(compactWestConnectorY - compactWestWinnerCardBottomY),
+                  backgroundColor: westFinalsTeam ? '#ffffff' : lineColor,
+                }}
+              />
+              <div
+                className="absolute h-0.5"
+                style={{
+                  top: compactWestConnectorY,
+                  left: Math.min(compactWestWinnerCenterX, compactFinalCardCenterX),
+                  width: Math.abs(compactFinalCardCenterX - compactWestWinnerCenterX),
+                  backgroundColor: westFinalsTeam ? '#ffffff' : lineColor,
+                }}
+              />
+              <div
+                className="absolute w-0.5"
+                style={{
+                  left: compactFinalCardCenterX,
+                  top: compactWestConnectorY,
+                  height: Math.abs(compactWestFinalTopY - compactWestConnectorY),
+                  backgroundColor: westFinalsTeam ? '#ffffff' : lineColor,
+                }}
+              />
+              <div
+                className="absolute w-0.5"
+                style={{
+                  left: compactFinalCardCenterX,
+                  top: compactEastFinalBottomY,
+                  height: Math.abs(compactEastConnectorY - compactEastFinalBottomY),
+                  backgroundColor: eastFinalsTeam ? '#ffffff' : lineColor,
+                }}
+              />
+              <div
+                className="absolute h-0.5"
+                style={{
+                  top: compactEastConnectorY,
+                  left: Math.min(compactEastWinnerCenterX, compactFinalCardCenterX),
+                  width: Math.abs(compactFinalCardCenterX - compactEastWinnerCenterX),
+                  backgroundColor: eastFinalsTeam ? '#ffffff' : lineColor,
+                }}
+              />
+              <div
+                className="absolute w-0.5"
+                style={{
+                  left: compactEastWinnerCenterX,
+                  top: compactEastConnectorY,
+                  height: Math.abs(compactEastWinnerCardTopY - compactEastConnectorY),
+                  backgroundColor: eastFinalsTeam ? '#ffffff' : lineColor,
+                }}
+              />
+              <div className="absolute top-4 z-30" style={{ left: compactFinalCardX }}>
+                <PlayoffTeamPill
+                  teamName={westFinalsTeam}
+                  wins={westFinalsTeam && finals ? finals.wins[westFinalsTeam] || 0 : undefined}
+                  winner={!!westFinalsTeam && finals?.winner === westFinalsTeam}
+                  muted={!westFinalsTeam}
+                  logoMap={logoMap}
+                  side="west"
+                />
+              </div>
+              <div className="absolute bottom-4 z-30" style={{ left: compactFinalCardX }}>
+                <PlayoffTeamPill
+                  teamName={eastFinalsTeam}
+                  wins={eastFinalsTeam && finals ? finals.wins[eastFinalsTeam] || 0 : undefined}
+                  winner={!!eastFinalsTeam && finals?.winner === eastFinalsTeam}
+                  muted={!eastFinalsTeam}
+                  logoMap={logoMap}
+                  side="east"
+                />
+              </div>
+            </div>
+            <CompactConferenceBracket conference="East" />
+          </div>
+        </div>
+      ) : (
+        <div
+          className="playoff-bracket-fit relative mx-auto mt-24 overflow-visible"
+          style={{ width: bracketBaseWidth * bracketScale, height: bracketBaseHeight * bracketScale }}
+        >
+          <div
+            className="playoff-bracket-board relative w-[2520px] p-4 pr-6"
+            style={{ transform: `scale(${bracketScale})`, transformOrigin: 'top left' }}
+          >
+            <div className="relative grid min-h-[calc(100vh-150px)] grid-cols-[960px_560px_960px] items-center gap-3">
+              <ConferenceBracket conference="West" />
+              <div className="relative h-[1020px]">
+                <div className="absolute left-0 h-0.5 w-[128px]" style={{ top: finalsWestCenterY, backgroundColor: lineColor }} />
+                <div className="absolute right-0 h-0.5 w-[128px]" style={{ top: finalsEastCenterY, backgroundColor: lineColor }} />
+
+                <div className="absolute left-1/2 z-30 -translate-x-1/2" style={{ top: finalsWestTop }}>
+                  <PlayoffTeamPill
+                    teamName={westFinalsTeam}
+                    wins={westFinalsTeam && finals ? finals.wins[westFinalsTeam] || 0 : undefined}
+                    winner={!!westFinalsTeam && finals?.winner === westFinalsTeam}
+                    muted={!westFinalsTeam}
+                    logoMap={logoMap}
+                    side="west"
+                  />
+                </div>
+                <div className="absolute left-1/2 z-30 -translate-x-1/2" style={{ top: finalsEastTop }}>
+                  <PlayoffTeamPill
+                    teamName={eastFinalsTeam}
+                    wins={eastFinalsTeam && finals ? finals.wins[eastFinalsTeam] || 0 : undefined}
+                    winner={!!eastFinalsTeam && finals?.winner === eastFinalsTeam}
+                    muted={!eastFinalsTeam}
+                    logoMap={logoMap}
+                    side="east"
+                  />
+                </div>
+              </div>
+              <ConferenceBracket conference="East" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 
 
@@ -2906,12 +3596,23 @@ const DarkModeToggle = () => {
 
 
 const NBA = () => {
+  const [nbaSeasons, setNbaSeasons] = useState<NBASeasonOption[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
   const [nbaPlayerData, setNbaPlayerData] = useState<Record<string, Player[]>>(() => _cachedPlayers ?? {});
   const [loading, setLoading] = useState(() => _cachedTeams === null); // only show loading spinner on true first load
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>(() => _cachedTeams ?? []);
   const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'top-scorers', or 'schedule'
+  const [playoffsRevealKey, setPlayoffsRevealKey] = useState(0);
+  const handleTabChange = useCallback((value: string) => {
+    React.startTransition(() => {
+      setActiveTab(value);
+      if (value === 'playoffs') {
+        setPlayoffsRevealKey((key) => key + 1);
+      }
+    });
+  }, []);
 
   // Portrait mobile detection — only affects mobile layout, never touches desktop
   const [isMobile, setIsMobile] = useState(() =>
@@ -2947,6 +3648,16 @@ const NBA = () => {
   const [sortField, setSortField] = useState<TeamSortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [scheduleData, setScheduleData] = useState<NBAScheduleData | null>(() => _cachedSchedule);
+  const selectedSeason = useMemo(
+    () => nbaSeasons.find((season) => season.id === selectedSeasonId) || nbaSeasons[0] || null,
+    [nbaSeasons, selectedSeasonId],
+  );
+  const [compactNavSeason, setCompactNavSeason] = useState(false);
+  const compactSeasonLabel = useMemo(() => {
+    const label = selectedSeason?.label || 'Season';
+    const match = label.match(/^20(\d{2})-(\d{2})$/);
+    return match ? `${match[1]}-${match[2]}` : label;
+  }, [selectedSeason?.label]);
   const logosScrollRef = useRef<HTMLDivElement | null>(null);
   const dashboardTeamRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const dashboardHighlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -3082,10 +3793,31 @@ const fetchData = async () => {
     };
 
     // Fetch all 3 endpoints in parallel — team/player use HTTP cache (they rarely change)
+    const manifestResult = await safeFetchJson('/data/nba_seasons.json', { cache: 'no-cache' });
+    const fallbackSeason: NBASeasonOption = {
+      id: 'latest',
+      label: 'Latest',
+      start_year: 0,
+      schedule: 'nba_schedule.json',
+      team_stats: 'espn_NBA_team_stats.json',
+      player_stats: 'espn_NBA_player_stats.json',
+    };
+    const manifest = manifestResult?.data as NBASeasonManifest | undefined;
+    const seasons = Array.isArray(manifest?.seasons) && manifest!.seasons.length
+      ? [...manifest!.seasons].sort((a, b) => Number(b.start_year || 0) - Number(a.start_year || 0))
+      : [fallbackSeason];
+    const nextSelectedId = selectedSeasonId || manifest?.current || seasons[0].id;
+    const seasonFiles = seasons.find((season) => season.id === nextSelectedId) || seasons[0];
+
+    setNbaSeasons(seasons);
+    if (!selectedSeasonId || !seasons.some((season) => season.id === selectedSeasonId)) {
+      setSelectedSeasonId(seasonFiles.id);
+    }
+
     const [teamResult, playerResult, schedResult] = await Promise.all([
-      safeFetchJson('/data/espn_NBA_team_stats.json'),
-      safeFetchJson('/data/espn_NBA_player_stats.json'),
-      safeFetchJson('/data/nba_schedule.json', { cache: 'no-cache' }),
+      safeFetchJson(`/data/${seasonFiles.team_stats}`, { cache: 'no-cache' }),
+      safeFetchJson(`/data/${seasonFiles.player_stats}`, { cache: 'no-cache' }),
+      safeFetchJson(`/data/${seasonFiles.schedule}`, { cache: 'no-cache' }),
     ]);
 
     if (teamResult) {
@@ -3122,6 +3854,14 @@ const fetchData = async () => {
   // Initial load
 useEffect(() => {
   fetchData();
+}, [selectedSeasonId]);
+
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+  const updateCompactNavSeason = () => setCompactNavSeason(window.innerWidth < 1500);
+  updateCompactNavSeason();
+  window.addEventListener('resize', updateCompactNavSeason);
+  return () => window.removeEventListener('resize', updateCompactNavSeason);
 }, []);
 
 // Auto-refresh teams/players every 5 minutes (not 30s — no need to hammer the server)
@@ -3132,7 +3872,7 @@ useEffect(() => {
     fetchData();
   }, 5 * 60 * 1000);
   return () => clearInterval(interval);
-}, [autoRefresh]);
+}, [autoRefresh, selectedSeasonId]);
 
 // Lightweight schedule-only polling
 // - Every 30s if there are live games, every 5 min otherwise
@@ -3144,7 +3884,8 @@ useEffect(() => {
   const fetchScheduleOnly = async () => {
     try {
       if (typeof document !== 'undefined' && document.hidden) return;
-      const resp = await fetch('/data/nba_schedule.json?_=' + Date.now(), { cache: 'no-store' });
+      const scheduleFile = selectedSeason?.schedule || 'nba_schedule.json';
+      const resp = await fetch(`/data/${scheduleFile}?_=` + Date.now(), { cache: 'no-store' });
       if (!resp.ok || cancelled) return;
       const text = await resp.text();
       if (cancelled) return;
@@ -3200,7 +3941,7 @@ useEffect(() => {
     clearInterval(id);
     document.removeEventListener('visibilitychange', vis);
   };
-}, [autoRefresh, scheduleData]);
+}, [autoRefresh, scheduleData, selectedSeason?.schedule]);
 
 
 // Compute league averages for ALL team stats
@@ -3611,7 +4352,11 @@ useEffect(() => {
   // ============================
   return (
     <PageLayout theme="nba">
-      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <style>{`
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes playoffsReveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+        .nba-playoffs-reveal { animation: playoffsReveal 0.45s ease-out both; will-change: opacity, transform; }
+      `}</style>
       <div className="flex justify-end">
       </div>
       {/* Tabs for Dashboard / All / East / West / Scorers / Schedule */}
@@ -3620,7 +4365,7 @@ useEffect(() => {
         value={isMobile ? 'schedule' : activeTab}
         className="w-full"
         onValueChange={(v) => {
-          if (!isMobile) React.startTransition(() => setActiveTab(v));
+          if (!isMobile) handleTabChange(v);
         }}
       >
   {/* ========================
@@ -3630,12 +4375,41 @@ useEffect(() => {
     <PageNavbar
       tabs={[
         { value: 'schedule',    label: 'Scoreboard'  },
+        { value: 'playoffs',    label: 'Playoffs'    },
         { value: 'standings',   label: 'Standings'   },
         { value: 'all',         label: 'Team Stats'  },
         { value: 'top-scorers', label: 'Top Players' },
       ]}
       activeTab={activeTab}
-      onTabChange={(v) => React.startTransition(() => setActiveTab(v))}
+      onTabChange={handleTabChange}
+      afterTabsSlot={!compactNavSeason ? (
+        <Select value={selectedSeasonId} onValueChange={(value) => setSelectedSeasonId(value)}>
+          <SelectTrigger className="h-10 w-[130px] shrink-0 rounded-full border-white/10 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur hover:bg-white/15">
+            {selectedSeason?.label || 'Season'}
+          </SelectTrigger>
+          <SelectContent className="min-w-[130px] rounded-2xl border-white/10 bg-[#171717]/95 p-1 text-white">
+            {nbaSeasons.map((season) => (
+              <SelectItem key={season.id} value={season.id} className="cursor-pointer rounded-full py-2 pl-8 pr-3">
+                {season.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
+      rightSlot={compactNavSeason ? (
+        <Select value={selectedSeasonId} onValueChange={(value) => setSelectedSeasonId(value)}>
+          <SelectTrigger className="h-10 w-[70px] shrink-0 rounded-full border-white/10 bg-white/10 px-3 text-sm font-semibold text-white backdrop-blur hover:bg-white/15 [&>svg]:hidden">
+            {compactSeasonLabel}
+          </SelectTrigger>
+          <SelectContent className="min-w-[130px] rounded-2xl border-white/10 bg-[#171717]/95 p-1 text-white">
+            {nbaSeasons.map((season) => (
+              <SelectItem key={season.id} value={season.id} className="cursor-pointer rounded-full py-2 pl-8 pr-3">
+                {season.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
     />
   )}
 
@@ -4086,6 +4860,12 @@ useEffect(() => {
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} streakMap={abbrToStreakMap} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
 </TabsContent>
 
+<TabsContent value="playoffs" className="mt-0">
+  <div key={`playoffs-reveal-${playoffsRevealKey}`} className="nba-playoffs-reveal">
+    <PlayoffBracketView scheduleData={scheduleData} logoMap={abbrToLogo} seasonLabel={selectedSeason?.label} />
+  </div>
+</TabsContent>
+
 {/* ========================
     PAGE: Standings
     - Two-column layout: Western Conference (left) | Eastern Conference (right)
@@ -4492,3 +5272,4 @@ useEffect(() => {
 };
 
 export default NBA;
+
