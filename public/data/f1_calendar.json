@@ -6020,7 +6020,7 @@
         "date": "September 11 - 13",
         "start_time_west": "September 13 at 6:00 AM PST",
         "tv_provider": "Apple TV",
-        "track_svg": "Not Found",
+        "track_svg": "https://upload.wikimedia.org/wikipedia/commons/2/25/Madring_%282026%29.svg",
         "track_svg_extracted": null,
         "session_times": {
             "Free Practice 1": "September 12 at 3:30 AM PST",

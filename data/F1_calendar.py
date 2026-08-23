@@ -26,6 +26,10 @@ MONTH_MAP = {
     "september": 9, "october": 10, "november": 11, "december": 12,
 }
 
+TRACK_SVG_FALLBACKS = {
+    "Madring": "https://upload.wikimedia.org/wikipedia/commons/2/25/Madring_%282026%29.svg",
+}
+
 # ==========================================================
 # 🏁 CIRCUIT EXTRACTION
 # ==========================================================
@@ -188,18 +192,11 @@ def _get_viewbox(svg: str) -> str:
     return "0 0 876 810"
 
 def _build_svg(selected: list, viewbox: str) -> str:
-    layer_fills = ['#e6e6e6', '#ebebeb', '#f2f2f2', '#e8e8e8']
     lines = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewbox}">']
-    for i, (d_len, cls, pid, d_val) in enumerate(selected):
-        fill = layer_fills[i % len(layer_fills)]
+    if selected:
+        _, _, pid, d_val = selected[0]
         id_attr = f' id="{pid}"' if pid != 'no-id' else ''
-        if i == 0:
-            lines.append(
-                f'  <path{id_attr} fill="{fill}" stroke="#48494a" '
-                f'stroke-width="1.2" d="{d_val}"/>'
-            )
-        else:
-            lines.append(f'  <path{id_attr} fill="{fill}" d="{d_val}"/>')
+        lines.append(f'  <path{id_attr} fill="#f1f1f1" d="{d_val}"/>')
     lines.append('</svg>')
     return '\n'.join(lines)
 
@@ -408,7 +405,14 @@ for block in event_blocks:
     # This is the primary guard for completed races. ESPN changes the schedule page format
     # after a race finishes (switches to results mode), so date/time parsing goes to TBD.
     # We never want to overwrite a race that already has good stored data.
-    if has_existing_times and not existing_has_canceled(existing):
+    existing_has_track_svg = (
+        existing
+        and existing.get("track_svg")
+        and existing.get("track_svg") != "Not Found"
+        and existing.get("track_svg_extracted")
+    )
+
+    if has_existing_times and existing_has_track_svg and not existing_has_canceled(existing):
         print(f"[SKIP] {gp_name} — has stored session times, keeping existing data.")
         existing["race_number"] = count
         f1_calendar.append(existing)
@@ -444,6 +448,9 @@ for block in event_blocks:
             pass
 
     # Extract circuit outline from SVG (skip on refresh — reuse existing)
+    if (not track_svg_url or track_svg_url == "Not Found") and circuit_name in TRACK_SVG_FALLBACKS:
+        track_svg_url = TRACK_SVG_FALLBACKS[circuit_name]
+
     track_svg_extracted = existing.get("track_svg_extracted") if existing else None
     if not is_refresh and track_svg_url and track_svg_url != "Not Found":
         print(f"Extracting circuit outline for {gp_name}...")

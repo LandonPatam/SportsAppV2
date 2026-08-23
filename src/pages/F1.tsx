@@ -149,13 +149,15 @@ function getWeekendRange(race: { session_times?: Record<string, string>; date: s
 // Parse "March 15 at 12:00 AM PDT" -> Date object (treated as local time)
 function parseSessionTime(timeStr: string): Date | null {
   try {
+    if (timeStr === 'Canceled') return null;
     // Strip timezone suffix e.g. " PDT", " PST"
     const clean = timeStr.replace(/\s+P[SD]T$/, '').trim();
-    // clean = "March 15 at 12:00 AM"
-    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+:\d+ [AP]M)$/);
+    // clean = "March 15 at 12:00 AM", "March 15 at 12:00AM", or "March 15 at 12:00"
+    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+):(\d+)\s*([AP]M)?$/);
     if (!m) return null;
     const year = new Date().getFullYear();
-    const d = new Date(`${m[1]} ${year} ${m[2]}`);
+    const meridiem = m[4] ? ` ${m[4]}` : '';
+    const d = new Date(`${m[1]} ${year} ${m[2]}:${m[3]}${meridiem}`);
     return isNaN(d.getTime()) ? null : d;
   } catch { return null; }
 }
@@ -306,14 +308,25 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
         // Ensure transparent background
         svg.setAttribute('style', (svg.getAttribute('style') || '') + '; background: transparent;');
 
-        // Force white stroke on all track elements as attributes (beats inline style overrides)
+        const allPaths = Array.from(svg.querySelectorAll('path'));
+        const trackPath = allPaths.reduce((longest, p) =>
+          (p.getTotalLength?.() ?? 0) > (longest.getTotalLength?.() ?? 0) ? p : longest
+        , allPaths[0]);
+
+        // Raw fallback SVGs can include dots, helper shapes, and duplicate linework.
+        // Keep only the longest path so the dashboard renders a clean circuit.
         svg.querySelectorAll('path, polyline, polygon, circle, ellipse, line, rect').forEach((el) => {
-          el.setAttribute('fill', 'none');
-          el.setAttribute('stroke', '#ffffff');
-          el.setAttribute('stroke-width', '3.5');
-          // Clear any inline style that might override CSS
-          el.removeAttribute('style');
+          if (el !== trackPath) el.remove();
         });
+
+        if (trackPath) {
+          trackPath.setAttribute('fill', 'none');
+          trackPath.setAttribute('stroke', '#ffffff');
+          trackPath.setAttribute('stroke-width', '4.5');
+          trackPath.setAttribute('stroke-linejoin', 'round');
+          trackPath.setAttribute('stroke-linecap', 'round');
+          trackPath.removeAttribute('style');
+        }
 
         // Inject style to make all paths thin, white, and glowing
         // Scoped to .f1-track-svg to avoid bleeding into other SVGs (e.g. Lucide icons)
@@ -324,7 +337,9 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
           .f1-track-svg circle, .f1-track-svg ellipse, .f1-track-svg line, .f1-track-svg rect {
             fill: none !important;
             stroke: #ffffff !important;
-            stroke-width: 3.5 !important;
+            stroke-width: 4.5 !important;
+            stroke-linejoin: round !important;
+            stroke-linecap: round !important;
           }
           .f1-teal-strip {
             fill: none !important;
@@ -342,26 +357,6 @@ const InlineSvg = ({ url, className }: { url: string; className?: string }) => {
           }
         `;
         svg.insertBefore(styleEl, svg.firstChild);
-
-        // Find the longest path to use as the motion track
-        const allPaths = Array.from(svg.querySelectorAll('path'));
-        const trackPath = allPaths.reduce((longest, p) =>
-          (p.getTotalLength?.() ?? 0) > (longest.getTotalLength?.() ?? 0) ? p : longest
-        , allPaths[0]);
-
-        if (trackPath) {
-          const totalLen = trackPath.getTotalLength?.() ?? 500;
-          const stripLen = totalLen * 0.08;
-          const gap = totalLen * 10;
-
-          const strip = trackPath.cloneNode() as SVGPathElement;
-          strip.setAttribute('class', 'f1-teal-strip');
-          strip.setAttribute('stroke-dasharray', `${stripLen} ${gap}`);
-          strip.setAttribute('stroke-dashoffset', '0');
-          strip.style.setProperty('--f1-track-len', `-${totalLen}`);
-          strip.removeAttribute('id');
-          svg.appendChild(strip);
-        }
 
         if (!cancelled) setSvgContent(svg.outerHTML);
       })
@@ -394,23 +389,11 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const glowStyle = `<style>
-    .f1-track-svg path, .f1-track-svg polyline, .f1-track-svg polygon,
-    .f1-track-svg circle, .f1-track-svg ellipse, .f1-track-svg line, .f1-track-svg rect {
-      fill: none !important;
-      stroke: #ffffff !important;
-      stroke-width: 3.5 !important;
-    }
-    .f1-teal-strip {
-      fill: none !important;
-      stroke: #2dd4bf !important;
-      stroke-width: 7 !important;
-      stroke-linecap: round !important;
-      animation: f1-dash var(--f1-anim-dur, 25s) linear infinite;
-      will-change: stroke-dashoffset;
-    }
-    @keyframes f1-dash {
-      from { stroke-dashoffset: 0; }
-      to { stroke-dashoffset: var(--f1-track-len); }
+    .f1-track-svg .f1-circuit-shape {
+      fill: rgba(255, 255, 255, 0.95) !important;
+      stroke: rgba(255, 255, 255, 0.42) !important;
+      stroke-width: 0.8 !important;
+      vector-effect: non-scaling-stroke;
     }
   </style>`;
 
@@ -427,7 +410,6 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
 
     const allPaths = Array.from(svg.querySelectorAll('path'));
     if (!allPaths.length) return;
-    normalizeTrackSvgViewBox(svg);
 
     const trackPath = allPaths.reduce((longest, p) =>
       (p.getTotalLength?.() ?? 0) > (longest.getTotalLength?.() ?? 0) ? p : longest
@@ -435,19 +417,16 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
 
     if (!trackPath) return;
 
-    const totalLen = trackPath.getTotalLength?.() ?? 500;
-    const stripLen = totalLen * 0.08;
-    const gap = totalLen * 10;
+    allPaths.forEach((path) => {
+      if (path !== trackPath) path.remove();
+    });
 
-    const strip = trackPath.cloneNode() as SVGPathElement;
-    strip.setAttribute('class', 'f1-teal-strip');
-    strip.setAttribute('stroke-dasharray', `${stripLen} ${gap}`);
-    strip.setAttribute('stroke-dashoffset', '0');
-    strip.style.setProperty('--f1-track-len', `-${totalLen}`);
-    strip.removeAttribute('id');
-    svg.appendChild(strip);
+    trackPath.setAttribute('class', 'f1-circuit-shape');
+    trackPath.removeAttribute('id');
+    trackPath.removeAttribute('style');
+    trackPath.removeAttribute('stroke-width');
 
-    return () => { strip.remove(); };
+    normalizeTrackSvgViewBox(svg, 0.08);
   }, [processed]);
 
   return (
@@ -455,7 +434,7 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
       ref={containerRef}
       className={className}
       dangerouslySetInnerHTML={{ __html: processed }}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', willChange: 'transform', filter: 'drop-shadow(0 0 4px #ffffff88) drop-shadow(0 0 8px #ffffff44)' }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', willChange: 'transform', filter: 'drop-shadow(0 0 3px rgba(255,255,255,0.36)) drop-shadow(0 0 7px rgba(255,255,255,0.18))' }}
     />
   );
 };
@@ -500,15 +479,21 @@ const SessionCountdown = ({ race, isMobile = false }: { race: F1Race; isMobile?:
 
 function formatSessionShort(timeStr: string): { day: string; time: string } | null {
   try {
+    if (timeStr === 'Canceled') return null;
     const clean = timeStr.replace(/\s+P[SD]T$/, '').trim();
-    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+):(\d+) ([AP]M)$/);
+    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+):(\d+)\s*([AP]M)?$/);
     if (!m) return null;
     const year = new Date().getFullYear();
     const d = new Date(`${m[1]} ${year}`);
     if (isNaN(d.getTime())) return null;
     const day = d.toLocaleDateString('en-US', { weekday: 'short' });
-    return { day, time: `${m[2]}:${m[3]} ${m[4]}` };
+    return { day, time: `${m[2]}:${m[3]}${m[4] ? ` ${m[4]}` : ''}` };
   } catch { return null; }
+}
+
+function isSessionCompleted(timeStr: string): boolean {
+  const sessionDate = parseSessionTime(timeStr);
+  return !!sessionDate && sessionDate.getTime() <= Date.now();
 }
 
 const SESSION_ORDER: { keys: string[]; label: string }[] = [
@@ -566,11 +551,12 @@ const DesktopSessionPanel = ({ race }: { race: F1Race }) => {
     .map((s) => {
       const key = s.keys.find(k => race.session_times?.[k]);
       if (!key) return null;
-      const fmt = formatSessionShort(race.session_times![key]);
+      const timeStr = race.session_times![key];
+      const fmt = formatSessionShort(timeStr);
       if (!fmt) return null;
-      return { label: s.label, ...fmt };
+      return { label: s.label, isCompleted: isSessionCompleted(timeStr), ...fmt };
     })
-    .filter(Boolean) as { label: string; day: string; time: string }[];
+    .filter(Boolean) as { label: string; day: string; time: string; isCompleted: boolean }[];
 
   const units = cd
     ? [
@@ -595,10 +581,16 @@ const DesktopSessionPanel = ({ race }: { race: F1Race }) => {
 
       <div className="space-y-3">
         {rows.map((row) => (
-          <div key={row.label} className="grid grid-cols-[42px_32px_1fr] items-baseline gap-2 text-[11px] leading-none">
-            <span className="font-black uppercase tracking-wide" style={{ color: '#2dd4bf' }}>{row.label}</span>
-            <span className="font-medium text-white/65">{row.day}</span>
-            <span className="font-medium text-right tabular-nums text-white">{row.time}</span>
+          <div
+            key={row.label}
+            className={[
+              'grid grid-cols-[42px_32px_1fr] items-baseline gap-2 text-[11px] leading-none',
+              row.isCompleted ? 'line-through decoration-white/45 decoration-1' : '',
+            ].join(' ')}
+          >
+            <span className="font-black uppercase tracking-wide" style={{ color: row.isCompleted ? 'rgba(45,212,191,0.38)' : '#2dd4bf' }}>{row.label}</span>
+            <span className={row.isCompleted ? 'font-medium text-white/30' : 'font-medium text-white/65'}>{row.day}</span>
+            <span className={row.isCompleted ? 'font-medium text-right tabular-nums text-white/35' : 'font-medium text-right tabular-nums text-white'}>{row.time}</span>
           </div>
         ))}
       </div>
@@ -1004,11 +996,18 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
                     {visibleBadges.map(({ label, time }) => {
                       const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
                       const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
+                      const isCompleted = time ? isSessionCompleted(time) : false;
                       return (
-                        <div key={label} className="flex items-center gap-1">
-                          <span className="text-[10px] font-black tracking-wider" style={{ color: '#2dd4bf' }}>{label}</span>
-                          <span className="text-[10px] font-semibold text-white">{datePart}</span>
-                          <span className="text-[10px] font-medium text-white/70">{timePart}</span>
+                        <div
+                          key={label}
+                          className={[
+                            'flex items-center gap-1',
+                            isCompleted ? 'line-through decoration-white/45 decoration-1' : '',
+                          ].join(' ')}
+                        >
+                          <span className="text-[10px] font-black tracking-wider" style={{ color: isCompleted ? 'rgba(45,212,191,0.38)' : '#2dd4bf' }}>{label}</span>
+                          <span className={isCompleted ? 'text-[10px] font-semibold text-white/30' : 'text-[10px] font-semibold text-white'}>{datePart}</span>
+                          <span className={isCompleted ? 'text-[10px] font-medium text-white/35' : 'text-[10px] font-medium text-white/70'}>{timePart}</span>
                         </div>
                       );
                     })}
