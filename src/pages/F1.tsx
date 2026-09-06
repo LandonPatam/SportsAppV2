@@ -2368,7 +2368,11 @@ const F1 = () => {
                   const raceKey = parseRaceEndDate(race.date);
                   const hasDate = !!race.date && race.date.trim().length > 0 && race.date.trim().toUpperCase() !== 'TBD';
                   const isCanceled = race.start_time_west === 'Canceled';
-                  const isUpcoming = !isCanceled && hasDate && raceKey >= todayKey;
+                  // Match the scraper's completion check; sprint results alone don't finish the GP.
+                  const winner = race.results?.find(result => Number(result.position) === 1);
+                  const winnerTime = String(winner?.race_time ?? '').trim();
+                  const hasRaceResults = !!winner && winnerTime !== '' && winnerTime !== '--';
+                  const isUpcoming = !isCanceled && !hasRaceResults && hasDate && raceKey >= todayKey;
                   const statusColor = isCanceled ? '#ef4444' : isUpcoming ? '#a855f7' : '#22c55e';
                   return (
                     <div
