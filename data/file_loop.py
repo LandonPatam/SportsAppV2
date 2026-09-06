@@ -1,6 +1,10 @@
 import json
 import time
 import subprocess
+import os
+import sys
+import pytz
+from scoreboard_client import acquire_script_lock
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -58,7 +62,7 @@ def get_sport_status(schedule_path: Path) -> dict:
         with open(schedule_path, "r", encoding="utf-8") as f:
             games = json.load(f)
 
-        today = datetime.now().date()
+        today = datetime.now(pytz.timezone("America/Los_Angeles")).date()
 
         for game in games:
             game_date_str = game.get("date", "")
@@ -67,6 +71,10 @@ def get_sport_status(schedule_path: Path) -> dict:
             except:
                 continue
 
+            # Keep games that cross Pacific midnight on the active cadence.
+            if game_date <= today and str(game.get("status", "")).lower() == "live":
+                status["has_live"] = True
+                status["should_run"] = True
             if game_date == today:
                 status["has_today_games"] = True
 
@@ -82,7 +90,7 @@ def get_sport_status(schedule_path: Path) -> dict:
                         status["first_game_time"] = game_time
 
         if status["has_today_games"]:
-            now = datetime.now()
+            now = datetime.now(pytz.timezone("America/Los_Angeles")).replace(tzinfo=None)
             if status["first_game_time"]:
                 start_time = status["first_game_time"] - timedelta(minutes=30)
                 if now >= start_time and not status["all_games_final"]:
@@ -160,88 +168,47 @@ def get_f1_status() -> dict:
 # ==========================================================
 # 🔧 RUNNER
 # ==========================================================
-def run_script(script_path: Path):
-    try:
-        subprocess.run(["python", str(script_path)], check=False)
-        print(f"[RUN] {script_path.name} executed successfully.")
-    except Exception as e:
-        print(f"[ERROR] Running {script_path.name}: {e}")
-
-
-# ==========================================================
-# 🔁 MAIN LOOP
-# ==========================================================
 def main():
-    print("🏀🏈🏎️  Dynamic Sports Scheduler started...")
-
-    last_nba_schedule_run = 0
-    last_nfl_schedule_run = 0
-    last_data_run         = 0
-    last_f1_data_run      = 0
-
-    while True:
-        now = time.time()
-
-        nba_status = get_sport_status(NBA_SCHEDULE_PATH)
-        nfl_status = get_sport_status(NFL_SCHEDULE_PATH)
-        f1_status  = get_f1_status()
-
-        nba_interval = ACTIVE_INTERVAL if nba_status["should_run"] else IDLE_INTERVAL
-        nfl_interval = ACTIVE_INTERVAL if nfl_status["should_run"] else IDLE_INTERVAL
-        f1_interval  = F1_RACE_INTERVAL if f1_status["is_race_weekend"] else F1_IDLE_INTERVAL
-
-        nba_state = "ACTIVE" if nba_status["should_run"] else ("NO GAMES" if not nba_status["has_today_games"] else "FINAL")
-        nfl_state = "ACTIVE" if nfl_status["should_run"] else ("NO GAMES" if not nfl_status["has_today_games"] else "FINAL")
-        f1_state  = "RACE WEEKEND" if f1_status["is_race_weekend"] else "OFF WEEKEND"
-
-        print(f"\n[STATUS] NBA: {nba_state} | NFL: {nfl_state} | F1: {f1_state}", end="")
-        if f1_status["next_race_name"]:
-            label = "Current" if f1_status["is_race_weekend"] else "Next"
-            print(f" ({label}: {f1_status['next_race_name']})", end="")
-        print()
-
-        if nba_status["has_live"]:       print("  🏀 NBA has LIVE games")
-        if nfl_status["has_live"]:       print("  🏈 NFL has LIVE games")
-        if f1_status["is_race_weekend"]: print(f"  🏎️  F1 race weekend — polling every {f1_interval // 60} min")
-
-        # ── NBA schedule ───────────────────────────────────────
-        if now - last_nba_schedule_run >= nba_interval:
-            if nba_status["should_run"] or (now - last_nba_schedule_run >= IDLE_INTERVAL):
-                run_script(NBA_SCHEDULE_SCRIPT)
-                last_nba_schedule_run = now
-
-        # ── NFL schedule ───────────────────────────────────────
-        if now - last_nfl_schedule_run >= nfl_interval:
-            if nfl_status["should_run"] or (now - last_nfl_schedule_run >= IDLE_INTERVAL):
-                run_script(NFL_SCHEDULE_SCRIPT)
-                last_nfl_schedule_run = now
-
-        # ── NBA / NFL data (every 2.5 min) ─────────────────────
-        if now - last_data_run >= DATA_INTERVAL:
-            run_script(NBA_DATA_SCRIPT)
-            run_script(NFL_DATA_SCRIPT)
-            last_data_run = now
-
-        # ── F1 data: race results + driver standings ───────────
-        # Race weekend → every 5 min  |  Off weekend → every 30 min
-        if now - last_f1_data_run >= f1_interval:
-            run_script(F1_DATA_SCRIPT)
-            last_f1_data_run = now
-
-        # ── Sleep until the next thing is due ──────────────────
-        next_runs = [
-            nba_interval  - (now - last_nba_schedule_run),
-            nfl_interval  - (now - last_nfl_schedule_run),
-            DATA_INTERVAL - (now - last_data_run),
-            f1_interval   - (now - last_f1_data_run),
-        ]
-        sleep_time = max(1, min(next_runs))
-        print(f"[SLEEP] {sleep_time:.0f}s\n")
-        time.sleep(sleep_time)
+    scheduler_lock = acquire_script_lock("sports-scheduler")
+    running = {}
+    last_run = {}
+    os.chdir(Path(__file__).resolve().parents[1])
+    try:
+        while True:
+            now = time.monotonic()
+            nba = get_sport_status(NBA_SCHEDULE_PATH)
+            nfl = get_sport_status(NFL_SCHEDULE_PATH)
+            f1 = get_f1_status()
+            jobs = [
+                (NBA_SCHEDULE_SCRIPT, ACTIVE_INTERVAL if nba["should_run"] else IDLE_INTERVAL, nba["should_run"]),
+                (NFL_SCHEDULE_SCRIPT, ACTIVE_INTERVAL if nfl["should_run"] else IDLE_INTERVAL, nfl["should_run"]),
+                (NBA_DATA_SCRIPT, DATA_INTERVAL, False),
+                (NFL_DATA_SCRIPT, DATA_INTERVAL, False),
+                (F1_DATA_SCRIPT, F1_RACE_INTERVAL if f1["is_race_weekend"] else F1_IDLE_INTERVAL, False),
+            ]
+            for script, interval, live_only in jobs:
+                child = running.get(script)
+                if child is not None and child.poll() is None:
+                    continue
+                if now - last_run.get(script, float("-inf")) < interval:
+                    continue
+                env = os.environ.copy()
+                env["SPORTS_LIVE_ONLY"] = "1" if live_only else "0"
+                running[script] = subprocess.Popen([sys.executable, "-u", str(script)], env=env)
+                last_run[script] = now
+            # Slow stats jobs cannot hold up either league's score updates.
+            time.sleep(1)
+    finally:
+        for child in running.values():
+            if child.poll() is None:
+                child.terminate()
+        for child in running.values():
+            try:
+                child.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                child.kill()
+        scheduler_lock.close()
 
 
-# ==========================================================
-# ▶️ ENTRY POINT
-# ==========================================================
 if __name__ == "__main__":
     main()

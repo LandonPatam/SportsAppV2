@@ -1,3 +1,4 @@
+import { pollSchedule } from '@/lib/pollSchedule';
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -896,31 +897,10 @@ const NFL = () => {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  useEffect(() => {
-    let alive = true;
-    const bust = () => `?_=${Date.now()}`;
-    const load = async () => {
-      try {
-        const res = await fetch(`/data/nfl_schedule.json${bust()}`, { cache: 'no-store' });
-        if (!res.ok) return;
-        const text = await res.text();
-        if (!alive) return;
-        let next: NFLScheduleData;
-        try { next = JSON.parse(text) as NFLScheduleData; } catch { return; }
-        setScheduleData((prev) => {
-          const prevText = JSON.stringify(prev ?? null);
-          if (prevText === text) return prev;
-          _cachedSchedule = next;
-          return next;
-        });
-      } catch {}
-    };
-    load();
-    const id = setInterval(load, 30000);
-    const vis = () => { if (document.visibilityState === 'visible') load(); };
-    document.addEventListener('visibilitychange', vis);
-    return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', vis); };
-  }, []);
+  useEffect(() => pollSchedule<NFLScheduleData>('/data/nfl_schedule.json', (next) => {
+    _cachedSchedule = next;
+    setScheduleData(next);
+  }), []);
 
   useEffect(() => {
     let alive = true;

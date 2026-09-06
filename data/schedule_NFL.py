@@ -1,14 +1,20 @@
-import requests
+from scoreboard_client import ScoreboardClient, ScoreboardUnavailable, acquire_script_lock
 import json
 import os
 from datetime import datetime, timedelta
 import pytz
 import time
 
+_script_lock = acquire_script_lock("schedule_NFL")
+scoreboard_client = ScoreboardClient()
+LIVE_ONLY = os.getenv("SPORTS_LIVE_ONLY") == "1"
+
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
 FIND_SCHEDULE = os.getenv("NFL_FIND_SCHEDULE", "").lower() in {"1", "true", "yes"}   # env override to crawl schedule
+if LIVE_ONLY:
+    FIND_SCHEDULE = False
 SAVE_PATH = "public/data/nfl_schedule.json"
 TEMP_PATH = SAVE_PATH + ".tmp"
 VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
@@ -40,8 +46,7 @@ def get_espn_schedule_url(date_obj):
     )
 
 def fetch_espn_events_for_date(date_obj):
-    response = requests.get(get_espn_schedule_url(date_obj), headers=HEADERS, timeout=15)
-    data = response.json()
+    data = scoreboard_client.get_json(get_espn_schedule_url(date_obj), HEADERS)
     return (
         data.get("sports", [])[0]
         .get("leagues", [])[0]
@@ -55,6 +60,8 @@ def find_first_regular_season_event_date(approx_start):
         date_obj = approx_start + timedelta(days=offset)
         try:
             events = fetch_espn_events_for_date(date_obj)
+        except ScoreboardUnavailable:
+            raise
         except Exception:
             continue
 
@@ -141,8 +148,20 @@ def get_season_dates(today: object) -> tuple:
 
     return season_year, season_start, postseason_start, season_end
 
-today = datetime.now().date()
-SEASON_YEAR, SEASON_START_DATE, POSTSEASON_START, SEASON_END_DATE = get_season_dates(today)
+today = datetime.now(PACIFIC).date()
+if LIVE_ONLY:
+    with open(SAVE_PATH, encoding="utf-8-sig") as live_file:
+        live_schedule = json.load(live_file)
+    known_dates = [datetime.strptime(g["date"], "%Y-%m-%d").date()
+                   for g in live_schedule if g.get("date")]
+    known_start = min(known_dates)
+    known_year = known_start.year if known_start.month >= 7 else known_start.year - 1
+    # Reuse the published season without network discovery during live polling.
+    SEASON_YEAR, SEASON_START_DATE = known_year, known_start
+    POSTSEASON_START = known_start + timedelta(weeks=18)
+    SEASON_END_DATE = datetime(known_year + 1, 2, 16).date()
+else:
+    SEASON_YEAR, SEASON_START_DATE, POSTSEASON_START, SEASON_END_DATE = get_season_dates(today)
 print(f"Active season: {SEASON_YEAR} | Start: {SEASON_START_DATE} | "
       f"Postseason: {POSTSEASON_START} | End: {SEASON_END_DATE}")
 
@@ -239,7 +258,7 @@ seen_ids = {g.get("game_id") for g in schedule if g.get("game_id")}
 _crawl_start_date = SEASON_START_DATE
 
 if not FIND_SCHEDULE:
-    if POSTSEASON_START <= today <= SEASON_END_DATE:
+    if not LIVE_ONLY and POSTSEASON_START <= today <= SEASON_END_DATE:
         last_scan = None
         if os.path.exists(_STATE_PATH):
             try:
@@ -282,9 +301,10 @@ if FIND_SCHEDULE:
         )
 
         print(f"Fetching {date_str_param} ...")
-        response = requests.get(url, headers=HEADERS)
         try:
-            data = response.json()
+            data = scoreboard_client.get_json(url, HEADERS)
+        except ScoreboardUnavailable:
+            raise
         except Exception:
             print("Invalid or empty JSON – skipping.")
             current_date += timedelta(days=1)
@@ -425,6 +445,9 @@ else:
         if game_date > today:
             continue
 
+        if LIVE_ONLY and game_date < today - timedelta(days=1) and game.get("status") != "live":
+            continue
+
         # Only skip if the game is truly complete with all data populated.
         # This allows games with null values to be updated.
         if (game.get("status") == "final" and 
@@ -445,9 +468,10 @@ else:
             f"&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={date_str_param}"
         )
 
-        response = requests.get(url, headers=HEADERS)
         try:
-            data = response.json()
+            data = scoreboard_client.get_json(url, HEADERS)
+        except ScoreboardUnavailable:
+            raise
         except Exception:
             continue
 
@@ -519,7 +543,7 @@ else:
                 updated_count += 1
                 print(f"Updated final: {game.get('matchup')} - {winner} wins {away_score}-{home_score}")
 
-            elif is_live and game_date == today:
+            elif is_live:
                 game.update({
                     "home_score": home_score,
                     "away_score": away_score,
@@ -544,7 +568,6 @@ else:
             # Break after finding the matching game — no need to keep scanning
             break
 
-        time.sleep(SLEEP_BETWEEN_CALLS)
 
     print(f"\nUpdate complete: {updated_count} games finalized, {live_count} games live, {total_checked} total checked")
 

@@ -1,3 +1,4 @@
+import { pollSchedule } from '@/lib/pollSchedule';
 // ============================
 // 🏀 NBA Dashboard
 // Displays NBA team standings and top player stats
@@ -3880,74 +3881,15 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, [autoRefresh, selectedSeasonId]);
 
-// Lightweight schedule-only polling
-// - Every 30s if there are live games, every 5 min otherwise
-// - Silently skips corrupt/partial JSON (mid-write race condition)
+// Live scores refresh from local JSON every 5s; idle schedules every 30s.
 useEffect(() => {
-  let cancelled = false;
   if (!autoRefresh) return;
-
-  const fetchScheduleOnly = async () => {
-    try {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      const scheduleFile = selectedSeason?.schedule || 'nba_schedule.json';
-      const resp = await fetch(`/data/${scheduleFile}?_=` + Date.now(), { cache: 'no-store' });
-      if (!resp.ok || cancelled) return;
-      const text = await resp.text();
-      if (cancelled) return;
-      // Validate JSON before applying — silently drop partial writes
-      let next: NBAScheduleData;
-      try {
-        next = JSON.parse(text) as NBAScheduleData;
-      } catch {
-        return; // mid-write race — skip this cycle
-      }
-      setScheduleData((prev) => {
-        const prevText = JSON.stringify(prev ?? null);
-        if (prevText === text) return prev;
-        _cachedSchedule = next;
-        return next;
-      });
-    } catch {}
-  };
-
-  // Determine poll interval based on whether any game is currently live
-  const getLiveGames = () => {
-    try {
-      const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
-        ? (scheduleData as ScheduleGameAny[])
-        : ((scheduleData as any)?.games || []);
-      return gamesArr.some((g: any) => g.status === 'live');
-    } catch { return false; }
-  };
-
-  let id: ReturnType<typeof setInterval>;
-  const start = () => {
-    const hasLive = getLiveGames();
-    const interval = hasLive ? 30_000 : 5 * 60_000;
-    id = setInterval(() => {
-      if (cancelled) return;
-      fetchScheduleOnly();
-      // Re-evaluate interval each cycle
-      clearInterval(id);
-      if (!cancelled) start();
-    }, interval);
-  };
-
-  fetchScheduleOnly();
-  start();
-
-  const vis = () => {
-    if (document.visibilityState === 'visible') fetchScheduleOnly();
-  };
-  document.addEventListener('visibilitychange', vis);
-
-  return () => {
-    cancelled = true;
-    clearInterval(id);
-    document.removeEventListener('visibilitychange', vis);
-  };
-}, [autoRefresh, scheduleData, selectedSeason?.schedule]);
+  const scheduleFile = selectedSeason?.schedule || 'nba_schedule.json';
+  return pollSchedule<NBAScheduleData>(`/data/${scheduleFile}`, (next) => {
+    _cachedSchedule = next;
+    setScheduleData(next);
+  });
+}, [autoRefresh, selectedSeason?.schedule]);
 
 
 // Compute league averages for ALL team stats
