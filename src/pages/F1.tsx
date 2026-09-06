@@ -30,6 +30,8 @@ interface F1Race {
   track_svg: string;
   track_svg_extracted?: string;
   session_times?: Record<string, string>; // e.g. { "Race": "March 15 at 12:00 AM PST", ... }
+  results?: any[];
+  sprint_results?: any[];
   urls: {
     race_page: string;
     circuit_info: string;
@@ -805,12 +807,16 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }, []);
 
-  // Start at the next upcoming race
+  // Start at the current race until standings points land, then advance.
   const initialIndex = useMemo(() => {
-    if (dateKeys.length === 0) return 0;
-    const idx = dateKeys.findIndex((k) => k >= todayKey);
-    return idx >= 0 ? idx : dateKeys.length - 1;
-  }, [dateKeys, todayKey]);
+    if (racesWithKeys.length === 0) return 0;
+    const idx = racesWithKeys.findIndex(({ race, dateKey }) => {
+      if (dateKey > todayKey) return true;
+      if (dateKey === todayKey) return !hasRacePointsUpdated(race, teamsData);
+      return !hasRacePointsUpdated(race, teamsData);
+    });
+    return idx >= 0 ? idx : racesWithKeys.length - 1;
+  }, [racesWithKeys, teamsData, todayKey]);
 
   const [index, setIndex] = useState(initialIndex);
   useEffect(() => { setIndex(initialIndex); }, [initialIndex]);
@@ -1475,8 +1481,8 @@ const PTS_TO_POS: Record<number, string> = {
    8: '6th',  6: '7th',  4: '8th',  2: '9th',  1: '10th',
 };
 const RACE_ABBREVS = [
-  'AUS', 'CHN', 'JPN', 'BRN', 'SAU', 'MIA', 'CAN', 'MON', 'ESP', 'AUT', 'GBR', 'BEL',
-  'HUN', 'NED', 'ITA2', 'AZB', 'SIN', 'USA', 'MEX', 'BRA', 'LAS', 'QAT', 'ARE',
+  'AUS', 'CHN', 'JPN', 'BRN', 'SAU', 'MIA', 'CAN', 'MCO', 'BAR', 'AUT', 'GBR', 'BEL',
+  'HUN', 'NLD', 'ITA', 'ESP', 'AZE', 'SGP', 'USA', 'MEX', 'BRA', 'LAS', 'QAT', 'UAE',
 ];
 const RACE_POINTS_BY_POSITION: Record<number, number> = {
   1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1,
@@ -1488,6 +1494,20 @@ const SPRINT_POINTS_BY_POSITION: Record<number, number> = {
 function getRaceAbbrev(race: { race_number?: number }): string | null {
   if (!race.race_number) return null;
   return RACE_ABBREVS[race.race_number - 1] ?? null;
+}
+
+function hasRacePointsUpdated(race: F1Race, teamsData: F1Team[]): boolean {
+  const abbrev = getRaceAbbrev(race);
+  if (!abbrev) return false;
+
+  if ((race.results?.length ?? 0) > 0 || (race.sprint_results?.length ?? 0) > 0) {
+    return true;
+  }
+
+  return teamsData.some((team: any) => {
+    if (typeof team.team_race_points?.[abbrev] === 'number') return true;
+    return (team.drivers ?? []).some((driver: any) => typeof driver.race_points?.[abbrev] === 'number');
+  });
 }
 
 function getCanceledRaceMap(calendarData: F1Race[]): Record<string, boolean> {
@@ -2161,7 +2181,7 @@ const F1 = () => {
                   <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                   </div>
                 ) : (
-                  <RaceCalendarNavigator races={calendarData} />
+                  <RaceCalendarNavigator races={calendarData} teamsData={standingsTeamsData} />
                 )}
               </div>
 

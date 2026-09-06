@@ -21,10 +21,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/AZ",
     "link": "https://www.nfl.com/teams/arizona-cardinals/",
-    "fpi": "-5.2",
-    "fpirank": "29",
-    "epa_offense": "-2.8",
-    "epa_defense": "-2.3",
+    "fpi": "-5.4",
+    "fpirank": "31",
+    "epa_offense": "-2.7",
+    "epa_defense": "-2.6",
     "epa_special": "-0.1"
   },
   {
@@ -49,10 +49,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/ATL",
     "link": "https://www.nfl.com/teams/atlanta-falcons/",
-    "fpi": "-1.5",
+    "fpi": "-1.8",
     "fpirank": "24",
-    "epa_offense": "-1.0",
-    "epa_defense": "-0.9",
+    "epa_offense": "-1.1",
+    "epa_defense": "-1.1",
     "epa_special": "0.4"
   },
   {
@@ -77,9 +77,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/BAL",
     "link": "https://www.nfl.com/teams/baltimore-ravens/",
-    "fpi": "3.7",
-    "fpirank": "3",
-    "epa_offense": "3.0",
+    "fpi": "3.5",
+    "fpirank": "4",
+    "epa_offense": "2.8",
     "epa_defense": "0.7",
     "epa_special": "-0.0"
   },
@@ -105,11 +105,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/BUF",
     "link": "https://www.nfl.com/teams/buffalo-bills/",
-    "fpi": "4.0",
+    "fpi": "4.1",
     "fpirank": "2",
     "epa_offense": "3.9",
-    "epa_defense": "0.1",
-    "epa_special": "-0.0"
+    "epa_defense": "0.2",
+    "epa_special": "0.0"
   },
   {
     "name": "Carolina Panthers",
@@ -133,11 +133,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/CAR",
     "link": "https://www.nfl.com/teams/carolina-panthers/",
-    "fpi": "-3.0",
+    "fpi": "-2.9",
     "fpirank": "26",
-    "epa_offense": "-2.2",
+    "epa_offense": "-2.1",
     "epa_defense": "-0.7",
-    "epa_special": "-0.0"
+    "epa_special": "-0.1"
   },
   {
     "name": "Chicago Bears",
@@ -161,10 +161,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/CHI",
     "link": "https://www.nfl.com/teams/chicago-bears/",
-    "fpi": "1.2",
-    "fpirank": "16",
-    "epa_offense": "0.7",
-    "epa_defense": "0.5",
+    "fpi": "1.1",
+    "fpirank": "17",
+    "epa_offense": "0.6",
+    "epa_defense": "0.4",
     "epa_special": "0.0"
   },
   {
@@ -189,11 +189,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/CIN",
     "link": "https://www.nfl.com/teams/cincinnati-bengals/",
-    "fpi": "1.6",
+    "fpi": "1.8",
     "fpirank": "12",
-    "epa_offense": "2.5",
-    "epa_defense": "-0.8",
-    "epa_special": "-0.0"
+    "epa_offense": "2.6",
+    "epa_defense": "-0.7",
+    "epa_special": "0.0"
   },
   {
     "name": "Cleveland Browns",
@@ -217,11 +217,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/CLE",
     "link": "https://www.nfl.com/teams/cleveland-browns/",
-    "fpi": "-5.5",
+    "fpi": "-5.3",
     "fpirank": "30",
-    "epa_offense": "-5.3",
+    "epa_offense": "-5.2",
     "epa_defense": "-0.2",
-    "epa_special": "0.1"
+    "epa_special": "0.0"
   },
   {
     "name": "Dallas Cowboys",
@@ -245,9 +245,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/DAL",
     "link": "https://www.nfl.com/teams/dallas-cowboys/",
-    "fpi": "1.8",
+    "fpi": "1.9",
     "fpirank": "11",
-    "epa_offense": "1.8",
+    "epa_offense": "1.9",
     "epa_defense": "-0.2",
     "epa_special": "0.2"
   },
@@ -273,9 +273,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/DEN",
     "link": "https://www.nfl.com/teams/denver-broncos/",
-    "fpi": "1.3",
+    "fpi": "1.5",
     "fpirank": "15",
-    "epa_offense": "-0.1",
+    "epa_offense": "0.1",
     "epa_defense": "1.4",
     "epa_special": "-0.0"
   },
@@ -301,11 +301,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/DET",
     "link": "https://www.nfl.com/teams/detroit-lions/",
-    "fpi": "2.5",
+    "fpi": "2.6",
     "fpirank": "8",
     "epa_offense": "2.6",
     "epa_defense": "0.0",
-    "epa_special": "-0.1"
+    "epa_special": "0.0"
   },
   {
     "name": "Green Bay Packers",
@@ -329,8 +329,8 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/GB",
     "link": "https://www.nfl.com/teams/green-bay-packers/",
-    "fpi": "2.8",
-    "fpirank": "6",
+    "fpi": "2.7",
+    "fpirank": "7",
     "epa_offense": "3.0",
     "epa_defense": "-0.1",
     "epa_special": "-0.1"
@@ -357,10 +357,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/HOU",
     "link": "https://www.nfl.com/teams/houston-texans/",
-    "fpi": "1.4",
+    "fpi": "1.7",
     "fpirank": "13",
-    "epa_offense": "-0.6",
-    "epa_defense": "1.9",
+    "epa_offense": "-0.5",
+    "epa_defense": "2.0",
     "epa_special": "0.2"
   },
   {
@@ -385,11 +385,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/IND",
     "link": "https://www.nfl.com/teams/indianapolis-colts/",
-    "fpi": "-0.6",
-    "fpirank": "20",
-    "epa_offense": "0.4",
-    "epa_defense": "-0.9",
-    "epa_special": "-0.1"
+    "fpi": "-0.4",
+    "fpirank": "19",
+    "epa_offense": "0.3",
+    "epa_defense": "-0.8",
+    "epa_special": "0.1"
   },
   {
     "name": "Jacksonville Jaguars",
@@ -413,9 +413,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/JAX",
     "link": "https://www.nfl.com/teams/jacksonville-jaguars/",
-    "fpi": "1.0",
-    "fpirank": "17",
-    "epa_offense": "-0.0",
+    "fpi": "1.1",
+    "fpirank": "16",
+    "epa_offense": "0.1",
     "epa_defense": "0.8",
     "epa_special": "0.2"
   },
@@ -441,10 +441,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/KC",
     "link": "https://www.nfl.com/teams/kansas-city-chiefs/",
-    "fpi": "2.4",
+    "fpi": "2.5",
     "fpirank": "9",
-    "epa_offense": "1.6",
-    "epa_defense": "0.8",
+    "epa_offense": "1.7",
+    "epa_defense": "0.9",
     "epa_special": "-0.0"
   },
   {
@@ -469,11 +469,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/LV",
     "link": "https://www.nfl.com/teams/las-vegas-raiders/",
-    "fpi": "-4.6",
+    "fpi": "-4.7",
     "fpirank": "28",
-    "epa_offense": "-3.7",
-    "epa_defense": "-0.8",
-    "epa_special": "-0.1"
+    "epa_offense": "-3.6",
+    "epa_defense": "-0.9",
+    "epa_special": "-0.2"
   },
   {
     "name": "Los Angeles Chargers",
@@ -497,9 +497,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/LAC",
     "link": "https://www.nfl.com/teams/los-angeles-chargers/",
-    "fpi": "2.6",
-    "fpirank": "7",
-    "epa_offense": "0.7",
+    "fpi": "2.9",
+    "fpirank": "6",
+    "epa_offense": "1.0",
     "epa_defense": "1.6",
     "epa_special": "0.3"
   },
@@ -525,10 +525,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/LA",
     "link": "https://www.nfl.com/teams/los-angeles-rams/",
-    "fpi": "5.6",
+    "fpi": "5.9",
     "fpirank": "1",
-    "epa_offense": "3.9",
-    "epa_defense": "1.5",
+    "epa_offense": "4.1",
+    "epa_defense": "1.6",
     "epa_special": "0.1"
   },
   {
@@ -553,10 +553,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/MIA",
     "link": "https://www.nfl.com/teams/miami-dolphins/",
-    "fpi": "-5.8",
+    "fpi": "-6.1",
     "fpirank": "32",
-    "epa_offense": "-3.3",
-    "epa_defense": "-2.5",
+    "epa_offense": "-3.6",
+    "epa_defense": "-2.6",
     "epa_special": "0.0"
   },
   {
@@ -582,9 +582,9 @@
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/MIN",
     "link": "https://www.nfl.com/teams/minnesota-vikings/",
     "fpi": "-0.4",
-    "fpirank": "19",
-    "epa_offense": "-1.7",
-    "epa_defense": "1.1",
+    "fpirank": "20",
+    "epa_offense": "-2.2",
+    "epa_defense": "1.6",
     "epa_special": "0.2"
   },
   {
@@ -609,9 +609,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/NE",
     "link": "https://www.nfl.com/teams/new-england-patriots/",
-    "fpi": "1.4",
+    "fpi": "1.5",
     "fpirank": "14",
-    "epa_offense": "1.0",
+    "epa_offense": "1.1",
     "epa_defense": "0.6",
     "epa_special": "-0.2"
   },
@@ -637,7 +637,7 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/NO",
     "link": "https://www.nfl.com/teams/new-orleans-saints/",
-    "fpi": "-2.7",
+    "fpi": "-2.8",
     "fpirank": "25",
     "epa_offense": "-2.3",
     "epa_defense": "-0.4",
@@ -665,11 +665,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/NYG",
     "link": "https://www.nfl.com/teams/new-york-giants/",
-    "fpi": "-1.2",
+    "fpi": "-1.5",
     "fpirank": "23",
-    "epa_offense": "-0.4",
-    "epa_defense": "-0.8",
-    "epa_special": "0.0"
+    "epa_offense": "-0.5",
+    "epa_defense": "-1.0",
+    "epa_special": "-0.1"
   },
   {
     "name": "New York Jets",
@@ -693,11 +693,11 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/NYJ",
     "link": "https://www.nfl.com/teams/new-york-jets/",
-    "fpi": "-5.5",
-    "fpirank": "31",
-    "epa_offense": "-3.5",
-    "epa_defense": "-1.9",
-    "epa_special": "-0.2"
+    "fpi": "-4.7",
+    "fpirank": "29",
+    "epa_offense": "-3.3",
+    "epa_defense": "-1.6",
+    "epa_special": "0.2"
   },
   {
     "name": "Philadelphia Eagles",
@@ -721,10 +721,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/PHI",
     "link": "https://www.nfl.com/teams/philadelphia-eagles/",
-    "fpi": "2.0",
+    "fpi": "2.1",
     "fpirank": "10",
     "epa_offense": "0.7",
-    "epa_defense": "1.5",
+    "epa_defense": "1.6",
     "epa_special": "-0.2"
   },
   {
@@ -749,10 +749,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/PIT",
     "link": "https://www.nfl.com/teams/pittsburgh-steelers/",
-    "fpi": "-0.9",
-    "fpirank": "22",
-    "epa_offense": "-1.3",
-    "epa_defense": "0.1",
+    "fpi": "-0.6",
+    "fpirank": "21",
+    "epa_offense": "-1.0",
+    "epa_defense": "0.2",
     "epa_special": "0.3"
   },
   {
@@ -777,10 +777,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/SF",
     "link": "https://www.nfl.com/teams/san-francisco-49ers/",
-    "fpi": "3.3",
+    "fpi": "3.0",
     "fpirank": "5",
-    "epa_offense": "3.2",
-    "epa_defense": "-0.1",
+    "epa_offense": "3.0",
+    "epa_defense": "-0.2",
     "epa_special": "0.2"
   },
   {
@@ -806,10 +806,10 @@
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/SEA",
     "link": "https://www.nfl.com/teams/seattle-seahawks/",
     "fpi": "3.6",
-    "fpirank": "4",
+    "fpirank": "3",
     "epa_offense": "1.3",
-    "epa_defense": "2.2",
-    "epa_special": "0.1"
+    "epa_defense": "2.1",
+    "epa_special": "0.2"
   },
   {
     "name": "Tampa Bay Buccaneers",
@@ -833,9 +833,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/TB",
     "link": "https://www.nfl.com/teams/tampa-bay-buccaneers/",
-    "fpi": "0.1",
+    "fpi": "0.0",
     "fpirank": "18",
-    "epa_offense": "0.6",
+    "epa_offense": "0.5",
     "epa_defense": "-0.7",
     "epa_special": "0.2"
   },
@@ -861,9 +861,9 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/TEN",
     "link": "https://www.nfl.com/teams/tennessee-titans/",
-    "fpi": "-3.9",
+    "fpi": "-4.0",
     "fpirank": "27",
-    "epa_offense": "-3.3",
+    "epa_offense": "-3.4",
     "epa_defense": "-0.5",
     "epa_special": "-0.1"
   },
@@ -889,10 +889,10 @@
     "Last5": "- -",
     "logo": "https://static.www.nfl.com/t_q-best/league/api/clubs/logos/WAS",
     "link": "https://www.nfl.com/teams/washington-commanders/",
-    "fpi": "-0.8",
-    "fpirank": "21",
-    "epa_offense": "0.4",
-    "epa_defense": "-0.9",
-    "epa_special": "-0.4"
+    "fpi": "-1.4",
+    "fpirank": "22",
+    "epa_offense": "-0.1",
+    "epa_defense": "-1.2",
+    "epa_special": "-0.1"
   }
 ]
