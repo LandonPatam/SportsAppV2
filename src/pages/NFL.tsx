@@ -118,14 +118,20 @@ interface NFLScheduleGame {
   location?: string;
   game_link?: string;
   status?: string;    // scheduled | live | final
-  home_score?: number;
-  away_score?: number;
+  home_score?: number | string | null;
+  away_score?: number | string | null;
   period?: number;    // quarter (1-4, or 5 for OT)
   clock?: string;     // e.g. "2:35"
   ts_utc?: number;    // kickoff timestamp (UTC) for reliable sorting
 }
 
 type NFLScheduleData = NFLScheduleGame[];
+
+function parseScore(value: unknown): number {
+  if (value === null || value === undefined || value === '') return Number.NaN;
+  const score = Number(value);
+  return Number.isFinite(score) ? score : Number.NaN;
+}
 
 type SortField =
   | 'WIN_PCT'
@@ -1885,8 +1891,8 @@ const DashboardTodayScheduleNFL = ({
           const homeLogo = normalizedHomeAbbr ? logoMap[normalizedHomeAbbr] : undefined;
           const awayRecord = normalizedAwayAbbr ? recordMap[normalizedAwayAbbr] : undefined;
           const homeRecord = normalizedHomeAbbr ? recordMap[normalizedHomeAbbr] : undefined;
-          const aScore = Number(g.away_score);
-          const hScore = Number(g.home_score);
+          const aScore = parseScore(g.away_score);
+          const hScore = parseScore(g.home_score);
           const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
           const statusText = String(g.status || '').toLowerCase();
           const isFinal = statusText.includes('final') || statusText === 'f' || Boolean((g as any).winner);
@@ -2211,8 +2217,8 @@ const ScheduleNFLViewV2 = ({
             const homeLogo = homeAbbr ? logoMap[homeAbbr] : undefined;
             const awayRecord = awayAbbr ? recordMap[awayAbbr] : undefined;
             const homeRecord = homeAbbr ? recordMap[homeAbbr] : undefined;
-            const aScore = Number(g.away_score);
-            const hScore = Number(g.home_score);
+            const aScore = parseScore(g.away_score);
+            const hScore = parseScore(g.home_score);
             const hasScores = Number.isFinite(aScore) && Number.isFinite(hScore);
             const awayWin = hasScores ? aScore >= hScore : false;
             const homeWin = hasScores ? hScore >= aScore : false;

@@ -243,6 +243,12 @@ type NBAScheduleData =
   | { teams?: Record<string, string>; games?: ScheduleGameAny[] }
   | ScheduleGameAny[];
 
+function parseScore(value: unknown): number {
+  if (value === null || value === undefined || value === '') return Number.NaN;
+  const score = Number(value);
+  return Number.isFinite(score) ? score : Number.NaN;
+}
+
 interface NBASeasonOption {
   id: string;
   label: string;
@@ -509,8 +515,8 @@ const computeStreakMap = (scheduleData: NBAScheduleData | null): Record<string, 
   const finished = gamesArr.filter((g) => {
     const status = String((g as any).status || '').toLowerCase();
     const isFinal = status.includes('final') || Boolean((g as any).winner);
-    const aScore = Number((g as any).away_score);
-    const hScore = Number((g as any).home_score);
+    const aScore = parseScore((g as any).away_score);
+    const hScore = parseScore((g as any).home_score);
     return isFinal && Number.isFinite(aScore) && Number.isFinite(hScore);
   });
 
@@ -528,8 +534,8 @@ const computeStreakMap = (scheduleData: NBAScheduleData | null): Record<string, 
       if (hn) homeAbbr = (teamAbbreviations as any)[hn] ?? homeAbbr;
     }
     if (!awayAbbr || !homeAbbr) continue;
-    const aScore = Number((g as any).away_score);
-    const hScore = Number((g as any).home_score);
+    const aScore = parseScore((g as any).away_score);
+    const hScore = parseScore((g as any).home_score);
     const awayWon = aScore > hScore;
     const awayKey = awayAbbr.toUpperCase();
     const homeKey = homeAbbr.toUpperCase();
@@ -2803,8 +2809,8 @@ const PlayerModal = ({
     let losses = 0;
     let ties = 0;
     return teamMatchups.map((game) => {
-      const teamScore = Number(game.isHome ? (game as any).home_score : (game as any).away_score);
-      const opponentScore = Number(game.isHome ? (game as any).away_score : (game as any).home_score);
+      const teamScore = parseScore(game.isHome ? (game as any).home_score : (game as any).away_score);
+      const opponentScore = parseScore(game.isHome ? (game as any).away_score : (game as any).home_score);
       let outcome: 'W' | 'L' | 'T' | null = null;
       if (Number.isFinite(teamScore) && Number.isFinite(opponentScore)) {
         if (teamScore > opponentScore) {
