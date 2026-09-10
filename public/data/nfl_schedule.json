@@ -9,10 +9,11 @@
       "NBC"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872656/patriots-seahawks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1788999600
+    "home_score": "13",
+    "away_score": "10",
+    "ts_utc": 1788999600,
+    "status": "final",
+    "winner": "Seattle Seahawks"
   },
   {
     "game_id": "401872657",

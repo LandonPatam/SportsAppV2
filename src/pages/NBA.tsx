@@ -1013,12 +1013,12 @@ const DashboardTodaySchedule = ({
 
                 {/* --- Center Score / Time --- */}
                 <div className="flex items-center justify-center shrink-0 z-10 relative" style={{ width: scoreColWidth }}>
-                  {hasScores ? (
+                  {hasScores || isLive ? (
                     <>
                       <div className="font-extrabold tracking-wide flex items-center justify-center gap-3" style={{ fontSize: scoreSize }}>
-                        <span className={awayScoreClass}>{aScore}</span>
+                        <span className={awayScoreClass}>{hasScores ? aScore : 0}</span>
                         <span className="text-muted-foreground/50 text-[0.8em]">-</span>
-                        <span className={homeScoreClass}>{hScore}</span>
+                        <span className={homeScoreClass}>{hasScores ? hScore : 0}</span>
                       </div>
                       {/* Show quarter and time for live games - positioned absolutely below score */}
                       {isLive && (g.period || g.clock) && (
@@ -1693,12 +1693,12 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
 
                       {/* Center time or score */}
                       <div className="flex items-center justify-center relative">
-                        {hasScores ? (
+                        {hasScores || isLiveGame ? (
                           <>
                             <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
-                              <span className={awayScoreClass}>{aScore}</span>
+                              <span className={awayScoreClass}>{hasScores ? aScore : 0}</span>
                               <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
-                              <span className={homeScoreClass}>{hScore}</span>
+                              <span className={homeScoreClass}>{hasScores ? hScore : 0}</span>
                             </div>
                             {isLiveGame && (g.period || g.clock) && (
                               <div className="absolute top-full text-white/90 font-black tracking-wide text-center whitespace-nowrap" style={{ fontSize: liveFontSize, marginTop: "0.2cqi" }}>
@@ -3287,11 +3287,18 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                                   LIVE
                                 </Badge>
                               )}
-                              {hasScore ? (
-                                <div className="text-2xl font-black tracking-wide">
-                                  <span className={awayWin ? 'text-white' : 'text-white/40'}>{awayScore}</span>
+                              {hasScore || isLive ? (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <div className="text-2xl font-black tracking-wide">
+                                    <span className={hasScore && awayWin ? 'text-white' : 'text-white/40'}>{hasScore ? awayScore : 0}</span>
                                   <span className="mx-2 text-muted-foreground">-</span>
-                                  <span className={homeWin ? 'text-white' : 'text-white/40'}>{homeScore}</span>
+                                    <span className={hasScore && homeWin ? 'text-white' : 'text-white/40'}>{hasScore ? homeScore : 0}</span>
+                                  </div>
+                                  {((game as any).period || (game as any).clock) && (
+                                    <span className="text-xs font-bold text-white/90">
+                                      {(game as any).period ? `Q${(game as any).period}` : ''}{(game as any).period && (game as any).clock ? ' · ' : ''}{(game as any).clock || ''}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="text-lg font-bold">{game.time || 'TBA'}</div>

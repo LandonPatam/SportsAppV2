@@ -1931,7 +1931,18 @@ const DashboardTodayScheduleNFL = ({
                   {/* Center */}
                   <div className="text-center">
                     {isLive ? (
-                      <Badge className="bg-red-600 text-white animate-pulse font-black tracking-wide px-3 py-1 text-xs">LIVE</Badge>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <div className="font-black tracking-wide tabular-nums" style={{ fontSize: scoreFont }}>
+                          <span className={awayWin ? 'text-white' : 'text-white/50'}>{hasScores ? aScore : 0}</span>
+                          <span className="mx-2 text-muted-foreground">-</span>
+                          <span className={homeWin ? 'text-white' : 'text-white/50'}>{hasScores ? hScore : 0}</span>
+                        </div>
+                        {(g.period || g.clock) && (
+                          <span className="text-white/90 font-black tracking-wide text-xs">
+                            {g.period ? `Q${g.period}` : ''}{g.period && g.clock ? ' · ' : ''}{g.clock || ''}
+                          </span>
+                        )}
+                      </div>
                     ) : showScore ? (
                       <div className="font-black tracking-wide tabular-nums" style={{ fontSize: scoreFont }}>
                         <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
@@ -2203,7 +2214,8 @@ const ScheduleNFLViewV2 = ({
             const awayWin = hasScores ? aScore >= hScore : false;
             const homeWin = hasScores ? hScore >= aScore : false;
             const isFinal = String(g.status || '').toLowerCase().includes('final') || Boolean((g as any).winner);
-            const isLiveGame = String(g.status || '').toLowerCase().includes('live');
+            const statusText = String(g.status || '').toLowerCase();
+            const isLiveGame = statusText.includes('live') || statusText.includes('in progress');
             const period = (g as any).period;
             const clock = (g as any).clock;
 
@@ -2295,10 +2307,14 @@ const ScheduleNFLViewV2 = ({
                               </div>
                             );
                           }
-                          if (s.includes('live')) {
+                          if (s.includes('live') || s.includes('in progress')) {
                             return (
                               <div className="flex flex-col items-center gap-0.5">
-                                <Badge className="bg-red-600 text-white animate-pulse font-black tracking-wide px-2.5 py-0.5 text-[10px]">LIVE</Badge>
+                                <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
+                                  <span className={awayWin ? 'text-white' : 'text-white/50'}>{hasScores ? aScore : 0}</span>
+                                  <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
+                                  <span className={homeWin ? 'text-white' : 'text-white/50'}>{hasScores ? hScore : 0}</span>
+                                </div>
                                 {(period || clock) && (
                                   <span className="text-white/90 font-black tracking-wide" style={{ fontSize: liveFontSize }}>
                                     {period ? `Q${period}` : ''}{period && clock ? ' · ' : ''}{clock || ''}
