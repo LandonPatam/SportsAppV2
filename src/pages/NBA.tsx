@@ -1573,34 +1573,6 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                   }
                 }}
               >
-                {/* Pulsing red dot for live games */}
-                {isLiveGame && (
-                  <>
-                    <style>
-                      {`
-                        @keyframes pulse {
-                          0%, 100% {
-                            opacity: 1;
-                            transform: scale(1);
-                          }
-                          50% {
-                            opacity: 0.6;
-                            transform: scale(1.1);
-                          }
-                        }
-                      `}
-                    </style>
-                    <div 
-                      className="absolute top-2 left-2 z-10 sched-live-dot"
-                      style={{
-                        borderRadius: '50%',
-                        backgroundColor: '#ffffff',
-                        boxShadow: '0 0 6px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4)',
-                        animation: 'pulse 1.5s ease-in-out infinite'
-                      }}
-                    />
-                  </>
-                )}
                 {/* Gradient background */}
                 <div 
                   className="absolute inset-0" 
@@ -1634,7 +1606,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                   </div>
                 )}
 
-                <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+                <style>{`@keyframes liveBadgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } } .sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
                 {isPlayoff && seriesNote && (
                   <div className="absolute left-0 right-0 text-white/50 font-black tracking-wide truncate text-center px-2 z-20" style={{ top: '2px', fontSize: recordFontSize }}>
                     {seriesNote.replace(/\s*if necessary/i, '*')}
@@ -1695,6 +1667,14 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                       <div className="flex items-center justify-center relative">
                         {hasScores || isLiveGame ? (
                           <>
+                            {isLiveGame && (
+                              <span
+                                className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-600 px-2 py-0.5 font-black tracking-[0.16em] text-white shadow-md"
+                                style={{ fontSize: liveFontSize, animation: 'liveBadgePulse 2.4s ease-in-out infinite' }}
+                              >
+                                LIVE
+                              </span>
+                            )}
                             <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
                               <span className={awayScoreClass}>{hasScores ? aScore : 0}</span>
                               <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>

@@ -8,7 +8,7 @@
             {
                 "name": "Franco Colapinto",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/alpine/fracol01/2026alpinefracol01right.webp",
-                "points": 21,
+                "points": 27,
                 "race_points": {
                     "AUS": null,
                     "CHN": 1,
@@ -25,7 +25,7 @@
                     "HUN": null,
                     "NLD": null,
                     "ITA": 2,
-                    "ESP": null,
+                    "ESP": 6,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -70,7 +70,7 @@
                 }
             }
         ],
-        "team_points": 62,
+        "team_points": 68,
         "team_race_points": {
             "AUS": 1,
             "CHN": 9,
@@ -87,7 +87,7 @@
             "HUN": null,
             "NLD": 2,
             "ITA": 8,
-            "ESP": null,
+            "ESP": 6,
             "AZE": null,
             "MYS": null,
             "SGP": null,
@@ -240,7 +240,7 @@
             {
                 "name": "Nico Hulkenberg",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/audi/nichul01/2026audinichul01right.webp",
-                "points": 6,
+                "points": 7,
                 "race_points": {
                     "AUS": null,
                     "CHN": null,
@@ -257,7 +257,7 @@
                     "HUN": 2,
                     "NLD": 4,
                     "ITA": null,
-                    "ESP": null,
+                    "ESP": 1,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -270,7 +270,7 @@
                 }
             }
         ],
-        "team_points": 16,
+        "team_points": 17,
         "team_race_points": {
             "AUS": 2,
             "CHN": null,
@@ -287,7 +287,7 @@
             "HUN": 2,
             "NLD": 4,
             "ITA": null,
-            "ESP": null,
+            "ESP": 1,
             "AZE": null,
             "MYS": null,
             "SGP": null,
@@ -440,7 +440,7 @@
             {
                 "name": "Charles Leclerc",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/ferrari/chalec01/2026ferrarichalec01right.webp",
-                "points": 155,
+                "points": 167,
                 "race_points": {
                     "AUS": 15,
                     "CHN": 19,
@@ -457,7 +457,7 @@
                     "HUN": 12,
                     "NLD": 17,
                     "ITA": null,
-                    "ESP": null,
+                    "ESP": 12,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -470,7 +470,7 @@
                 }
             }
         ],
-        "team_points": 346,
+        "team_points": 358,
         "team_race_points": {
             "AUS": 27,
             "CHN": 40,
@@ -487,7 +487,7 @@
             "HUN": 22,
             "NLD": 31,
             "ITA": 8,
-            "ESP": null,
+            "ESP": 12,
             "AZE": null,
             "MYS": null,
             "SGP": null,
@@ -608,7 +608,7 @@
             {
                 "name": "Lando Norris",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/mclaren/lannor01/2026mclarenlannor01right.webp",
-                "points": 171,
+                "points": 186,
                 "race_points": {
                     "AUS": 10,
                     "CHN": 5,
@@ -625,7 +625,7 @@
                     "HUN": 25,
                     "NLD": 31,
                     "ITA": 12,
-                    "ESP": null,
+                    "ESP": 15,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -640,7 +640,7 @@
             {
                 "name": "Oscar Piastri",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/mclaren/oscpia01/2026mclarenoscpia01right.webp",
-                "points": 116,
+                "points": 120,
                 "race_points": {
                     "AUS": null,
                     "CHN": 3,
@@ -657,7 +657,7 @@
                     "HUN": null,
                     "NLD": 12,
                     "ITA": 10,
-                    "ESP": null,
+                    "ESP": 4,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -670,7 +670,7 @@
                 }
             }
         ],
-        "team_points": 287,
+        "team_points": 306,
         "team_race_points": {
             "AUS": 10,
             "CHN": 8,
@@ -687,7 +687,7 @@
             "HUN": 25,
             "NLD": 43,
             "ITA": 22,
-            "ESP": null,
+            "ESP": 19,
             "AZE": null,
             "MYS": null,
             "SGP": null,
@@ -708,7 +708,7 @@
             {
                 "name": "Kimi Antonelli",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/mercedes/andant01/2026mercedesandant01right.webp",
-                "points": 267,
+                "points": 292,
                 "race_points": {
                     "AUS": 18,
                     "CHN": 29,
@@ -725,7 +725,7 @@
                     "HUN": 15,
                     "NLD": 23,
                     "ITA": 25,
-                    "ESP": null,
+                    "ESP": 25,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -740,7 +740,7 @@
             {
                 "name": "George Russell",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/mercedes/georus01/2026mercedesgeorus01right.webp",
-                "points": 201,
+                "points": 211,
                 "race_points": {
                     "AUS": 25,
                     "CHN": 26,
@@ -757,7 +757,7 @@
                     "HUN": 6,
                     "NLD": 23,
                     "ITA": 18,
-                    "ESP": null,
+                    "ESP": 10,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -770,7 +770,7 @@
                 }
             }
         ],
-        "team_points": 468,
+        "team_points": 503,
         "team_race_points": {
             "AUS": 43,
             "CHN": 55,
@@ -787,7 +787,7 @@
             "HUN": 21,
             "NLD": 46,
             "ITA": 43,
-            "ESP": null,
+            "ESP": 35,
             "AZE": null,
             "MYS": null,
             "SGP": null,
@@ -808,7 +808,7 @@
             {
                 "name": "Liam Lawson",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/racingbulls/lialaw01/2026racingbullslialaw01right.webp",
-                "points": 51,
+                "points": 59,
                 "race_points": {
                     "AUS": null,
                     "CHN": 8,
@@ -825,7 +825,7 @@
                     "HUN": 4,
                     "NLD": 6,
                     "ITA": null,
-                    "ESP": null,
+                    "ESP": 8,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -840,7 +840,7 @@
             {
                 "name": "Arvid Lindblad",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/racingbulls/arvlin01/2026racingbullsarvlin01right.webp",
-                "points": 29,
+                "points": 31,
                 "race_points": {
                     "AUS": 4,
                     "CHN": null,
@@ -857,7 +857,7 @@
                     "HUN": 1,
                     "NLD": null,
                     "ITA": 4,
-                    "ESP": null,
+                    "ESP": 2,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -870,7 +870,7 @@
                 }
             }
         ],
-        "team_points": 80,
+        "team_points": 90,
         "team_race_points": {
             "AUS": 4,
             "CHN": 8,
@@ -887,7 +887,7 @@
             "HUN": 5,
             "NLD": 6,
             "ITA": 4,
-            "ESP": null,
+            "ESP": 10,
             "AZE": null,
             "MYS": null,
             "SGP": null,
@@ -940,7 +940,7 @@
             {
                 "name": "Max Verstappen",
                 "picture_url": "https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/redbullracing/maxver01/2026redbullracingmaxver01right.webp",
-                "points": 127,
+                "points": 145,
                 "race_points": {
                     "AUS": 8,
                     "CHN": null,
@@ -957,7 +957,7 @@
                     "HUN": 18,
                     "NLD": 3,
                     "ITA": 15,
-                    "ESP": null,
+                    "ESP": 18,
                     "AZE": null,
                     "MYS": null,
                     "SGP": null,
@@ -970,7 +970,7 @@
                 }
             }
         ],
-        "team_points": 198,
+        "team_points": 216,
         "team_race_points": {
             "AUS": 8,
             "CHN": 4,
@@ -987,7 +987,7 @@
             "HUN": 26,
             "NLD": 3,
             "ITA": 15,
-            "ESP": null,
+            "ESP": 18,
             "AZE": null,
             "MYS": null,
             "SGP": null,

@@ -9,6 +9,8 @@ import os
 from datetime import datetime
 from urllib.parse import urlencode
 import time
+import pytz
+from scoreboard_client import ScoreboardClient, ScoreboardUnavailable
 
 
 # ==========================================================
@@ -31,6 +33,7 @@ SCHEDULE_JSON = os.path.join(BASE_DIR, "public", "data", "nba_schedule.json")
 TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_team_stats.json")
 PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_player_stats.json")
 SEASONS_MANIFEST_JSON = os.path.join(BASE_DIR, "public", "data", "nba_seasons.json")
+ROSTER_CACHE_TTL_SECONDS = 24 * 60 * 60
 
 def get_nba_season_year() -> int:
     try:
@@ -57,6 +60,106 @@ print(f"NBA stats season: {NBA_SEASON}")
 SEASON_START_YEAR = int(NBA_SEASON.split("-")[0])
 SEASON_TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", f"espn_NBA_team_stats_{NBA_SEASON}.json")
 SEASON_PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", f"espn_NBA_player_stats_{NBA_SEASON}.json")
+ROSTER_CACHE_JSON = os.path.join(BASE_DIR, "public", "data", f"nba_roster_cache_{NBA_SEASON}.json")
+
+
+# ==========================================================
+# SCORE BACKFILL — a fresh app-data run fills scores for any
+# completed NBA games that were missed while the app was offline.
+# ==========================================================
+SCOREBOARD_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0",
+    "Accept": "*/*",
+    "Referer": "https://www.espn.com/",
+}
+
+
+def _scoreboard_events(data):
+    try:
+        return data.get("sports", [])[0].get("leagues", [])[0].get("events", [])
+    except (AttributeError, IndexError, KeyError, TypeError):
+        return []
+
+
+def backfill_missing_schedule_scores():
+    try:
+        with open(SCHEDULE_JSON, "r", encoding="utf-8-sig") as f:
+            schedule = json.load(f)
+    except (OSError, ValueError) as exc:
+        print(f"[WARN] Could not read NBA schedule for score backfill: {exc}")
+        return
+
+    today = datetime.now(pytz.timezone("America/Los_Angeles")).date()
+    missing_by_date = {}
+    for game in schedule:
+        try:
+            game_date = datetime.strptime(game.get("date", ""), "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            continue
+        if game_date <= today and (game.get("home_score") in (None, "") or game.get("away_score") in (None, "")):
+            missing_by_date.setdefault(game_date, []).append(game)
+
+    if not missing_by_date:
+        return
+
+    client = ScoreboardClient()
+    changed = False
+    for game_date, games in missing_by_date.items():
+        url = (
+            "https://site.web.api.espn.com/apis/personalized/v2/scoreboard/header"
+            "?sport=basketball&league=nba&region=us&lang=en&contentorigin=espn"
+            "&configuration=STREAM_MENU&platform=web&features=sfb-all%2Ccutl"
+            f"&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={game_date:%Y%m%d}"
+        )
+        try:
+            events = {str(event.get("id")): event for event in _scoreboard_events(client.get_json(url, SCOREBOARD_HEADERS))}
+        except ScoreboardUnavailable as exc:
+            print(f"[WARN] NBA score backfill deferred for {game_date}: {exc}")
+            break
+        except Exception as exc:
+            print(f"[WARN] NBA score backfill failed for {game_date}: {exc}")
+            continue
+
+        for game in games:
+            event = events.get(str(game.get("game_id")))
+            if not event:
+                continue
+            competitors = event.get("competitors", [])
+            home = next((team for team in competitors if team.get("homeAway") == "home"), {})
+            away = next((team for team in competitors if team.get("homeAway") == "away"), {})
+            home_score, away_score = home.get("score"), away.get("score")
+            if home_score is None or away_score is None:
+                continue
+
+            status_type = event.get("fullStatus", {}).get("type", {})
+            is_final = event.get("status") == "post" or status_type.get("state") == "post" or status_type.get("name") == "STATUS_FINAL" or status_type.get("completed", False)
+            is_live = event.get("status") == "in" or status_type.get("state") == "in"
+            if not is_final and not is_live:
+                continue
+
+            game.update({"home_score": home_score, "away_score": away_score, "status": "final" if is_final else "live"})
+            if is_final:
+                winner = next((team.get("displayName") for team in competitors if team.get("winner")), None)
+                if not winner:
+                    try:
+                        winner = home.get("displayName") if int(home_score) > int(away_score) else away.get("displayName")
+                    except (TypeError, ValueError):
+                        pass
+                game["winner"] = winner
+                game.pop("period", None)
+                game.pop("clock", None)
+            else:
+                game["period"] = event.get("fullStatus", {}).get("period")
+                game["clock"] = event.get("fullStatus", {}).get("displayClock", "")
+                game.pop("winner", None)
+            changed = True
+
+    if changed:
+        atomic_write_json(schedule, SCHEDULE_JSON)
+        print("[INFO] Backfilled missing NBA schedule scores.")
+
+
+backfill_missing_schedule_scores()
 
 NBA_TEAM_ABBREVIATIONS = {
     "Atlanta Hawks": "ATL",
@@ -280,15 +383,37 @@ def format_roster_row(row: Dict[str, Any], team_name: str) -> Dict[str, Any]:
     player_dict.update(ZERO_PLAYER_STATS)
     return player_dict
 
-def fetch_roster_players(team_source: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+def load_roster_cache() -> tuple[Dict[str, List[Dict[str, Any]]], bool]:
+    cached = load_json_or_default(ROSTER_CACHE_JSON, {})
+    if not isinstance(cached, dict):
+        return {}, False
+    try:
+        is_fresh = time.time() - os.path.getmtime(ROSTER_CACHE_JSON) < ROSTER_CACHE_TTL_SECONDS
+    except OSError:
+        is_fresh = False
+    return cached, is_fresh
+
+
+def fetch_roster_players(
+    team_source: List[Dict[str, Any]],
+    cached_rosters: Dict[str, List[Dict[str, Any]]] | None = None,
+    use_cached_only: bool = False,
+) -> Dict[str, List[Dict[str, Any]]]:
+    cached_rosters = cached_rosters or {}
     roster_players = defaultdict(list)
     for team in team_source:
         team_id = team.get("TEAM_ID")
         team_name = team.get("TEAM_NAME", "")
         if not team_id:
             continue
+        cache_key = str(team_id)
+        cached_players = cached_rosters.get(cache_key, [])
+        if use_cached_only and cached_players:
+            roster_players[cache_key].extend(cached_players)
+            continue
         try:
-            resp = requests.get(nba_roster_url(team_id), headers=headers, timeout=20)
+            resp = requests.get(nba_roster_url(team_id), headers=headers, timeout=(5, 30))
+            resp.raise_for_status()
             roster_data = resp.json()
             result = roster_data.get("resultSets", [{}])[0]
             roster_headers = result.get("headers", [])
@@ -300,7 +425,11 @@ def fetch_roster_players(team_source: List[Dict[str, Any]]) -> Dict[str, List[Di
             print(f"[ROSTER] {team_name}: {len(roster_rows)} players")
         except Exception as e:
             print(f"[WARN] Could not fetch roster for {team_name} ({team_id}): {e}")
-        time.sleep(0.2)
+            # Keep the last known roster rather than publishing a partial result.
+            if cached_players:
+                roster_players[cache_key].extend(cached_players)
+        # NBA Stats throttles aggressively; roster data does not need rapid refreshes.
+        time.sleep(1.0)
     return dict(roster_players)
 
 
@@ -389,14 +518,20 @@ for p in players:
 if team_players:
     write_player_stats(dict(team_players))
 else:
-    print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; fetching current rosters.")
-    roster_team_source = formatted_teams or load_json_or_default(SEASON_TEAM_STATS_JSON, []) or load_json_or_default(TEAM_STATS_JSON, [])
-    roster_players = fetch_roster_players(roster_team_source)
-    if roster_players:
-        write_player_stats(roster_players)
-        print(f"[OK] Saved roster fallback for {sum(len(v) for v in roster_players.values())} players.")
+    existing_players = load_json_or_default(SEASON_PLAYER_STATS_JSON, {}) or load_json_or_default(PLAYER_STATS_JSON, {})
+    if existing_players:
+        print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; preserving the existing player data.")
     else:
-        print(f"[WARN] No NBA rosters returned for {NBA_SEASON}; preserving existing player stats.")
+        cached_rosters, cache_is_fresh = load_roster_cache()
+        print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; {'using the roster cache' if cache_is_fresh else 'refreshing roster data'}.")
+        roster_team_source = formatted_teams or load_json_or_default(SEASON_TEAM_STATS_JSON, []) or load_json_or_default(TEAM_STATS_JSON, [])
+        roster_players = fetch_roster_players(roster_team_source, cached_rosters, use_cached_only=cache_is_fresh)
+        if roster_players:
+            atomic_write_json(roster_players, ROSTER_CACHE_JSON)
+            write_player_stats(roster_players)
+            print(f"[OK] Saved roster fallback for {sum(len(v) for v in roster_players.values())} players.")
+        else:
+            print(f"[WARN] No NBA rosters returned for {NBA_SEASON}; preserving existing player stats.")
 
 
 # --- Load existing team stats ---

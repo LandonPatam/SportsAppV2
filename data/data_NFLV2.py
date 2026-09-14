@@ -6,6 +6,8 @@ import os
 import html as htmllib
 from typing import List, Dict, Any
 from datetime import datetime
+import pytz
+from scoreboard_client import ScoreboardClient, ScoreboardUnavailable
 
 # ==========================================================
 # STEP 1: PATH SETUP (Fixes Background Service Issues)
@@ -34,6 +36,125 @@ def get_nfl_season_year() -> int:
     return datetime.now().year
 
 SEASON_YEAR = get_nfl_season_year()
+
+
+# ==========================================================
+# SCORE BACKFILL — keep completed schedule games current even
+# when this process starts after the game has already ended.
+# ==========================================================
+SCOREBOARD_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0',
+    'Accept': '*/*',
+    'Referer': 'https://www.espn.com/',
+}
+
+
+def _scoreboard_events(data):
+    try:
+        return data.get('sports', [])[0].get('leagues', [])[0].get('events', [])
+    except (AttributeError, IndexError, KeyError, TypeError):
+        return []
+
+
+def _missing_score(game):
+    return game.get('home_score') in (None, '') or game.get('away_score') in (None, '')
+
+
+def backfill_missing_schedule_scores():
+    """Fetch final/live scores for any past schedule entries that lack them."""
+    try:
+        with open(SCHEDULE_JSON, 'r', encoding='utf-8-sig') as f:
+            schedule = json.load(f)
+    except (OSError, ValueError) as exc:
+        print(f'[WARN] Could not read NFL schedule for score backfill: {exc}')
+        return
+
+    today = datetime.now(pytz.timezone('America/Los_Angeles')).date()
+    missing_by_date = {}
+    for game in schedule:
+        try:
+            game_date = datetime.strptime(game.get('date', ''), '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            continue
+        if game_date <= today and _missing_score(game):
+            missing_by_date.setdefault(game_date, []).append(game)
+
+    if not missing_by_date:
+        return
+
+    client = ScoreboardClient()
+    changed = False
+    for game_date, games in missing_by_date.items():
+        date_param = game_date.strftime('%Y%m%d')
+        url = (
+            'https://site.web.api.espn.com/apis/personalized/v2/scoreboard/header'
+            '?sport=football&league=nfl&region=us&lang=en&contentorigin=espn'
+            '&configuration=STREAM_MENU&platform=web&features=sfb-all%2Ccutl'
+            f'&showAirings=buy%2Clive%2Creplay&tz=America%2FNew_York&dates={date_param}'
+        )
+        try:
+            events = {str(event.get('id')): event for event in _scoreboard_events(client.get_json(url, SCOREBOARD_HEADERS))}
+        except ScoreboardUnavailable as exc:
+            print(f'[WARN] NFL score backfill deferred for {game_date}: {exc}')
+            break
+        except Exception as exc:
+            print(f'[WARN] NFL score backfill failed for {game_date}: {exc}')
+            continue
+
+        for game in games:
+            event = events.get(str(game.get('game_id')))
+            if not event:
+                continue
+            competitors = event.get('competitors', [])
+            home = next((team for team in competitors if team.get('homeAway') == 'home'), {})
+            away = next((team for team in competitors if team.get('homeAway') == 'away'), {})
+            home_score, away_score = home.get('score'), away.get('score')
+            if home_score is None or away_score is None:
+                continue
+
+            status_type = event.get('fullStatus', {}).get('type', {})
+            is_final = (
+                event.get('status') == 'post'
+                or status_type.get('state') == 'post'
+                or status_type.get('name') == 'STATUS_FINAL'
+                or status_type.get('completed', False)
+            )
+            is_live = event.get('status') == 'in' or status_type.get('state') == 'in'
+            if not is_final and not is_live:
+                continue
+
+            game.update({'home_score': home_score, 'away_score': away_score, 'status': 'final' if is_final else 'live'})
+            if is_final:
+                winner = next((team.get('displayName') for team in competitors if team.get('winner')), None)
+                if not winner:
+                    try:
+                        if int(home_score) > int(away_score):
+                            winner = home.get('displayName')
+                        elif int(away_score) > int(home_score):
+                            winner = away.get('displayName')
+                        else:
+                            winner = 'TIE'
+                            game['tie'] = True
+                    except (TypeError, ValueError):
+                        pass
+                game['winner'] = winner
+                game.pop('period', None)
+                game.pop('clock', None)
+            else:
+                game['period'] = event.get('fullStatus', {}).get('period')
+                game['clock'] = event.get('fullStatus', {}).get('displayClock', '')
+                game.pop('winner', None)
+            changed = True
+
+    if changed:
+        temp_path = SCHEDULE_JSON + '.tmp'
+        with open(temp_path, 'w', encoding='utf-8') as f:
+            json.dump(schedule, f, indent=2, ensure_ascii=False)
+        os.replace(temp_path, SCHEDULE_JSON)
+        print('[INFO] Backfilled missing NFL schedule scores.')
+
+
+backfill_missing_schedule_scores()
 
 # ==========================================================
 # STEP 2: SCRAPE NFL.COM STANDINGS

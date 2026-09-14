@@ -106,10 +106,22 @@ class ScoreboardClient:
                 response = self.session.get(url, headers=headers, timeout=(3, 7))
                 response.raise_for_status()
                 data = response.json()
-                # A malformed response must never look like an empty scoreboard.
-                leagues = data["sports"][0]["leagues"]
-                if not isinstance(leagues[0]["events"], list):
-                    raise ValueError("Invalid scoreboard events")
+                # ESPN legitimately omits `events` on dates without games.
+                # Validate the response type, but let callers treat that shape
+                # as an empty scoreboard rather than a provider failure.
+                if not isinstance(data, dict):
+                    raise ValueError("Invalid scoreboard response")
+                sports = data.get("sports")
+                if sports:
+                    if not isinstance(sports, list) or not isinstance(sports[0], dict):
+                        raise ValueError("Invalid scoreboard sports")
+                    leagues = sports[0].get("leagues", [])
+                    if leagues and (
+                        not isinstance(leagues, list)
+                        or not isinstance(leagues[0], dict)
+                        or ("events" in leagues[0] and not isinstance(leagues[0]["events"], list))
+                    ):
+                        raise ValueError("Invalid scoreboard events")
             except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
                 failures = min(state.get("failures", 0) + 1, 8)
                 delay = min(30 * 2 ** (failures - 1), 900)

@@ -134,6 +134,86 @@ function parseScore(value: unknown): number {
   return Number.isFinite(score) ? score : Number.NaN;
 }
 
+/**
+ * Resolves the schedule's team fields to the team name used by standings.
+ * The feed can provide abbreviations or only a "Away @ Home" matchup.
+ */
+function scheduleTeamName(game: NFLScheduleGame, side: 'away' | 'home'): string | undefined {
+  const fieldValue = game[side];
+  if (fieldValue) {
+    const value = String(fieldValue).trim();
+    return abbreviationToTeamName[value.toUpperCase()] || value;
+  }
+
+  const matchupParts = String(game.matchup || '').split('@');
+  const name = matchupParts[side === 'away' ? 0 : 1]?.trim();
+  return name || undefined;
+}
+
+/**
+ * Adds final schedule results that have not yet appeared in the standings feed.
+ * Once the feed catches up, its games-played total absorbs the same result and
+ * the temporary adjustment naturally disappears instead of being double-counted.
+ */
+function withPendingScheduleResults(teams: NFLTeam[], scheduleData: NFLScheduleData | null): NFLTeam[] {
+  if (!teams.length || !scheduleData?.length) return teams;
+
+  const resultsByTeam = new Map<string, Array<{ wins: number; losses: number; ties: number; order: number }>>();
+  const addResult = (teamName: string | undefined, result: { wins: number; losses: number; ties: number; order: number }) => {
+    if (!teamName) return;
+    const results = resultsByTeam.get(teamName) || [];
+    results.push(result);
+    resultsByTeam.set(teamName, results);
+  };
+
+  scheduleData.forEach((game, index) => {
+    const status = String(game.status || '').toLowerCase();
+    const isFinal = status.includes('final') || status === 'f' || Boolean((game as any).winner);
+    const awayScore = parseScore(game.away_score);
+    const homeScore = parseScore(game.home_score);
+    const awayTeam = scheduleTeamName(game, 'away');
+    const homeTeam = scheduleTeamName(game, 'home');
+    if (!isFinal) return;
+
+    const order = Number(game.ts_utc) || Date.parse(String(game.date || '')) || index;
+    if (Number.isFinite(awayScore) && Number.isFinite(homeScore)) {
+      if (awayScore === homeScore) {
+        addResult(awayTeam, { wins: 0, losses: 0, ties: 1, order });
+        addResult(homeTeam, { wins: 0, losses: 0, ties: 1, order });
+      } else {
+        addResult(awayTeam, { wins: awayScore > homeScore ? 1 : 0, losses: awayScore < homeScore ? 1 : 0, ties: 0, order });
+        addResult(homeTeam, { wins: homeScore > awayScore ? 1 : 0, losses: homeScore < awayScore ? 1 : 0, ties: 0, order });
+      }
+    } else {
+      const winner = String((game as any).winner || '').trim();
+      if (winner && winner === awayTeam) {
+        addResult(awayTeam, { wins: 1, losses: 0, ties: 0, order });
+        addResult(homeTeam, { wins: 0, losses: 1, ties: 0, order });
+      } else if (winner && winner === homeTeam) {
+        addResult(awayTeam, { wins: 0, losses: 1, ties: 0, order });
+        addResult(homeTeam, { wins: 1, losses: 0, ties: 0, order });
+      }
+    }
+  });
+
+  return teams.map((team) => {
+    const results = resultsByTeam.get(team.name);
+    if (!results?.length) return team;
+
+    const officialGames = Math.max(0, Number(team.wins) + Number(team.losses) + Number(team.ties));
+    const missingResultCount = Math.max(0, results.length - officialGames);
+    if (!missingResultCount) return team;
+
+    const pending = [...results].sort((a, b) => a.order - b.order).slice(-missingResultCount);
+    const wins = Number(team.wins) + pending.reduce((total, result) => total + result.wins, 0);
+    const losses = Number(team.losses) + pending.reduce((total, result) => total + result.losses, 0);
+    const ties = Number(team.ties) + pending.reduce((total, result) => total + result.ties, 0);
+    const games = wins + losses + ties;
+
+    return { ...team, wins, losses, ties, win_pct: games ? (wins + ties * 0.5) / games : 0 };
+  });
+}
+
 type SortField =
   | 'WIN_PCT'
   | 'PF'
@@ -820,6 +900,10 @@ const NFL = () => {
   const [selectedTeamAll, setSelectedTeamAll] = useState<NFLTeam | null>(null);
   const [rosterByTeam, setRosterByTeam] = useState<Record<string, any[]>>(() => _cachedRoster ?? {});
   const [espnGameId, setEspnGameId] = useState<string | null>(null);
+  const displayTeams = useMemo(
+    () => withPendingScheduleResults(teams, scheduleData),
+    [teams, scheduleData],
+  );
 
   const radarExtrema = useMemo(() => {
     const init = {
@@ -833,7 +917,7 @@ const NFL = () => {
       epaST: { min: Infinity, max: -Infinity },
     } as const;
     const acc: any = JSON.parse(JSON.stringify(init));
-    for (const t of teams) {
+    for (const t of displayTeams) {
       const games = (t.wins || 0) + (t.losses || 0) + (t.ties || 0);
       const vals = {
         winPct: Number(t.win_pct || 0),
@@ -868,7 +952,7 @@ const NFL = () => {
       epaDef: { min: number; max: number };
       epaST: { min: number; max: number };
     };
-  }, [teams]);
+  }, [displayTeams]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -950,7 +1034,7 @@ const NFL = () => {
     return sortOrder === 'asc' ? sorted.reverse() : sorted;
   };
 
-  const orderedTeams = useMemo(() => sortTeamsDynamic(teams), [teams, sortField, sortOrder]);
+  const orderedTeams = useMemo(() => sortTeamsDynamic(displayTeams), [displayTeams, sortField, sortOrder]);
   const selectionSignature = useMemo(
     () => JSON.stringify({ sortField, sortOrder }),
     [sortField, sortOrder],
@@ -967,13 +1051,16 @@ const NFL = () => {
       !orderedTeams.some((t) => t.name === selectedTeamAll.name)
     ) {
       setSelectedTeamAll(orderedTeams[0]);
+    } else {
+      const refreshedSelection = orderedTeams.find((t) => t.name === selectedTeamAll.name);
+      if (refreshedSelection && refreshedSelection !== selectedTeamAll) setSelectedTeamAll(refreshedSelection);
     }
     lastSelectionSignatureRef.current = selectionSignature;
   }, [orderedTeams, selectionSignature, selectedTeamAll]);
 
   const leagueAverages = React.useMemo(() => {
-    if (teams.length === 0) return null as null | Record<string, number>;
-    const totals = teams.reduce(
+    if (displayTeams.length === 0) return null as null | Record<string, number>;
+    const totals = displayTeams.reduce(
       (acc, t: any) => {
         const games = t.wins + t.losses + t.ties;
         acc.WIN_PCT += t.win_pct;
@@ -1015,7 +1102,7 @@ const NFL = () => {
         EPA_ST_SUM: 0, EPA_ST_CNT: 0,
       } as any
     );
-    const n = teams.length;
+    const n = displayTeams.length;
     const avg = (sum: number, cnt: number, def = 0) => (cnt > 0 ? sum / cnt : def);
     return {
       WIN_PCT: totals.WIN_PCT / n,
@@ -1036,10 +1123,10 @@ const NFL = () => {
       EPA_DEF: avg(totals.EPA_DEF_SUM, totals.EPA_DEF_CNT),
       EPA_ST: avg(totals.EPA_ST_SUM, totals.EPA_ST_CNT),
     } as any;
-  }, [teams]);
+  }, [displayTeams]);
 
   const winRateSortedTeams = React.useMemo(() => {
-    return [...teams]
+    return [...displayTeams]
       .map((team) => ({
         team,
         winPct: Number.isFinite(team.win_pct) ? Number(team.win_pct) : 0,
@@ -1051,10 +1138,10 @@ const NFL = () => {
         return (b.team.point_diff ?? 0) - (a.team.point_diff ?? 0);
       })
       .map((entry) => entry.team);
-  }, [teams]);
+  }, [displayTeams]);
 
   const fpiSortedTeams = React.useMemo(() => {
-    return [...teams]
+    return [...displayTeams]
       .map((team) => {
         const fpi = Number(team.fpi);
         const rank = Number(team.fpirank);
@@ -1072,7 +1159,7 @@ const NFL = () => {
         return (b.team.wins ?? 0) - (a.team.wins ?? 0);
       })
       .map((entry) => entry.team);
-  }, [teams]);
+  }, [displayTeams]);
 
   const conferenceAverages = React.useMemo(() => {
     const buckets: Record<string, { divPctSum: number; confPctSum: number; last5PctSum: number; countDiv: number; countConf: number; countL5: number }> = {};
@@ -1088,7 +1175,7 @@ const NFL = () => {
       return (wins + 0.5 * ties) / total;
     };
 
-    teams.forEach((t) => {
+    displayTeams.forEach((t) => {
       const key = t.conference;
       if (!buckets[key]) {
         buckets[key] = { divPctSum: 0, confPctSum: 0, last5PctSum: 0, countDiv: 0, countConf: 0, countL5: 0 };
@@ -1110,26 +1197,26 @@ const NFL = () => {
       };
     });
     return result;
-  }, [teams]);
+  }, [displayTeams]);
 
-  const abbrToLogo = useAbbrToLogo(teams);
+  const abbrToLogo = useAbbrToLogo(displayTeams);
   const abbrToRecord = useMemo(() => {
     const map: Record<string, string> = {};
-    teams.forEach((t) => {
+    displayTeams.forEach((t) => {
       const abbr = (teamAbbreviations as any)[t.name];
       if (!abbr) return;
       map[abbr] = `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ''}`;
     });
     return map;
-  }, [teams]);
+  }, [displayTeams]);
   const abbrToTeamMap = useMemo(() => {
     const map: Record<string, NFLTeam> = {};
-    teams.forEach((t) => {
+    displayTeams.forEach((t) => {
       const abbr = (teamAbbreviations as any)[t.name];
       if (abbr) map[abbr] = t;
     });
     return map;
-  }, [teams]);
+  }, [displayTeams]);
 
   const [activeTab, setActiveTab] = useState<string>('schedule');
   const [isMobile, setIsMobile] = useState(() =>
@@ -1228,7 +1315,7 @@ const NFL = () => {
                   />
                 </CardContent>
               </Card>
-              {teams.length > 0 }
+              {displayTeams.length > 0 }
             </div>
           </div>
         </TabsContent>
@@ -1347,7 +1434,7 @@ const NFL = () => {
                           team={{ ...currentTeam, rank: (orderedTeams.findIndex((t) => t.name === currentTeam.name) + 1) || 1 }}
                           leagueAverages={leagueAverages}
                           conferenceAverages={conferenceAverages}
-                          allTeams={teams}
+                          allTeams={displayTeams}
                         />
                       </div>
                       <div className="flex gap-3" style={{ animation: 'slideUp 0.4s ease-out 0.05s both' }}>
@@ -1485,13 +1572,13 @@ const NFL = () => {
         )}
 
         {!isMobile && ['AFC', 'NFC'].map((conference) => {
-          const conferenceTeams = teams
+          const conferenceTeams = displayTeams
             .filter((team) => team.conference === conference)
             .sort((a, b) => b.wins - a.wins);
 
           // Flat list of all teams in render order — used for global animation index
           const orderedConferenceTeams = ['East', 'North', 'South', 'West'].flatMap((division) =>
-            teams
+            displayTeams
               .filter((t) => t.conference === conference && t.division.endsWith(division))
               .sort((a, b) => b.wins - a.wins)
           );
@@ -1504,7 +1591,7 @@ const NFL = () => {
             className="space-y-4 min-h-0 max-h-[calc(100vh-90px)] overflow-y-auto pr-1 pb-8 no-scrollbar"
           >
             {['East', 'North', 'South', 'West'].map((division) => {
-              const divisionTeams = teams
+              const divisionTeams = displayTeams
                 .filter((team) => team.conference === conference)
                 .filter((team) => team.division.endsWith(division))
                 .sort((a, b) => b.wins - a.wins);
@@ -1526,7 +1613,7 @@ const NFL = () => {
                           team={{ ...team, rank: conferenceRank }}
                           leagueAverages={leagueAverages}
                           conferenceAverages={conferenceAverages}
-                          allTeams={teams}
+                          allTeams={displayTeams}
                           compact={true}
                         />
                         </div>
@@ -1880,6 +1967,8 @@ const DashboardTodayScheduleNFL = ({
           const showScore = (hasScores && (aScore !== 0 || hScore !== 0)) || isFinal || isLive;
           const awayWin = showScore ? aScore >= hScore : false;
           const homeWin = showScore ? hScore >= aScore : false;
+          const awayScoreClass = isFinal ? (awayWin ? 'text-white' : 'text-white/50') : 'text-white';
+          const homeScoreClass = isFinal ? (homeWin ? 'text-white' : 'text-white/50') : 'text-white';
 
           const cardPadding = Math.max(6, Math.round(10 * scale));
           const logoSize = Math.max(30, Math.round(72 * scale));
@@ -1933,9 +2022,9 @@ const DashboardTodayScheduleNFL = ({
                     {isLive ? (
                       <div className="flex flex-col items-center gap-0.5">
                         <div className="font-black tracking-wide tabular-nums" style={{ fontSize: scoreFont }}>
-                          <span className={awayWin ? 'text-white' : 'text-white/50'}>{hasScores ? aScore : 0}</span>
+                          <span className={awayScoreClass}>{hasScores ? aScore : 0}</span>
                           <span className="mx-2 text-muted-foreground">-</span>
-                          <span className={homeWin ? 'text-white' : 'text-white/50'}>{hasScores ? hScore : 0}</span>
+                          <span className={homeScoreClass}>{hasScores ? hScore : 0}</span>
                         </div>
                         {(g.period || g.clock) && (
                           <span className="text-white/90 font-black tracking-wide text-xs">
@@ -1945,9 +2034,9 @@ const DashboardTodayScheduleNFL = ({
                       </div>
                     ) : showScore ? (
                       <div className="font-black tracking-wide tabular-nums" style={{ fontSize: scoreFont }}>
-                        <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
+                        <span className={awayScoreClass}>{aScore}</span>
                         <span className="mx-2 text-muted-foreground">-</span>
-                        <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
+                        <span className={homeScoreClass}>{hScore}</span>
                       </div>
                     ) : (
                       <div className="font-black tracking-wide" style={{ fontSize: timeFont }}>{g.time || 'TBA'}</div>
@@ -2214,6 +2303,8 @@ const ScheduleNFLViewV2 = ({
             const awayWin = hasScores ? aScore >= hScore : false;
             const homeWin = hasScores ? hScore >= aScore : false;
             const isFinal = String(g.status || '').toLowerCase().includes('final') || Boolean((g as any).winner);
+            const awayScoreClass = isFinal ? (awayWin ? 'text-white' : 'text-white/50') : 'text-white';
+            const homeScoreClass = isFinal ? (homeWin ? 'text-white' : 'text-white/50') : 'text-white';
             const statusText = String(g.status || '').toLowerCase();
             const isLiveGame = statusText.includes('live') || statusText.includes('in progress');
             const period = (g as any).period;
@@ -2246,12 +2337,6 @@ const ScheduleNFLViewV2 = ({
                   else if (g.game_link) window.open(g.game_link, '_blank', 'noopener,noreferrer');
                 }}
               >
-                {isLiveGame && (
-                  <>
-                    <style>{`@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } } @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-                    <div className="absolute top-2 left-2 z-10 sched-live-dot" style={{ borderRadius: '50%', backgroundColor: '#ffffff', boxShadow: '0 0 6px rgba(255,255,255,0.8), 0 0 12px rgba(255,255,255,0.4)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                  </>
-                )}
                 <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${awayColor} 0%, ${awayColor} 20%, ${homeColor} 80%, ${homeColor} 100%)` }} />
                 <div className="absolute inset-0 bg-black/40" />
 
@@ -2273,7 +2358,7 @@ const ScheduleNFLViewV2 = ({
                   </div>
                 )}
 
-                <style>{`.sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }.sched-live-dot { width: 1.5cqi; height: 1.5cqi; } @media (min-width: 1024px) { .sched-live-dot { width: 1cqi; height: 1cqi; } }`}</style>
+                <style>{`@keyframes liveBadgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } } .sched-logo { width: 7cqi; height: 7cqi; } @media (max-width: 1023px) { .sched-logo { width: 10cqi; height: 10cqi; } }`}</style>
                 <CardContent className="relative z-10 py-0 flex flex-col h-full">
                   <div className="flex-1 flex items-center py-1">
                     <div className="grid grid-cols-3 items-center w-full" style={{ gap: "1cqi" }}>
@@ -2301,25 +2386,31 @@ const ScheduleNFLViewV2 = ({
                           if (s === 'final') {
                             return (
                               <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
-                                <span className={awayWin ? 'text-white' : 'text-white/50'}>{aScore}</span>
+                                <span className={awayScoreClass}>{aScore}</span>
                                 <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
-                                <span className={homeWin ? 'text-white' : 'text-white/50'}>{hScore}</span>
+                                <span className={homeScoreClass}>{hScore}</span>
                               </div>
                             );
                           }
                           if (s.includes('live') || s.includes('in progress')) {
                             return (
-                              <div className="flex flex-col items-center gap-0.5">
+                              <div className="relative flex items-center justify-center">
                                 <div className="font-black tracking-wide flex items-center justify-center tabular-nums" style={{ fontSize: scoreFontSize }}>
-                                  <span className={awayWin ? 'text-white' : 'text-white/50'}>{hasScores ? aScore : 0}</span>
+                                  <span className={awayScoreClass}>{hasScores ? aScore : 0}</span>
                                   <span className="text-white" style={{ margin: "0 0.6cqi" }}>-</span>
-                                  <span className={homeWin ? 'text-white' : 'text-white/50'}>{hasScores ? hScore : 0}</span>
+                                  <span className={homeScoreClass}>{hasScores ? hScore : 0}</span>
                                 </div>
                                 {(period || clock) && (
-                                  <span className="text-white/90 font-black tracking-wide" style={{ fontSize: liveFontSize }}>
+                                  <span className="absolute left-1/2 top-full mt-0.5 -translate-x-1/2 whitespace-nowrap text-white/90 font-black tracking-wide" style={{ fontSize: liveFontSize }}>
                                     {period ? `Q${period}` : ''}{period && clock ? ' · ' : ''}{clock || ''}
                                   </span>
                                 )}
+                                <span
+                                  className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-600 px-2 py-0.5 font-black tracking-[0.16em] text-white shadow-md"
+                                  style={{ fontSize: liveFontSize, animation: 'liveBadgePulse 2.4s ease-in-out infinite' }}
+                                >
+                                  LIVE
+                                </span>
                               </div>
                             );
                           }
