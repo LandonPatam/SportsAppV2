@@ -184,6 +184,7 @@ def main():
             jobs = [
                 (NBA_SCHEDULE_SCRIPT, ACTIVE_INTERVAL if nba["should_run"] else IDLE_INTERVAL, nba["should_run"]),
                 (NFL_SCHEDULE_SCRIPT, ACTIVE_INTERVAL if nfl["should_run"] else IDLE_INTERVAL, nfl["should_run"]),
+                (Path("data/local_nfl_broadcasts.py"), 24 * 60 * 60, False),
                 (NBA_DATA_SCRIPT, DATA_INTERVAL, False),
                 (NFL_DATA_SCRIPT, DATA_INTERVAL, False),
                 (NBA_ROSTER_SCRIPT, NBA_ROSTER_INTERVAL, False),

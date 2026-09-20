@@ -127,6 +127,14 @@ interface NFLScheduleGame {
 }
 
 type NFLScheduleData = NFLScheduleGame[];
+type NFLLocalBroadcasts = Record<string, string[]>;
+
+// ESPN's schedule feed lists the network carrying a game nationally, but FOX
+// and CBS Sunday windows are split by local TV market.  Keep the source value
+// intact while making that limitation clear wherever it is displayed.
+function isRegionalNflBroadcast(provider: string): boolean {
+  return /^(fox|cbs)$/i.test(provider.trim());
+}
 
 function parseScore(value: unknown): number {
   if (value === null || value === undefined || value === '') return Number.NaN;
@@ -890,11 +898,13 @@ const TeamCard = ({
 let _cachedTeams: NFLTeam[] | null = null;
 let _cachedSchedule: NFLScheduleData | null = null;
 let _cachedRoster: Record<string, any[]> | null = null;
+let _cachedLocalBroadcasts: NFLLocalBroadcasts | null = null;
 // ────────────────────────────────────────────────────────────────────────────
 
 const NFL = () => {
   const [teams, setTeams] = useState<NFLTeam[]>(() => _cachedTeams ?? []);
   const [scheduleData, setScheduleData] = useState<NFLScheduleData | null>(() => _cachedSchedule);
+  const [localBroadcasts, setLocalBroadcasts] = useState<NFLLocalBroadcasts>(() => _cachedLocalBroadcasts ?? {});
   const [sortField, setSortField] = useState<SortField>('WIN_PCT');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedTeamAll, setSelectedTeamAll] = useState<NFLTeam | null>(null);
@@ -985,6 +995,24 @@ const NFL = () => {
     _cachedSchedule = next;
     setScheduleData(next);
   }), []);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch(`/data/nfl_local_broadcasts.json?_=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (alive && data && typeof data === 'object' && !Array.isArray(data)) {
+          _cachedLocalBroadcasts = data as NFLLocalBroadcasts;
+          setLocalBroadcasts(data as NFLLocalBroadcasts);
+        }
+      } catch {}
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -1634,6 +1662,7 @@ const NFL = () => {
         >
           <ScheduleNFLViewV2
             scheduleData={scheduleData}
+            localBroadcasts={localBroadcasts}
             logoMap={abbrToLogo}
             recordMap={abbrToRecord}
             onGameClick={(gameId) => setEspnGameId(gameId)}
@@ -2082,12 +2111,14 @@ const DashboardTodayScheduleNFL = ({
 
 const ScheduleNFLViewV2 = ({
   scheduleData,
+  localBroadcasts = {},
   logoMap,
   recordMap = {},
   onGameClick,
   isMobile = false,
 }: {
   scheduleData: NFLScheduleData | null;
+  localBroadcasts?: NFLLocalBroadcasts;
   logoMap: Record<string, string>;
   recordMap?: Record<string, string>;
   onGameClick?: (gameId: string) => void;
@@ -2310,11 +2341,18 @@ const ScheduleNFLViewV2 = ({
             const period = (g as any).period;
             const clock = (g as any).clock;
 
-            const providers: string[] = Array.isArray(g.tv_providers)
+            const sourceProviders: string[] = Array.isArray(g.tv_providers)
               ? (g.tv_providers as string[]).filter(Boolean)
               : g.tv
               ? String(g.tv).split(',').map((s) => s.trim()).filter(Boolean)
               : [];
+            // FOX/CBS are regional Sunday windows. They appear only if the
+            // SoCal coverage file confirms this game for the local market.
+            const localRegionalProviders = localBroadcasts[g.game_id] ?? [];
+            const providers = sourceProviders.filter((provider) => (
+              !isRegionalNflBroadcast(provider)
+              || localRegionalProviders.some((localProvider) => localProvider.toLowerCase() === provider.toLowerCase())
+            ));
 
             const awayTeamName = g.matchup ? g.matchup.split('@')[0]?.trim() : undefined;
             const homeTeamName = g.matchup ? g.matchup.split('@')[1]?.trim() : undefined;
