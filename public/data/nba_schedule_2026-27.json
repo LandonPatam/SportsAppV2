@@ -330,15 +330,17 @@
     "location": "Rocket Mortgage FieldHouse",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401898392/celtics-cavaliers",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "29",
+    "away_score": "32",
     "is_nba_cup": false,
     "is_preseason": true,
     "tournament": null,
     "is_playoff": false,
     "series_note": null,
     "series_game_number": null,
-    "status": "scheduled"
+    "status": "live",
+    "period": 1,
+    "clock": "0.0"
   },
   {
     "game_id": "401898393",
