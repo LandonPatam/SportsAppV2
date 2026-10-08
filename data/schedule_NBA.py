@@ -33,6 +33,7 @@ UPCOMING_SEASON_CHECK_INTERVAL_HOURS = 24
 POSTSEASON_SCAN_INTERVAL_HOURS = 1               # how often to re-scan during postseason
 _STATE_PATH = "public/data/.nba_schedule_last_scan.txt"
 _UPCOMING_STATE_PATH = "public/data/.nba_upcoming_schedule_last_check.txt"
+_PRESEASON_STATE_PATH = "public/data/.nba_preseason_last_scan.txt"
 # ==========================================================
 
 HEADERS = {
@@ -199,7 +200,7 @@ def find_existing_schedule_start_for_year(season_year: int):
         dates = [
             datetime.strptime(g["date"], "%Y-%m-%d").date()
             for g in schedule
-            if g.get("date")
+            if g.get("date") and not g.get("is_preseason")
         ]
     except Exception:
         return None
@@ -294,7 +295,7 @@ def load_schedule() -> tuple:
         except (ValueError, TypeError):
             continue
 
-    if earliest is not None and earliest < SEASON_START_DATE:
+    if earliest is not None and earliest < datetime(SEASON_YEAR, 9, 1).date():
         print(f"[NEW SEASON DETECTED] Earliest game in JSON is {earliest}, "
               f"but current season starts {SEASON_START_DATE}. Resetting schedule.")
         write_schedule_json([])
@@ -315,6 +316,26 @@ seen_ids = {g.get("game_id") for g in schedule if g.get("game_id")}
 # AUTO-CRAWL during postseason
 # ==========================================================
 _crawl_start_date = SEASON_START_DATE
+_crawl_end_date = SEASON_END_DATE
+_preseason_scan = False
+
+if not LIVE_ONLY:
+    preseason_start = datetime(SEASON_YEAR, 9, 25).date()
+    last_preseason_scan = None
+    try:
+        with open(_PRESEASON_STATE_PATH, encoding="utf-8") as state:
+            last_preseason_scan = datetime.fromisoformat(state.read().strip())
+    except (OSError, ValueError):
+        pass
+    preseason_scan_due = last_preseason_scan is None or (datetime.now() - last_preseason_scan).total_seconds() >= 86400
+    if FIND_SCHEDULE:
+        _crawl_start_date = preseason_start
+    elif preseason_start <= today < SEASON_START_DATE and preseason_scan_due:
+        FIND_SCHEDULE = True
+        _preseason_scan = True
+        _crawl_start_date = preseason_start
+        _crawl_end_date = SEASON_START_DATE - timedelta(days=1)
+        print("[AUTO] Refreshing NBA preseason schedule.")
 
 if not FIND_SCHEDULE:
     if not LIVE_ONLY and POSTSEASON_START <= today <= SEASON_END_DATE:
@@ -370,7 +391,7 @@ if FIND_SCHEDULE:
     current_date = _crawl_start_date
     empty_days = 0
 
-    while current_date <= SEASON_END_DATE and empty_days < MAX_EMPTY_DAYS:
+    while current_date <= _crawl_end_date and empty_days < MAX_EMPTY_DAYS:
         date_str_param = current_date.strftime("%Y%m%d")
 
         url = (
@@ -410,6 +431,11 @@ if FIND_SCHEDULE:
         for event in events:
             try:
                 game_id = event.get("id")
+                if str(event.get("seasonType")) not in {"1", "2", "3"}:
+                    continue
+                if int(event.get("season", 0) or 0) != get_espn_season_value(SEASON_YEAR):
+                    continue
+                is_preseason = str(event.get("seasonType")) == "1"
                 existing_game = next((g for g in schedule if g.get("game_id") == game_id), None)
 
                 date_str = event.get("date")
@@ -470,6 +496,7 @@ if FIND_SCHEDULE:
                         "tv_providers": tv_providers,
                         "game_link": link,
                         "is_nba_cup": is_nba_cup,
+                        "is_preseason": is_preseason,
                         "tournament": nba_cup_label or None,
                         "is_playoff": is_playoff,
                         "series_note": series_note,
@@ -488,6 +515,7 @@ if FIND_SCHEDULE:
                         "home_score": None,
                         "away_score": None,
                         "is_nba_cup": is_nba_cup,
+                        "is_preseason": is_preseason,
                         "tournament": nba_cup_label or None,
                         "is_playoff": is_playoff,
                         "series_note": series_note,
@@ -508,7 +536,7 @@ if FIND_SCHEDULE:
     print(f"\n Schedule fetch complete — {len(schedule)} total games saved.")
 
     os.makedirs(os.path.dirname(_STATE_PATH), exist_ok=True)
-    with open(_STATE_PATH, "w") as _sf:
+    with open(_PRESEASON_STATE_PATH if _preseason_scan else _STATE_PATH, "w") as _sf:
         _sf.write(datetime.now().isoformat())
 
 

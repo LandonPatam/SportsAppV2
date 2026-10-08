@@ -109,6 +109,8 @@ def main():
 
         rosters = dict(previous) if isinstance(previous, dict) else {}
         session = requests.Session()
+        consecutive_failures = 0
+        refreshed = 0
         for team in teams:
             team_id = team.get("TEAM_ID")
             team_name = team.get("TEAM_NAME", "")
@@ -121,16 +123,30 @@ def main():
                 headers = result.get("headers", [])
                 rows = result.get("rowSet", [])
                 players = [format_player(dict(zip(headers, row)), team_name) for row in rows]
-                rosters[str(team_id)] = [p for p in players if p.get("PLAYER_ID") and p.get("PLAYER_NAME")]
-                print(f"[ROSTER] {team_name}: {len(rows)} players")
+                valid_players = [p for p in players if p.get("PLAYER_ID") and p.get("PLAYER_NAME")]
+                if not valid_players:
+                    raise ValueError("empty roster response; keeping cached roster")
+                rosters[str(team_id)] = valid_players
+                consecutive_failures = 0
+                refreshed += 1
+                print(f"[ROSTER] {team_name}: {len(valid_players)} players")
             except Exception as exc:
                 print(f"[WARN] Could not refresh roster for {team_name} ({team_id}): {exc}")
+                consecutive_failures += 1
+                if consecutive_failures >= 3:
+                    print("[WARN] NBA roster endpoint failed three times in a row; keeping remaining cached rosters until the next daily refresh.")
+                    break
             time.sleep(1)
+
+        session.close()
+        if not refreshed:
+            print(f"[INFO] No NBA rosters refreshed for {season}; cache left unchanged.")
+            return
 
         temp_path = cache_path.with_suffix(".tmp")
         temp_path.write_text(json.dumps(rosters, indent=2, ensure_ascii=False), encoding="utf-8")
         temp_path.replace(cache_path)
-        print(f"[OK] NBA roster cache refreshed for {season}.")
+        print(f"[OK] NBA roster cache refreshed for {season}: {refreshed} teams updated.")
     finally:
         lock.close()
 

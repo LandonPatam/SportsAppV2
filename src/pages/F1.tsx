@@ -1521,12 +1521,12 @@ function getCanceledRaceMap(calendarData: F1Race[]): Record<string, boolean> {
 }
 
 function driverMatchesResult(driverName: string, result: any): boolean {
-  const haystack = `${result.driver ?? ''} ${result.short_name ?? ''}`.toLowerCase();
-  return driverName
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .some((part) => haystack.includes(part));
+  const normalize = (name: string) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const name = normalize(driverName);
+  if (!name) return false;
+  if (normalize(result.driver ?? '') === name) return true;
+  const lastName = name.split(/\s+/).at(-1);
+  return Boolean(lastName && normalize(result.short_name ?? '').split(/\s+/).at(-1) === lastName);
 }
 
 function deriveTeamsFromCalendar(teamsData: F1Team[], calendarData: F1Race[]): F1Team[] {
@@ -1536,15 +1536,24 @@ function deriveTeamsFromCalendar(teamsData: F1Team[], calendarData: F1Race[]): F
 
   if (completedRaces.length === 0) return teamsData;
 
+  // Keep every published standings column, including codes absent from the calendar.
+  const raceAbbrevs = [...new Set([
+    ...RACE_ABBREVS,
+    ...teamsData.flatMap((team: any) => [
+      ...Object.keys(team.team_race_points ?? {}),
+      ...(team.drivers ?? []).flatMap((driver: any) => Object.keys(driver.race_points ?? {})),
+    ]),
+  ])];
+
   return teamsData.map((team: any) => {
     const teamRacePoints: Record<string, number | null> = {};
-    RACE_ABBREVS.forEach((abbrev) => {
+    raceAbbrevs.forEach((abbrev) => {
       teamRacePoints[abbrev] = null;
     });
 
     const drivers = (team.drivers ?? []).map((driver: any) => {
       const racePoints: Record<string, number | null> = {};
-      RACE_ABBREVS.forEach((abbrev) => {
+      raceAbbrevs.forEach((abbrev) => {
         racePoints[abbrev] = driver.race_points?.[abbrev] ?? null;
       });
 
@@ -1570,7 +1579,7 @@ function deriveTeamsFromCalendar(teamsData: F1Team[], calendarData: F1Race[]): F
 
     drivers.forEach((driver: any) => {
       Object.entries(driver.race_points ?? {}).forEach(([abbrev, points]) => {
-        if (!RACE_ABBREVS.includes(abbrev)) return;
+        if (!raceAbbrevs.includes(abbrev)) return;
         teamRacePoints[abbrev] = (teamRacePoints[abbrev] ?? 0) + (points as number ?? 0);
         if (teamRacePoints[abbrev] === 0) teamRacePoints[abbrev] = null;
       });

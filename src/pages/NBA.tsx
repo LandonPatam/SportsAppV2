@@ -1322,6 +1322,30 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
     return () => document.removeEventListener('mousedown', handler);
   }, [showCalendar]);
 
+  const scoreboardGridRef = React.useRef<HTMLDivElement>(null);
+  const [scoreboardRowHeight, setScoreboardRowHeight] = React.useState<number | null>(null);
+  useEffect(() => {
+    const update = () => {
+      const grid = scoreboardGridRef.current;
+      if (isMobile || window.innerWidth < 1024 || !grid) {
+        setScoreboardRowHeight(null);
+        return;
+      }
+      // Reserve four 12px gaps and a bottom margin for five desktop rows.
+      const top = grid.getBoundingClientRect().top + window.scrollY;
+      setScoreboardRowHeight(Math.max(92, Math.floor((window.innerHeight - top - 16 - 48) / 5)));
+    };
+    const frame = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+    const observer = new ResizeObserver(update);
+    if (scoreboardGridRef.current) observer.observe(scoreboardGridRef.current);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', update);
+      observer.disconnect();
+    };
+  }, [isMobile, index, scheduleData]);
+
   if (!scheduleData) return <div className="text-sm text-muted-foreground"></div>;
   const logos: Record<string, string> = Array.isArray(scheduleData) ? {} : (scheduleData?.teams || {});
 
@@ -1488,7 +1512,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
           <CardContent className="py-8 text-center text-sm font-black tracking-wide text-muted-foreground">No games</CardContent>
         </Card>
       ) : (
-        <div key={currentKey} className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full pb-16`}>
+        <div key={currentKey} ref={scoreboardGridRef} style={scoreboardRowHeight ? { gridAutoRows: `${scoreboardRowHeight}px` } : undefined} className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-2 sm:gap-3 auto-rows-fr w-full ${scoreboardRowHeight ? 'pb-0' : 'pb-16'}`} >
           {games.map((g, index) => {
             // Derive home/away abbreviations and logos
             let awayAbbr = (g as any).away as string | undefined;
@@ -1539,7 +1563,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
             const showTeamNames = games.length <= 6;
 
             // Mobile-specific sizing
-            const logoSize = isMobile ? '13cqi' : undefined;
+            const logoSize = isMobile ? '13cqi' : scoreboardRowHeight ? `min(7cqi, ${Math.max(30, scoreboardRowHeight - 52)}px)` : undefined;
             const scoreFontSize = isMobile ? 'clamp(1.5rem, 7cqi, 2.2rem)' : 'clamp(1.125rem, 4cqi, 1.75rem)';
             const timeFontSize = isMobile ? 'clamp(0.85rem, 5cqi, 1.6rem)' : 'clamp(0.875rem, 3.2cqi, 1.3rem)';
             const recordFontSize = isMobile ? 'clamp(0.65rem, 2.5cqi, 0.8rem)' : 'clamp(0.6rem, 2.2cqi, 0.75rem)';
@@ -4312,8 +4336,8 @@ useEffect(() => {
         { value: 'schedule',    label: 'Scoreboard'  },
         { value: 'playoffs',    label: 'Playoffs'    },
         { value: 'standings',   label: 'Standings'   },
-        { value: 'all',         label: 'Team Stats'  },
-        { value: 'top-scorers', label: 'Top Players' },
+        { value: 'all',         label: 'Teams'  },
+        { value: 'top-scorers', label: 'Players' },
       ]}
       activeTab={activeTab}
       onTabChange={handleTabChange}

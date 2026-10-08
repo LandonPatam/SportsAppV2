@@ -20,7 +20,6 @@ NBA_SCHEDULE_SCRIPT = Path("data/schedule_NBA.py")
 NFL_SCHEDULE_SCRIPT = Path("data/schedule_NFL.py")
 NBA_DATA_SCRIPT     = Path("data/data_NBAV2.py")
 NFL_DATA_SCRIPT     = Path("data/data_NFLV2.py")
-NBA_ROSTER_SCRIPT   = Path("data/roster_NBA.py")
 F1_DATA_SCRIPT      = Path("data/data_F1.py")      # race results + driver standings
 # F1_CALENDAR_SCRIPT removed — run manually at the start of a new season
 
@@ -28,7 +27,6 @@ F1_DATA_SCRIPT      = Path("data/data_F1.py")      # race results + driver stand
 ACTIVE_INTERVAL = 15     # when games are live/upcoming today
 IDLE_INTERVAL   = 600    # no games today (10 min)
 DATA_INTERVAL   = 150    # NBA/NFL data scripts (2.5 min)
-NBA_ROSTER_INTERVAL = 24 * 60 * 60  # Daily roster/trade refresh
 
 # F1 intervals (seconds)
 F1_RACE_INTERVAL = 5  * 60   # 5 min — during race weekend (results change fast)
@@ -187,7 +185,6 @@ def main():
                 (Path("data/local_nfl_broadcasts.py"), 24 * 60 * 60, False),
                 (NBA_DATA_SCRIPT, DATA_INTERVAL, False),
                 (NFL_DATA_SCRIPT, DATA_INTERVAL, False),
-                (NBA_ROSTER_SCRIPT, NBA_ROSTER_INTERVAL, False),
                 (F1_DATA_SCRIPT, F1_RACE_INTERVAL if f1["is_race_weekend"] else F1_IDLE_INTERVAL, False),
             ]
             for script, interval, live_only in jobs:

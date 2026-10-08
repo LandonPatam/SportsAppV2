@@ -280,10 +280,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872933/panthers-falcons",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "3",
+    "away_score": "34",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Carolina Panthers"
   },
   {
     "game_id": "401872934",
@@ -295,10 +296,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872934/bengals-texans",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "6",
+    "away_score": "20",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Cincinnati Bengals"
   },
   {
     "game_id": "401872935",
@@ -310,10 +312,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872935/browns-buccaneers",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "19",
+    "away_score": "23",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Cleveland Browns"
   },
   {
     "game_id": "401872936",
@@ -325,10 +328,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872936/packers-jets",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "17",
+    "away_score": "20",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Green Bay Packers"
   },
   {
     "game_id": "401872937",
@@ -340,10 +344,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872937/vikings-bears",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "3",
+    "away_score": "9",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Minnesota Vikings"
   },
   {
     "game_id": "401872938",
@@ -355,10 +360,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872938/saints-ravens",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "17",
+    "away_score": "24",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "New Orleans Saints"
   },
   {
     "game_id": "401872939",
@@ -370,10 +376,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872939/eagles-titans",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "20",
+    "away_score": "24",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Philadelphia Eagles"
   },
   {
     "game_id": "401872946",
@@ -385,10 +392,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872946/steelers-patriots",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "20",
+    "away_score": "3",
     "ts_utc": 1789923600,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "New England Patriots"
   },
   {
     "game_id": "401872940",
@@ -400,10 +408,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872940/jaguars-broncos",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "20",
+    "away_score": "13",
     "ts_utc": 1789934700,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Denver Broncos"
   },
   {
     "game_id": "401872941",
@@ -415,10 +424,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872941/raiders-chargers",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "14",
+    "away_score": "26",
     "ts_utc": 1789934700,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Las Vegas Raiders"
   },
   {
     "game_id": "401872942",
@@ -430,10 +440,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872942/dolphins-49ers",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "35",
+    "away_score": "13",
     "ts_utc": 1789935900,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "San Francisco 49ers"
   },
   {
     "game_id": "401872943",
@@ -445,10 +456,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872943/seahawks-cardinals",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "7",
+    "away_score": "31",
     "ts_utc": 1789935900,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Seattle Seahawks"
   },
   {
     "game_id": "401872944",
@@ -460,10 +472,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872944/commanders-cowboys",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "37",
+    "away_score": "20",
     "ts_utc": 1789935900,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Dallas Cowboys"
   },
   {
     "game_id": "401872945",
@@ -475,10 +488,11 @@
       "NBC"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872945/colts-chiefs",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "33",
+    "away_score": "30",
     "ts_utc": 1789950000,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Kansas City Chiefs"
   },
   {
     "game_id": "401872947",
@@ -491,10 +505,11 @@
       "ABC"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872947/giants-rams",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790036100
+    "winner": "Los Angeles Rams",
+    "home_score": "28",
+    "away_score": "6",
+    "ts_utc": 1790036100,
+    "status": "final"
   },
   {
     "game_id": "401872948",
@@ -506,10 +521,11 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872948/falcons-packers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790295300
+    "winner": "Atlanta Falcons",
+    "home_score": "14",
+    "away_score": "35",
+    "ts_utc": 1790295300,
+    "status": "final"
   },
   {
     "game_id": "401872949",
@@ -521,10 +537,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872949/panthers-browns",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Cleveland Browns",
+    "home_score": "21",
+    "away_score": "18",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872950",
@@ -536,10 +553,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872950/bengals-steelers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Pittsburgh Steelers",
+    "home_score": "30",
+    "away_score": "27",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872951",
@@ -551,10 +569,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872951/texans-colts",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Indianapolis Colts",
+    "home_score": "19",
+    "away_score": "17",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872952",
@@ -566,10 +585,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872952/chiefs-dolphins",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Kansas City Chiefs",
+    "home_score": "10",
+    "away_score": "24",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872953",
@@ -581,10 +601,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872953/chargers-bills",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Buffalo Bills",
+    "home_score": "24",
+    "away_score": "16",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872954",
@@ -596,10 +617,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872954/jets-lions",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Detroit Lions",
+    "home_score": "31",
+    "away_score": "24",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872955",
@@ -611,10 +633,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872955/seahawks-commanders",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Washington Commanders",
+    "home_score": "33",
+    "away_score": "31",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872956",
@@ -626,10 +649,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872956/titans-giants",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "New York Giants",
+    "home_score": "12",
+    "away_score": "7",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872957",
@@ -641,10 +665,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872957/patriots-jaguars",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790528400
+    "winner": "Jacksonville Jaguars",
+    "home_score": "35",
+    "away_score": "6",
+    "ts_utc": 1790528400,
+    "status": "final"
   },
   {
     "game_id": "401872958",
@@ -656,10 +681,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872958/cardinals-49ers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790539500
+    "winner": "San Francisco 49ers",
+    "home_score": "36",
+    "away_score": "30",
+    "ts_utc": 1790539500,
+    "status": "final"
   },
   {
     "game_id": "401872959",
@@ -671,10 +697,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872959/vikings-buccaneers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790539500
+    "winner": "Minnesota Vikings",
+    "home_score": "16",
+    "away_score": "23",
+    "ts_utc": 1790539500,
+    "status": "final"
   },
   {
     "game_id": "401872960",
@@ -686,10 +713,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872960/ravens-cowboys",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790540700
+    "winner": "Baltimore Ravens",
+    "home_score": "31",
+    "away_score": "34",
+    "ts_utc": 1790540700,
+    "status": "final"
   },
   {
     "game_id": "401872961",
@@ -701,10 +729,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872961/raiders-saints",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790540700
+    "winner": "Las Vegas Raiders",
+    "home_score": "27",
+    "away_score": "35",
+    "ts_utc": 1790540700,
+    "status": "final"
   },
   {
     "game_id": "401872962",
@@ -716,10 +745,11 @@
       "NBC"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872962/rams-broncos",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790554800
+    "winner": "Denver Broncos",
+    "home_score": "30",
+    "away_score": "26",
+    "ts_utc": 1790554800,
+    "status": "final"
   },
   {
     "game_id": "401872963",
@@ -732,10 +762,11 @@
       "ABC"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872963/eagles-bears",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790640900
+    "winner": "Chicago Bears",
+    "home_score": "27",
+    "away_score": "7",
+    "ts_utc": 1790640900,
+    "status": "final"
   },
   {
     "game_id": "401872964",
@@ -747,10 +778,11 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872964/steelers-browns",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1790900100
+    "winner": "Cleveland Browns",
+    "home_score": "27",
+    "away_score": "24",
+    "ts_utc": 1790900100,
+    "status": "final"
   },
   {
     "game_id": "401872965",
@@ -762,10 +794,11 @@
       "NFL Network"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872965/colts-commanders",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791120600
+    "winner": "Indianapolis Colts",
+    "home_score": "13",
+    "away_score": "30",
+    "ts_utc": 1791120600,
+    "status": "final"
   },
   {
     "game_id": "401872966",
@@ -777,10 +810,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872966/cardinals-giants",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "New York Giants",
+    "home_score": "36",
+    "away_score": "24",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872967",
@@ -792,10 +826,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872967/cowboys-texans",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "Dallas Cowboys",
+    "home_score": "30",
+    "away_score": "34",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872968",
@@ -807,10 +842,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872968/packers-buccaneers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "Green Bay Packers",
+    "home_score": "14",
+    "away_score": "17",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872969",
@@ -822,10 +858,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872969/jaguars-bengals",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "Jacksonville Jaguars",
+    "home_score": "17",
+    "away_score": "22",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872970",
@@ -837,10 +874,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872970/rams-eagles",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "Los Angeles Rams",
+    "home_score": "20",
+    "away_score": "24",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872971",
@@ -852,10 +890,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872971/patriots-bills",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "New England Patriots",
+    "home_score": "26",
+    "away_score": "29",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872972",
@@ -867,10 +906,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872972/jets-bears",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "Chicago Bears",
+    "home_score": "23",
+    "away_score": "12",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872973",
@@ -882,10 +922,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872973/titans-ravens",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791133200
+    "winner": "Baltimore Ravens",
+    "home_score": "24",
+    "away_score": "18",
+    "ts_utc": 1791133200,
+    "status": "final"
   },
   {
     "game_id": "401872974",
@@ -897,10 +938,11 @@
       "FOX"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872974/dolphins-vikings",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791144300
+    "winner": "Minnesota Vikings",
+    "home_score": "15",
+    "away_score": "10",
+    "ts_utc": 1791144300,
+    "status": "final"
   },
   {
     "game_id": "401872975",
@@ -912,10 +954,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872975/broncos-49ers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791145500
+    "winner": "San Francisco 49ers",
+    "home_score": "24",
+    "away_score": "14",
+    "ts_utc": 1791145500,
+    "status": "final"
   },
   {
     "game_id": "401872976",
@@ -927,10 +970,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872976/chiefs-raiders",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791145500
+    "winner": "Kansas City Chiefs",
+    "home_score": "27",
+    "away_score": "30",
+    "ts_utc": 1791145500,
+    "status": "final"
   },
   {
     "game_id": "401872977",
@@ -942,10 +986,11 @@
       "CBS"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872977/chargers-seahawks",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791145500
+    "winner": "Seattle Seahawks",
+    "home_score": "30",
+    "away_score": "23",
+    "ts_utc": 1791145500,
+    "status": "final"
   },
   {
     "game_id": "401872978",
@@ -957,10 +1002,11 @@
       "NBC"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872978/lions-panthers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791159600
+    "winner": "Carolina Panthers",
+    "home_score": "32",
+    "away_score": "26",
+    "ts_utc": 1791159600,
+    "status": "final"
   },
   {
     "game_id": "401872979",
@@ -972,10 +1018,11 @@
       "ESPN"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872979/falcons-saints",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1791245700
+    "winner": "Atlanta Falcons",
+    "home_score": "24",
+    "away_score": "45",
+    "ts_utc": 1791245700,
+    "status": "final"
   },
   {
     "game_id": "401872980",
@@ -987,10 +1034,10 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872980/buccaneers-cowboys",
-    "winner": null,
     "home_score": null,
     "away_score": null,
-    "ts_utc": 1791504900
+    "ts_utc": 1791504900,
+    "status": "scheduled"
   },
   {
     "game_id": "401872981",

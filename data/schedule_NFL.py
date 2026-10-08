@@ -17,7 +17,7 @@ if LIVE_ONLY:
     FIND_SCHEDULE = False
 SAVE_PATH = "public/data/nfl_schedule.json"
 TEMP_PATH = SAVE_PATH + ".tmp"
-VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock"}
+VALID_NETWORKS = {"ESPN", "ABC", "FOX", "CBS", "NBC", "NFL Network", "Prime Video", "Peacock", "Paramount+"}
 SLEEP_BETWEEN_CALLS = float(os.getenv("NFL_SCHEDULE_SLEEP", "1.5"))
 MAX_EMPTY_DAYS = 20
 ENABLE_UPCOMING_SEASON_AUTO_DETECT = True

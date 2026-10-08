@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 import os
 from datetime import datetime
 from urllib.parse import urlencode
-import time
 import pytz
 from scoreboard_client import ScoreboardClient, ScoreboardUnavailable
 
@@ -33,7 +32,6 @@ SCHEDULE_JSON = os.path.join(BASE_DIR, "public", "data", "nba_schedule.json")
 TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_team_stats.json")
 PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", "espn_NBA_player_stats.json")
 SEASONS_MANIFEST_JSON = os.path.join(BASE_DIR, "public", "data", "nba_seasons.json")
-ROSTER_CACHE_TTL_SECONDS = 24 * 60 * 60
 
 def get_nba_season_year() -> int:
     try:
@@ -60,7 +58,6 @@ print(f"NBA stats season: {NBA_SEASON}")
 SEASON_START_YEAR = int(NBA_SEASON.split("-")[0])
 SEASON_TEAM_STATS_JSON = os.path.join(BASE_DIR, "public", "data", f"espn_NBA_team_stats_{NBA_SEASON}.json")
 SEASON_PLAYER_STATS_JSON = os.path.join(BASE_DIR, "public", "data", f"espn_NBA_player_stats_{NBA_SEASON}.json")
-ROSTER_CACHE_JSON = os.path.join(BASE_DIR, "public", "data", f"nba_roster_cache_{NBA_SEASON}.json")
 
 
 # ==========================================================
@@ -161,60 +158,7 @@ def backfill_missing_schedule_scores():
 
 backfill_missing_schedule_scores()
 
-NBA_TEAM_ABBREVIATIONS = {
-    "Atlanta Hawks": "ATL",
-    "Boston Celtics": "BOS",
-    "Brooklyn Nets": "BKN",
-    "Charlotte Hornets": "CHA",
-    "Chicago Bulls": "CHI",
-    "Cleveland Cavaliers": "CLE",
-    "Dallas Mavericks": "DAL",
-    "Denver Nuggets": "DEN",
-    "Detroit Pistons": "DET",
-    "Golden State Warriors": "GSW",
-    "Houston Rockets": "HOU",
-    "Indiana Pacers": "IND",
-    "LA Clippers": "LAC",
-    "Los Angeles Clippers": "LAC",
-    "Los Angeles Lakers": "LAL",
-    "Memphis Grizzlies": "MEM",
-    "Miami Heat": "MIA",
-    "Milwaukee Bucks": "MIL",
-    "Minnesota Timberwolves": "MIN",
-    "New Orleans Pelicans": "NOP",
-    "New York Knicks": "NYK",
-    "Oklahoma City Thunder": "OKC",
-    "Orlando Magic": "ORL",
-    "Philadelphia 76ers": "PHI",
-    "Phoenix Suns": "PHX",
-    "Portland Trail Blazers": "POR",
-    "Sacramento Kings": "SAC",
-    "San Antonio Spurs": "SAS",
-    "Toronto Raptors": "TOR",
-    "Utah Jazz": "UTA",
-    "Washington Wizards": "WAS",
-}
 
-ZERO_PLAYER_STATS = {
-    "GP": 0,
-    "MIN": 0,
-    "PTS": 0,
-    "REB": 0,
-    "AST": 0,
-    "STL": 0,
-    "BLK": 0,
-    "TOV": 0,
-    "FG_PCT": 0,
-    "FG3_PCT": 0,
-    "FT_PCT": 0,
-    "FGA": 0,
-    "FG3A": 0,
-    "FTA": 0,
-    "OFF_RATING": None,
-    "DEF_RATING": None,
-    "NET_RATING": None,
-    "VALUE_SCORE": None,
-}
 
 def nba_stats_url(endpoint: str, extra_params: Dict[str, Any] = None) -> str:
     params = {
@@ -254,13 +198,6 @@ def nba_stats_url(endpoint: str, extra_params: Dict[str, Any] = None) -> str:
         params.update(extra_params)
     return f"https://stats.nba.com/stats/{endpoint}?{urlencode(params)}"
 
-def nba_roster_url(team_id: int) -> str:
-    params = {
-        "LeagueID": "00",
-        "Season": NBA_SEASON,
-        "TeamID": str(team_id),
-    }
-    return f"https://stats.nba.com/stats/commonteamroster?{urlencode(params)}"
 
 def load_json_or_default(path: str, default):
     try:
@@ -362,75 +299,9 @@ def format_player_stats_row(p: Dict[str, Any]) -> Dict[str, Any]:
             player_dict[key] = value
     return player_dict
 
-def format_roster_row(row: Dict[str, Any], team_name: str) -> Dict[str, Any]:
-    team_id = row.get("TeamID")
-    player_dict = {
-        "PLAYER_ID": row.get("PLAYER_ID"),
-        "PLAYER_NAME": row.get("PLAYER"),
-        "TEAM_ID": team_id,
-        "TEAM_ABBREVIATION": NBA_TEAM_ABBREVIATIONS.get(team_name, ""),
-        "JERSEY_NUMBER": row.get("NUM") or "",
-        "POSITION": row.get("POSITION") or "",
-        "NICKNAME": row.get("NICKNAME") or "",
-        "AGE": row.get("AGE"),
-        "HEIGHT": row.get("HEIGHT") or "",
-        "WEIGHT": row.get("WEIGHT") or "",
-        "SCHOOL": row.get("SCHOOL") or "",
-        "EXP": row.get("EXP") or "",
-        "PLAYER_SLUG": row.get("PLAYER_SLUG") or "",
-        "ROSTER_ONLY": True,
-    }
-    player_dict.update(ZERO_PLAYER_STATS)
-    return player_dict
-
-def load_roster_cache() -> tuple[Dict[str, List[Dict[str, Any]]], bool]:
-    cached = load_json_or_default(ROSTER_CACHE_JSON, {})
-    if not isinstance(cached, dict):
-        return {}, False
-    try:
-        is_fresh = time.time() - os.path.getmtime(ROSTER_CACHE_JSON) < ROSTER_CACHE_TTL_SECONDS
-    except OSError:
-        is_fresh = False
-    return cached, is_fresh
 
 
-def fetch_roster_players(
-    team_source: List[Dict[str, Any]],
-    cached_rosters: Dict[str, List[Dict[str, Any]]] | None = None,
-    use_cached_only: bool = False,
-) -> Dict[str, List[Dict[str, Any]]]:
-    cached_rosters = cached_rosters or {}
-    roster_players = defaultdict(list)
-    for team in team_source:
-        team_id = team.get("TEAM_ID")
-        team_name = team.get("TEAM_NAME", "")
-        if not team_id:
-            continue
-        cache_key = str(team_id)
-        cached_players = cached_rosters.get(cache_key, [])
-        if use_cached_only and cached_players:
-            roster_players[cache_key].extend(cached_players)
-            continue
-        try:
-            resp = requests.get(nba_roster_url(team_id), headers=headers, timeout=(5, 30))
-            resp.raise_for_status()
-            roster_data = resp.json()
-            result = roster_data.get("resultSets", [{}])[0]
-            roster_headers = result.get("headers", [])
-            roster_rows = result.get("rowSet", [])
-            for row in roster_rows:
-                player = format_roster_row(dict(zip(roster_headers, row)), team_name)
-                if player.get("PLAYER_ID") and player.get("PLAYER_NAME"):
-                    roster_players[str(team_id)].append(player)
-            print(f"[ROSTER] {team_name}: {len(roster_rows)} players")
-        except Exception as e:
-            print(f"[WARN] Could not fetch roster for {team_name} ({team_id}): {e}")
-            # Keep the last known roster rather than publishing a partial result.
-            if cached_players:
-                roster_players[cache_key].extend(cached_players)
-        # NBA Stats throttles aggressively; roster data does not need rapid refreshes.
-        time.sleep(1.0)
-    return dict(roster_players)
+
 
 
 # NBA Team Data
@@ -522,16 +393,8 @@ else:
     if existing_players:
         print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; preserving the existing player data.")
     else:
-        cached_rosters, cache_is_fresh = load_roster_cache()
-        print(f"[WARN] No NBA player stats returned for {NBA_SEASON}; {'using the roster cache' if cache_is_fresh else 'refreshing roster data'}.")
-        roster_team_source = formatted_teams or load_json_or_default(SEASON_TEAM_STATS_JSON, []) or load_json_or_default(TEAM_STATS_JSON, [])
-        roster_players = fetch_roster_players(roster_team_source, cached_rosters, use_cached_only=cache_is_fresh)
-        if roster_players:
-            atomic_write_json(roster_players, ROSTER_CACHE_JSON)
-            write_player_stats(roster_players)
-            print(f"[OK] Saved roster fallback for {sum(len(v) for v in roster_players.values())} players.")
-        else:
-            print(f"[WARN] No NBA rosters returned for {NBA_SEASON}; preserving existing player stats.")
+        print(f"[INFO] No NBA player stats available for {NBA_SEASON} yet; waiting for player stats without fetching rosters.")
+
 
 
 # --- Load existing team stats ---

@@ -34,7 +34,10 @@ def _restore_teams_from_backup():
 def _safe_write_teams(teams, label="F1 teams"):
     if not _valid_f1_teams(teams):
         print(f"[WARN] Refusing to overwrite {TEAMS_PATH}: {label} produced invalid/empty team data.")
-        _restore_teams_from_backup()
+        if _load_valid_teams(TEAMS_PATH) is not None:
+            print("[INFO] Keeping the existing F1 teams and points.")
+        else:
+            _restore_teams_from_backup()
         return False
 
     os.makedirs(os.path.dirname(TEAMS_PATH), exist_ok=True)
@@ -552,6 +555,10 @@ def fetch_circuit_stats():
     with open(CALENDAR_PATH) as f:
         calendar = json.load(f)
 
+    if calendar and all(race.get('circuit_stats') for race in calendar):
+        print("[INFO] F1 circuit stats already cached; no circuit fetch needed.")
+        return
+
     # ── Race name keyword → formula-timer circuit ID ─────────────────────────
     RACE_TO_FT = {
         'Australian':    'albert_park',
@@ -620,7 +627,7 @@ def fetch_circuit_stats():
         resp = requests.get('https://formula-timer.com/circuit', headers=headers, timeout=15)
         resp.raise_for_status()
     except Exception as e:
-        print(f"ERROR fetching formula-timer: {e}")
+        print(f"[WARN] Circuit stats unavailable; keeping cached circuit data: {e}")
         return
 
     # Parse all circuit cards: each is an <a href="/circuit/ID"> block
