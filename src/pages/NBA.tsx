@@ -1504,7 +1504,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
             {live && <div className="nba-mobile-status">{live && <i />}{final ? '' : live ? `${g.period && g.period > 4 ? 'OT' : `Q${g.period || 1}`} \u00b7 ${g.clock || g.time || 'Live'}` : g.time || 'Scheduled'}</div>}
             {[{ abbr: away, name: names[0], score: aScore, other: hScore }, { abbr: home, name: names[1], score: hScore, other: aScore }].map((team, i) => <div className="nba-mobile-team" key={i}>
               <img src={logoMap[team.abbr] || logos[team.abbr] || `https://a.espncdn.com/i/teamlogos/nba/500/${team.abbr.toLowerCase()}.png`} alt="" />
-              <span>{team.name || abbreviationToTeamName[team.abbr] || team.abbr}{upcoming && streakMap[team.abbr] && <span
+              <span>{team.name || abbreviationToTeamName[team.abbr] || team.abbr}{!final && streakMap[team.abbr] && <span
                 className="nba-mobile-result-arrow"
                 style={{ color: streakMap[team.abbr].type === 'W' ? '#4ade80' : '#f87171' }}
                 aria-label={streakMap[team.abbr].type === 'W' ? 'Won last game' : 'Lost last game'}
@@ -1797,7 +1797,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {awaySeriesWins} - {homeSeriesWins} )</span>
-                                {!isFinal && !isLiveGame && awayDisplayStreak && (
+                                {!isFinal && awayDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -1811,7 +1811,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {awayDisplayRecord.replace(/-/g, ' - ')} )</span>
-                                {!isFinal && !isLiveGame && awayDisplayStreak && (
+                                {!isFinal && awayDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -1890,7 +1890,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {homeSeriesWins} - {awaySeriesWins} )</span>
-                                {!isFinal && !isLiveGame && homeDisplayStreak && (
+                                {!isFinal && homeDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {homeDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -1904,7 +1904,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {homeDisplayRecord.replace(/-/g, ' - ')} )</span>
-                                {!isFinal && !isLiveGame && homeDisplayStreak && (
+                                {!isFinal && homeDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {homeDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>

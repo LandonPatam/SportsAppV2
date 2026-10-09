@@ -2397,7 +2397,7 @@ const ScheduleNFLViewV2 = ({
             {live && <div className="nba-mobile-status">{live && <i />}{final ? '' : live ? `${g.period && g.period > 4 ? 'OT' : `Q${g.period || 1}`} \u00b7 ${g.clock || g.time || 'Live'}` : g.time || 'Scheduled'}</div>}
             {[{ abbr: away, name: names[0], score: aScore, other: hScore }, { abbr: home, name: names[1], score: hScore, other: aScore }].map((team, i) => <div className="nba-mobile-team" key={i}>
               <img src={logoMap[team.abbr] || `https://a.espncdn.com/i/teamlogos/nfl/500/${team.abbr.toLowerCase()}.png`} alt="" />
-              <span>{team.name || abbreviationToTeamName[team.abbr] || team.abbr}{upcoming && streakMap[team.abbr] && <span
+              <span>{team.name || abbreviationToTeamName[team.abbr] || team.abbr}{!final && streakMap[team.abbr] && <span
                 className="nba-mobile-result-arrow"
                 style={{ color: streakMap[team.abbr].type === 'W' ? '#4ade80' : '#f87171' }}
                 aria-label={streakMap[team.abbr].type === 'W' ? 'Won last game' : 'Lost last game'}

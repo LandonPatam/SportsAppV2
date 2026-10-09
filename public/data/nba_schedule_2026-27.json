@@ -425,8 +425,8 @@
     "location": "Staples Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401898717/kings-lakers",
-    "home_score": "101",
-    "away_score": "84",
+    "home_score": "103",
+    "away_score": "87",
     "is_nba_cup": false,
     "is_preseason": true,
     "tournament": null,
@@ -435,7 +435,7 @@
     "series_game_number": null,
     "status": "live",
     "period": 4,
-    "clock": "5:37"
+    "clock": "4:32"
   },
   {
     "game_id": "401898395",
