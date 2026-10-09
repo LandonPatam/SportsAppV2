@@ -228,3 +228,434 @@
     box-shadow: none !important;
   }
 }
+/* NBA's mobile surface is mounted only for the mobile layout. */
+.nba-mobile-page {
+  min-height: 100dvh;
+  padding: max(24px, env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom));
+  background: #080a0c;
+  color: #f7f8fa;
+  font-family: 'Inter', sans-serif;
+}
+.nba-mobile-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 2px 22px; }
+.nba-mobile-title { display: flex; align-items: center; gap: 12px; font-size: 44px; font-weight: 850; letter-spacing: -2px; line-height: 1; }
+.nba-mobile-chevron { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #1b2027; border: 1px solid #292f38; color: #aeb4c2; }
+.nba-mobile-season { width: 88px; height: 38px; border-radius: 24px; border: 1px solid #292f38; background: #12161b; color: white; font-family: 'Inter', sans-serif; font-weight: 600; }
+.nba-mobile-section { position: relative; padding: 0 4px 13px; border-bottom: 1px solid #272d35; font-size: 17px; font-weight: 700; }
+.nba-mobile-section::after { content: ''; position: absolute; bottom: -1px; left: 2px; width: 52px; height: 3px; border-radius: 3px; background: #00dce9; }
+.nba-mobile-date { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 17px 0; }
+.nba-mobile-date > span { font-size: 16px; font-weight: 700; }
+.nba-mobile-date button { display: grid; place-items: center; min-width: 36px; min-height: 40px; }
+.nba-mobile-date button:disabled { opacity: .25; }
+.nba-mobile-calendar { position: relative; margin-left: auto; width: 34px; height: 40px; display: grid; place-items: center; }
+.nba-mobile-calendar select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.nba-mobile-game-list { background: linear-gradient(120deg, #13171c, #101419); border: 1px solid #262c34; border-radius: 14px; padding: 0 10px; overflow: hidden; }
+.nba-mobile-game { display: block; position: relative; width: 100%; padding: 12px 2px 14px; text-align: left; border-bottom: 1px solid #2a3038; }
+.nba-mobile-game:last-child { border-bottom: 0; }
+.nba-mobile-game.is-live::before { content: ''; position: absolute; top: 16px; bottom: 14px; left: -10px; width: 3px; background: #a42eff; border-radius: 3px; }
+.nba-mobile-status { display: flex; justify-content: flex-end; align-items: center; gap: 6px; color: #a5abba; font-size: 12px; min-height: 18px; padding-right: 4px; }
+.nba-mobile-status i { width: 7px; height: 7px; border-radius: 50%; background: #ff3744; }
+.nba-mobile-team { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 39px; }
+.nba-mobile-team img { width: 36px; height: 36px; object-fit: contain; }
+.nba-mobile-team > span { font-size: clamp(12px, 3.7vw, 17px); font-weight: 550; letter-spacing: -.45px; }
+.nba-mobile-team strong { font-size: 23px; font-weight: 800; padding-right: 4px; font-variant-numeric: tabular-nums; }
+.nba-mobile-team strong.trailing { color: #969bab; }
+
+
+.nba-mobile-scoreboard-page {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.nba-mobile-scoreboard-page > [dir] {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.nba-mobile-scoreboard-page .nba-mobile-header,
+.nba-mobile-scoreboard-page .nba-mobile-section,
+.nba-mobile-scoreboard-page .nba-mobile-date { flex-shrink: 0; }
+.nba-mobile-scoreboard-page [role="tabpanel"][data-state="active"],
+.nba-mobile-scoreboard-page .nba-mobile-scores {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.nba-mobile-scoreboard-page .nba-mobile-game-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+
+html.nba-mobile-browser,
+html.nba-mobile-browser body { background-color: #080a0c; }
+.nba-mobile-scoreboard-page {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+
+.nba-mobile-section { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.nba-mobile-next-event { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 65%; text-align: right; line-height: 1.3; }
+.nba-mobile-next-countdown { flex-shrink: 0; font-size: 11px; font-weight: 650; color: #00dce9; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nba-mobile-next-name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; font-weight: 600; color: #e7e9ee; }
+
+
+.nba-mobile-game.is-upcoming { padding-right: 102px; }
+.nba-mobile-game.is-upcoming .nba-mobile-team { grid-template-columns: 38px minmax(0, 1fr); }
+.nba-mobile-tipoff {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 94px;
+  text-align: center;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.nba-mobile-result-arrow { display: inline-block; margin-left: 5px; font-size: 15px; font-weight: 800; line-height: 1; }
+
+
+.nba-mobile-header { flex-wrap: nowrap; justify-content: flex-start; gap: 0; overflow: hidden; }
+.nba-mobile-header .nba-mobile-title { flex-shrink: 0; order: 0; }
+.nba-mobile-header .nba-mobile-season { flex-shrink: 0; order: 2; margin-left: auto; transition: transform 480ms cubic-bezier(.22, 1, .36, 1); }
+.nba-mobile-header.sports-open .nba-mobile-season { transform: translateX(110px); }
+.nba-mobile-sports-reveal {
+  order: 1;
+  flex: 0 0 auto;
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: width 480ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease, visibility 480ms;
+}
+.nba-mobile-sports-reveal.is-open { width: 190px; opacity: 1; visibility: visible; }
+.nba-mobile-sports-clip { overflow: hidden; }
+.nba-mobile-sports-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  width: 190px;
+  padding-left: 18px;
+  transform: translateX(-12px);
+  transition: transform 480ms cubic-bezier(.22, 1, .36, 1);
+}
+.is-open .nba-mobile-sports-row { transform: translateX(0); }
+.nba-mobile-sport-option {
+  font-family: 'Inter', sans-serif;
+  font-size: 44px;
+  font-weight: 850;
+  letter-spacing: -2px;
+  line-height: 1;
+  padding: 4px 0;
+  color: #f7f8fa;
+  transition: color 200ms ease;
+}
+.nba-mobile-sport-option:active { color: #00dce9; }
+.nba-mobile-title .nba-mobile-chevron svg { transition: transform 420ms cubic-bezier(.22, 1, .36, 1); }
+.nba-mobile-title[aria-expanded="true"] .nba-mobile-chevron svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .nba-mobile-sports-reveal, .nba-mobile-sports-row, .nba-mobile-header .nba-mobile-season, .nba-mobile-title .nba-mobile-chevron svg { transition: none; }
+}
+
+
+.nba-mobile-header .nba-mobile-season-switcher {
+  width: auto;
+  height: 44px;
+  padding: 0;
+  gap: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.7px;
+}
+.nba-mobile-season-switcher > svg { display: none; }
+.nba-mobile-season-switcher .nba-mobile-chevron svg {
+  transform: rotate(90deg);
+  transition: transform 420ms cubic-bezier(.22, 1, .36, 1);
+}
+.nba-mobile-season-switcher[data-state="open"] .nba-mobile-chevron svg { transform: rotate(-90deg); }
+@media (prefers-reduced-motion: reduce) {
+  .nba-mobile-season-switcher .nba-mobile-chevron svg { transition: none; }
+}
+
+
+.nba-mobile-season-menu {
+  border: 0;
+  border-radius: 0;
+  background: #080a0c;
+  color: #f7f8fa;
+  font-family: 'Inter', sans-serif;
+}
+.nba-mobile-season-menu .nba-mobile-season-option {
+  padding: 12px 30px 12px 12px;
+  border-radius: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.7px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+.nba-mobile-season-option[data-state="checked"],
+.nba-mobile-season-option[data-highlighted] {
+  color: #00dce9;
+  background: transparent;
+}
+.nba-mobile-season-option > span:first-child { left: auto; right: 8px; }
+
+
+.nba-mobile-season-switcher .nba-mobile-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+.nba-mobile-season-switcher .nba-mobile-chevron svg {
+  display: block;
+  margin: 0;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  transform-origin: center;
+}
+
+
+.nba-mobile-header .nba-mobile-season-swipe {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.nba-season-swipe-window { position: relative; width: 72px; height: 44px; overflow: hidden; }
+.nba-season-swipe-window > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.7px;
+  white-space: nowrap;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+.nba-season-step { display: grid; place-items: center; width: 20px; height: 44px; color: #aeb4c2; }
+.nba-season-step:disabled { opacity: .2; }
+
+
+.nba-mobile-header { align-items: flex-start; }
+.nba-mobile-header .nba-mobile-season-picker {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.nba-mobile-season-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.7px;
+  white-space: nowrap;
+}
+.nba-mobile-season-picker-trigger .nba-mobile-chevron { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nba-mobile-season-picker-trigger svg { display: block; transform: rotate(90deg); transition: transform 480ms cubic-bezier(.22, 1, .36, 1); }
+.nba-mobile-season-picker-trigger[aria-expanded="true"] svg { transform: rotate(-90deg); }
+.nba-mobile-season-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 480ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease, visibility 480ms;
+}
+.nba-mobile-season-reveal.is-open { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
+.nba-mobile-season-clip { min-height: 0; overflow: hidden; }
+.nba-mobile-season-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  transform: translateY(-10px);
+  transition: transform 480ms cubic-bezier(.22, 1, .36, 1);
+}
+.is-open .nba-mobile-season-options { transform: translateY(0); }
+.nba-mobile-season-options button { min-height: 36px; text-align: left; font-size: 22px; font-weight: 800; letter-spacing: -.7px; white-space: nowrap; }
+.nba-mobile-season-options button:active { color: #00dce9; }
+@media (prefers-reduced-motion: reduce) {
+  .nba-mobile-season-reveal, .nba-mobile-season-options, .nba-mobile-season-picker-trigger svg { transition: none; }
+}
+
+
+.nba-mobile-header-reversed { flex-direction: row-reverse; }
+.nba-mobile-header-reversed .nba-mobile-season-picker { margin-left: 0; margin-right: auto; }
+.nba-mobile-header-reversed.sports-open .nba-mobile-season-picker { transform: translateX(-110px); }
+.nba-mobile-header-reversed .nba-mobile-sports-row { padding-left: 0; padding-right: 18px; }
+.nba-mobile-header-reversed .nba-mobile-title .nba-mobile-chevron svg { transform: rotate(180deg); }
+.nba-mobile-header-reversed .nba-mobile-title[aria-expanded="true"] .nba-mobile-chevron svg { transform: rotate(0); }
+
+.nfl-mobile-header { justify-content: flex-start; }
+.nba-mobile-header-reversed {
+  position: relative;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.nba-mobile-header-reversed .nba-mobile-title { order: 1; margin-left: auto; }
+.nba-mobile-header-reversed .nba-mobile-season-picker { order: 0; margin-right: 0; }
+.nba-mobile-header-reversed.sports-open .nba-mobile-season-picker { transform: none; }
+.nba-mobile-header-reversed .nba-mobile-sports-reveal {
+  order: 2;
+  flex-basis: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 480ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease, visibility 480ms;
+}
+.nba-mobile-header-reversed .nba-mobile-sports-reveal.is-open { width: 100%; grid-template-rows: 1fr; }
+.nba-mobile-header-reversed .nba-mobile-sports-clip { min-height: 0; }
+.nba-mobile-header-reversed .nba-mobile-sports-row {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 16px 0 0;
+  transform: translateY(-10px);
+}
+.nba-mobile-header-reversed .is-open .nba-mobile-sports-row { transform: translateY(0); }
+.nba-mobile-header-reversed .nba-mobile-title .nba-mobile-chevron svg { transform: rotate(90deg); }
+.nba-mobile-header-reversed .nba-mobile-title[aria-expanded="true"] .nba-mobile-chevron svg { transform: rotate(-90deg); }
+@media (prefers-reduced-motion: reduce) {
+  .nba-mobile-header-reversed .nba-mobile-sports-reveal { transition: none; }
+}
+
+
+.nba-mobile-scores { overflow: hidden; }
+.nba-day-enter-next { animation: nbaDayEnterNext 200ms cubic-bezier(.22, 1, .36, 1) both; }
+.nba-day-enter-previous { animation: nbaDayEnterPrevious 200ms cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes nbaDayEnterNext {
+  from { opacity: 0; transform: translateX(36px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes nbaDayEnterPrevious {
+  from { opacity: 0; transform: translateX(-36px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nba-day-enter-next, .nba-day-enter-previous { animation: none; }
+}
+
+
+.nba-mobile-day-swipe-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+html.nba-mobile-browser,
+html.nba-mobile-browser body {
+  overscroll-behavior-y: none;
+}
+html.nba-mobile-browser .nba-mobile-day-swipe-area {
+  overscroll-behavior-y: none;
+}
+.nba-mobile-game.is-upcoming { padding-right: 112px; }
+.nba-mobile-tipoff {
+  width: 106px;
+  white-space: nowrap;
+  font-size: clamp(17px, 5vw, 20px);
+}
+
+
+.nba-mobile-broadcasts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+  padding-left: 48px;
+}
+.nba-mobile-broadcasts span {
+  padding: 2px 5px;
+  border: 1px solid #303640;
+  border-radius: 4px;
+  color: #a8afbd;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+
+.nba-mobile-game-meta.is-upcoming {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 106px;
+}
+.nba-mobile-game-meta .nba-mobile-tipoff {
+  position: static;
+  transform: none;
+  width: 100%;
+}
+.nba-mobile-game-meta .nba-mobile-broadcasts {
+  justify-content: center;
+  padding-left: 0;
+  margin-top: 6px;
+}
+.nba-mobile-game-meta.is-live {
+  position: absolute;
+  right: 6px;
+  top: 29px;
+  max-width: 106px;
+}
+.nba-mobile-game-meta.is-live .nba-mobile-broadcasts { justify-content: flex-end; margin-top: 0; }
+.nba-mobile-game.is-live .nba-mobile-status { margin-bottom: 18px; }
+.nba-mobile-broadcasts span {
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+.f1-mobile-page { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+.f1-mobile-page > header, .f1-mobile-page > .nba-mobile-section, .f1-mobile-page > .nba-mobile-date { flex-shrink: 0; }
+.f1-mobile-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; }
+.f1-mobile-surface { background: linear-gradient(120deg, #13171c, #101419); border: 1px solid #262c34; border-radius: 14px; margin-bottom: 12px; padding: 16px; }
+.f1-mobile-eyebrow { font-size: 11px; font-weight: 650; color: #a5abba; margin-bottom: 7px; }
+.f1-mobile-race h2 { font-size: 26px; font-weight: 800; letter-spacing: -.8px; line-height: 1.15; }
+.f1-mobile-circuit { font-size: 12px; color: #9ca4b3; margin-top: 7px; }
+.f1-mobile-track { height: 210px; margin-top: 12px; }
+.f1-mobile-track svg { width: 100% !important; height: 100% !important; display: block; }
+.f1-mobile-surface h3 { font-size: 15px; font-weight: 750; margin-bottom: 10px; }
+.f1-mobile-session { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid #2a3038; }
+.f1-mobile-session > span { font-size: 13px; font-weight: 550; }
+.f1-mobile-session > div { text-align: right; }
+.f1-mobile-session strong { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.f1-mobile-session small { display: block; font-size: 10px; color: #9ca4b3; margin-top: 3px; }
+.f1-mobile-session.is-completed { opacity: .45; }
+.f1-mobile-broadcast { justify-content: flex-end; padding-left: 0; }
+.f1-mobile-broadcast span { background: #C8102E; color: white; }
+.f1-mobile-standing { display: flex; align-items: center; gap: 9px; padding: 12px 0; border-top: 1px solid #2a3038; }
+.f1-mobile-standing > small { width: 18px; font-size: 11px; color: #9ca4b3; }
+.f1-mobile-standing > i { width: 3px; height: 20px; border-radius: 2px; }
+.f1-mobile-standing > span { flex: 1; font-size: 13px; font-weight: 550; }
+.f1-mobile-standing strong { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.f1-mobile-standing strong small { font-size: 8px; font-weight: 550; color: #9ca4b3; }
+
+.nba-mobile-season-label { display: inline-block; min-width: 64px; }

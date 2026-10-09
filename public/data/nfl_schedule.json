@@ -1034,10 +1034,11 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401872980/buccaneers-cowboys",
-    "home_score": null,
-    "away_score": null,
+    "home_score": "16",
+    "away_score": "24",
     "ts_utc": 1791504900,
-    "status": "scheduled"
+    "status": "final",
+    "winner": "Tampa Bay Buccaneers"
   },
   {
     "game_id": "401872981",

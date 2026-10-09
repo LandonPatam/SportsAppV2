@@ -255,6 +255,20 @@ function useNextEvent() {
 
 // ── Countdown display ─────────────────────────────────────────────────────────
 
+export function MobileNextEventIndicator() {
+  const data = useNextEvent();
+  const navigate = useNavigate();
+  if (!data) return null;
+  const { event, days, hours, mins, secs } = data;
+  const countdown = days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${mins}m` : mins > 0 ? `${mins}m` : `${secs}s`;
+  return (
+    <button className="nba-mobile-next-event" onClick={() => navigate(`/${event.sport.toLowerCase()}`)} aria-label={`Next ${event.sport} event: ${event.name}, in ${countdown}`}>
+      <span className="nba-mobile-next-name">{event.name}</span>
+      <span className="nba-mobile-next-countdown">{countdown}</span>
+    </button>
+  );
+}
+
 const NextEventCountdown = () => {
   const data = useNextEvent();
   if (!data) return null;

@@ -27,7 +27,7 @@ export function PageLayout({ title, children, theme = 'default' }: PageLayoutPro
       className="flex-1 min-h-screen overflow-x-hidden"
       style={{
         paddingTop: isMobile ? '0' : '0.75rem',
-        paddingBottom: '1.5rem',
+        paddingBottom: isMobile && (theme === 'nba' || theme === 'nfl' || theme === 'f1') ? '0' : '1.5rem',
         paddingLeft: isMobile ? '0' : '1.5rem',
         paddingRight: isMobile ? '0' : '1.5rem',
       }}

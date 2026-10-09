@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { PageNavbar } from '@/components/layout/PageNavbar';
+import { PageNavbar, MobileNextEventIndicator } from '@/components/layout/PageNavbar';
 import {
   Card, CardContent,
 } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
   Tabs, TabsContent,
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 
 // ============================
 // 📘 Type Definitions
@@ -786,6 +786,9 @@ const TeamStandingsGrid = ({ teamsData, limit = 8 }: { teamsData: F1Team[]; limi
 
 const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { races: F1Race[]; isMobile?: boolean; teamsData?: F1Team[] }) => {
   const navigate = useNavigate();
+  const [mobileSportsOpen, setMobileSportsOpen] = useState(false);
+  const mobileRaceSwipe = useRef<{ x: number; y: number } | null>(null);
+  const [mobileRaceDirection, setMobileRaceDirection] = useState(0);
   const location = useLocation();
   const pages = ['/nba', '/f1', '/nfl'] as const;
   const currentPageIdx = pages.findIndex(p => location.pathname.startsWith(p));
@@ -974,167 +977,53 @@ const RaceCalendarNavigator = ({ races, isMobile = false, teamsData = [] }: { ra
 
   // ── Mobile layout: sticky header + scrollable dashboard content ──
   if (isMobile) {
-    return (
-      <div className="flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-4">
-          {/* Race info card */}
-          <Card
-            className="relative overflow-hidden rounded-2xl border border-white/10 cursor-pointer hover:ring-2 hover:ring-white/20 transition-all duration-300 mx-0 mb-3"
-            onClick={() => setResultsModal(race)}
-          >
-            <div className="absolute inset-0" style={{ background: '#141414' }} />
-            <div className="relative z-10 px-4 py-3 flex items-center justify-between gap-4">
-              <div className="flex flex-col justify-start min-w-0 gap-1">
-                <h2 className="text-xl font-extrabold text-white leading-tight truncate">{race.race_name}</h2>
-                <p className="text-sm font-bold text-white/50 leading-tight truncate">{race.circuit}</p>
-                <p className="text-xs font-medium text-white/30 leading-tight">{race.date}</p>
-              </div>
-              {(() => {
-                const st = race.session_times ?? {};
-                const hasSprint = !!(st['Sprint Race'] || st['Sprint']);
-                const badges = hasSprint
-                  ? [{ label: 'SQ', time: st['Sprint'] ?? st['Sprint Qualifying'] }, { label: 'SPR', time: st['Sprint Race'] }, { label: 'QUAL', time: st['Qualifying'] }, { label: 'RACE', time: st['Race'] }]
-                  : [{ label: 'QUAL', time: st['Qualifying'] }, { label: 'RACE', time: st['Race'] ?? race.start_time_west }];
-                const visibleBadges = badges.filter(b => b.time);
-                if (!visibleBadges.length) return null;
-                return (
-                  <div className="flex-shrink-0 flex flex-col gap-1 items-end">
-                    {visibleBadges.map(({ label, time }) => {
-                      const datePart = time?.match(/^([A-Za-z]+ \d+) at /)?.[1] ?? '';
-                      const timePart = time?.replace(/^[A-Za-z]+ \d+ at /, '') ?? '';
-                      const isCompleted = time ? isSessionCompleted(time) : false;
-                      return (
-                        <div
-                          key={label}
-                          className={[
-                            'flex items-center gap-1',
-                            isCompleted ? 'line-through decoration-white/45 decoration-1' : '',
-                          ].join(' ')}
-                        >
-                          <span className="text-[10px] font-black tracking-wider" style={{ color: isCompleted ? 'rgba(45,212,191,0.38)' : '#2dd4bf' }}>{label}</span>
-                          <span className={isCompleted ? 'text-[10px] font-semibold text-white/30' : 'text-[10px] font-semibold text-white'}>{datePart}</span>
-                          <span className={isCompleted ? 'text-[10px] font-medium text-white/35' : 'text-[10px] font-medium text-white/70'}>{timePart}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-          </Card>
-
-          {/* Track SVG */}
-          <Card className="relative overflow-hidden rounded-2xl border border-white/10 mb-3 mx-0" style={{ height: '240px' }}>
-            <div className="absolute inset-0" style={{ background: '#141414' }} />
-            <style>{`.f1-svg-wrap svg { width: 100% !important; height: 100% !important; display: block; }`}</style>
-            <div className="f1-svg-wrap absolute inset-0" style={{ transform: 'scale(1.1) translateY(10%)', transformOrigin: 'center center' }}>
-              {race.track_svg_extracted
-                ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" />
-                : <InlineSvg url={race.track_svg} className="w-full h-full" />
-              }
-            </div>
-          </Card>
-
-          {/* Driver standings — top 6 */}
-          {(() => {
-            const allDrivers = teamsData.flatMap((team) =>
-              (team.drivers ?? []).map((d: any) => ({ ...d, teamColour: team.colour ?? '#ffffff' }))
-            ).filter((d: any) => d.points != null).sort((a: any, b: any) => b.points - a.points).slice(0, 6);
-            if (!allDrivers.length) return null;
-            return (
-              <div className="mb-3">
-                <p className="text-xs font-black tracking-widest text-white/30 uppercase mb-2 px-1">Drivers</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {allDrivers.map((driver: any, index: number) => {
-                    const accent = driver.teamColour;
-                    const lastName = driver.name.split(' ').slice(1).join(' ') || driver.name;
-                    return (
-                      <div key={driver.name} className="relative rounded-xl overflow-hidden" style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px' }}>
-                        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
-                        <div className="relative z-10 flex items-center justify-between px-3 h-12">
-                          <div className="flex flex-col">
-                            <span className="text-[11px] font-black text-white/40">#{index + 1}</span>
-                            <span className="text-sm font-black text-white uppercase tracking-wide">{lastName}</span>
-                          </div>
-                          <span className="text-xl font-black text-white leading-none">
-                            {driver.points}<span className="text-[10px] font-semibold text-white/40 ml-1">PTS</span>
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Constructor standings — top 6 */}
-          {(() => {
-            const sortedTeams = [...teamsData].sort((a, b) => (b.team_points ?? 0) - (a.team_points ?? 0)).slice(0, 6);
-            if (!sortedTeams.length) return null;
-            return (
-              <div className="mb-3">
-                <p className="text-xs font-black tracking-widest text-white/30 uppercase mb-2 px-1">Constructors</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {sortedTeams.map((team: any, index: number) => {
-                    const accent = team.colour ?? '#ffffff';
-                    return (
-                      <div key={team.name} className="relative rounded-xl overflow-hidden" style={{ backgroundImage: `linear-gradient(300deg, ${accent}, ${accent}99)`, padding: '3px' }}>
-                        <div className="absolute inset-[3px] rounded-xl" style={{ backgroundColor: '#141414' }} aria-hidden />
-                        <div className="relative z-10 flex items-center justify-between px-3 h-12">
-                          <div className="flex items-center gap-2">
-                            {team.logo_url && <img src={team.logo_url} alt="" className="w-5 h-5 object-contain" loading="lazy" />}
-                            <div className="flex flex-col">
-                              <span className="text-[11px] font-black text-white/40">#{index + 1}</span>
-                              <span className="text-sm font-black text-white truncate max-w-[80px]">{team.name}</span>
-                            </div>
-                          </div>
-                          <span className="text-xl font-black text-white leading-none">
-                            {team.team_points ?? 0}<span className="text-[10px] font-semibold text-white/40 ml-1">PTS</span>
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+    const drivers = teamsData.flatMap(team => (team.drivers || []).map((driver: any) => ({ ...driver, colour: team.colour }))).filter((driver: any) => driver.points != null).sort((a: any, b: any) => b.points - a.points).slice(0, 6);
+    const constructors = [...teamsData].sort((a, b) => (b.team_points || 0) - (a.team_points || 0)).slice(0, 6);
+    return <div className="nba-mobile-page f1-mobile-page">
+      <header className={`nba-mobile-header nba-mobile-header-reversed ${mobileSportsOpen ? 'sports-open' : ''}`}>
+        <button type="button" className="nba-mobile-title" aria-expanded={mobileSportsOpen} aria-controls="f1-mobile-sports" onClick={() => setMobileSportsOpen(open => !open)}>
+          <span>F1</span><span className="nba-mobile-chevron"><ChevronRight size={22} /></span>
+        </button>
+        <div id="f1-mobile-sports" className={`nba-mobile-sports-reveal ${mobileSportsOpen ? 'is-open' : ''}`} aria-hidden={!mobileSportsOpen}>
+          <div className="nba-mobile-sports-clip"><nav className="nba-mobile-sports-row" aria-label="Switch sport">
+            {[['/nba', 'NBA'], ['/nfl', 'NFL']].map(([path, label]) => <button type="button" key={path} className="nba-mobile-sport-option" tabIndex={mobileSportsOpen ? 0 : -1} onClick={() => navigate(path)}>{label}</button>)}
+          </nav></div>
         </div>
-
-        <div className="px-4 pb-px pt-2">
-          <div
-            className="flex items-center rounded-[28px] overflow-hidden"
-            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
-          >
-            <button
-              onClick={() => setIndex(i => clamp(i - 1))}
-              disabled={index <= 0}
-              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={cycleToNextPage}
-              className="flex-[2] flex flex-col items-center justify-center h-16 border-x border-white/10 active:bg-white/10 transition-colors"
-            >
-              <span className="text-white font-bold text-base tracking-wider">F1</span>
-              <span className="text-white/40 text-[11px] mt-0.5">Race {race.race_number}</span>
-            </button>
-            <button
-              onClick={() => setIndex(i => clamp(i + 1))}
-              disabled={index >= racesWithKeys.length - 1}
-              className="flex-1 flex items-center justify-center h-16 disabled:opacity-30 active:bg-white/10 transition-colors"
-            >
-              <ChevronRight className="w-6 h-6 text-white" />
-            </button>
-          </div>
+      </header>
+      <div className="nba-mobile-section"><span>Race weekend</span><MobileNextEventIndicator /></div>
+      <div className="nba-mobile-date">
+        <button aria-label="Previous race" disabled={index <= 0} onClick={() => { setMobileRaceDirection(-1); setIndex(i => clamp(i - 1)); }}><ChevronLeft /></button>
+        <span>Round {String(race.race_number).padStart(2, '0')} / {totalRaceCount}</span>
+        <button aria-label="Next race" disabled={index >= racesWithKeys.length - 1} onClick={() => { setMobileRaceDirection(1); setIndex(i => clamp(i + 1)); }}><ChevronRight /></button>
+        <label className="nba-mobile-calendar"><CalendarDays size={21} /><select aria-label="Pick a race weekend" value={index} onChange={e => { setMobileRaceDirection(Number(e.target.value) > index ? 1 : -1); setIndex(Number(e.target.value)); }}>{racesWithKeys.map(({ race: item }, i) => <option key={item.race_number} value={i}>{item.race_name}</option>)}</select></label>
+      </div>
+      <div className="f1-mobile-scroll" onTouchStart={e => { mobileRaceSwipe.current = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null; }}
+        onTouchMove={e => { if (mobileRaceSwipe.current && (e.touches.length !== 1 || Math.abs(e.touches[0].clientY - mobileRaceSwipe.current.y) > 30)) mobileRaceSwipe.current = null; }}
+        onTouchCancel={() => { mobileRaceSwipe.current = null; }}
+        onTouchEnd={e => { const start = mobileRaceSwipe.current; mobileRaceSwipe.current = null; if (!start || !e.changedTouches.length) return; const dx = e.changedTouches[0].clientX - start.x; const dy = e.changedTouches[0].clientY - start.y; if (Math.abs(dx) >= 70 && Math.abs(dy) < 30) { const step = dx < 0 ? 1 : -1; if (clamp(index + step) !== index) { setMobileRaceDirection(step); setIndex(i => clamp(i + step)); } } }}>
+        <div key={race.race_number} className={mobileRaceDirection > 0 ? 'nba-day-enter-next' : mobileRaceDirection < 0 ? 'nba-day-enter-previous' : ''}>
+          <section className="f1-mobile-surface f1-mobile-race">
+            <p className="f1-mobile-eyebrow">{race.date}</p>
+            <h2>{race.race_name}</h2><p className="f1-mobile-circuit">{race.circuit}</p>
+            <div className="f1-mobile-track">{race.track_svg_extracted ? <ExtractedSvg svgString={race.track_svg_extracted} className="w-full h-full" /> : <InlineSvg url={race.track_svg} className="w-full h-full" />}</div>
+          </section>
+          <section className="f1-mobile-surface f1-mobile-sessions"><h3>Weekend schedule</h3>
+            {Object.entries(race.session_times || {}).filter(([, time]) => Boolean(time)).map(([session, time]) => {
+              const completed = isSessionCompleted(time);
+              return <div className={`f1-mobile-session ${completed ? 'is-completed' : ''}`} key={session}>
+                <span>{session}</span><div><strong>{time.replace(/^[A-Za-z]+ \d+ at /, '')}</strong><small>{time.match(/^([A-Za-z]+ \d+) at /)?.[1]}</small></div>
+              </div>;
+            })}
+            {!Object.keys(race.session_times || {}).length && <div className="f1-mobile-session"><span>Race</span><strong>{race.start_time_west}</strong></div>}
+            {race.tv_provider && <div className="nba-mobile-broadcasts f1-mobile-broadcast"><span>{race.tv_provider}</span></div>}
+          </section>
+          {!!drivers.length && <section className="f1-mobile-surface f1-mobile-standings"><h3>Drivers</h3>{drivers.map((driver: any, i) => <div className="f1-mobile-standing" key={driver.name}><small>{String(i + 1).padStart(2, '0')}</small><i style={{ background: driver.colour || '#00dce9' }} /><span>{driver.name}</span><strong>{driver.points}<small> PTS</small></strong></div>)}</section>}
+          {!!constructors.length && <section className="f1-mobile-surface f1-mobile-standings"><h3>Constructors</h3>{constructors.map((team, i) => <div className="f1-mobile-standing" key={team.name}><small>{String(i + 1).padStart(2, '0')}</small><i style={{ background: team.colour || '#00dce9' }} /><span>{team.name}</span><strong>{team.team_points || 0}<small> PTS</small></strong></div>)}</section>}
         </div>
       </div>
-    );
+    </div>;
   }
 
-  // ── Desktop layout (unchanged) ──
   return (
     <div className="flex flex-col h-full space-y-3">
 
@@ -2064,6 +1953,23 @@ const F1 = () => {
     };
   }, []);
 
+  // Match Safari's surrounding surface only while the mobile NBA page is open.
+  useEffect(() => {
+    if (!isMobile) return;
+    document.documentElement.classList.add('nba-mobile-browser');
+    const existingMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const themeMeta = existingMeta || document.createElement('meta');
+    const previousColor = themeMeta.getAttribute('content');
+    themeMeta.name = 'theme-color';
+    themeMeta.content = '#080a0c';
+    if (!existingMeta) document.head.appendChild(themeMeta);
+    return () => {
+      document.documentElement.classList.remove('nba-mobile-browser');
+      if (!existingMeta) themeMeta.remove();
+      else if (previousColor === null) themeMeta.removeAttribute('content');
+      else themeMeta.content = previousColor;
+    };
+  }, [isMobile]);
   useEffect(() => {
     let cancelled = false;
 

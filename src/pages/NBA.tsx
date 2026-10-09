@@ -7,7 +7,7 @@ import { pollSchedule } from '@/lib/pollSchedule';
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { PageNavbar } from '@/components/layout/PageNavbar';
+import { PageNavbar, MobileNextEventIndicator } from '@/components/layout/PageNavbar';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Tabs, TabsContent,
 } from '@/components/ui/tabs';
-import { X, Sun, Moon, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { X, Sun, Moon, ChevronLeft, ChevronRight, CalendarDays, Star } from 'lucide-react';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -257,6 +257,31 @@ interface NBASeasonOption {
   schedule: string;
   team_stats: string;
   player_stats: string;
+}
+
+function MobileSeasonPicker({ seasons, selectedId, onChange, hidden }: {
+  seasons: NBASeasonOption[];
+  selectedId: string;
+  onChange: (id: string) => void;
+  hidden: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => { if (hidden) setOpen(false); }, [hidden]);
+  const season = seasons.find(item => item.id === selectedId);
+  const formatSeason = (item: NBASeasonOption) => `${String(item.start_year).slice(-2)}\u2013${String(item.start_year + 1).slice(-2)}`;
+  return <div className="nba-mobile-season nba-mobile-season-picker" aria-hidden={hidden}>
+    <button type="button" className="nba-mobile-season-picker-trigger" aria-expanded={open} aria-controls="nba-mobile-season-options" tabIndex={hidden ? -1 : 0} onClick={() => setOpen(value => !value)}>
+      <span className="nba-mobile-season-label">{season ? formatSeason(season) : ''}</span>
+      <span className="nba-mobile-chevron"><ChevronRight size={22} /></span>
+    </button>
+    <div id="nba-mobile-season-options" className={`nba-mobile-season-reveal ${open ? 'is-open' : ''}`} aria-hidden={!open}>
+      <div className="nba-mobile-season-clip">
+        <div className="nba-mobile-season-options">
+          {seasons.filter(item => item.id !== selectedId).map(item => <button type="button" key={item.id} tabIndex={open && !hidden ? 0 : -1} onClick={() => { onChange(item.id); setOpen(false); }}>{formatSeason(item)}</button>)}
+        </div>
+      </div>
+    </div>
+  </div>;
 }
 
 interface NBASeasonManifest {
@@ -1212,6 +1237,10 @@ const StatRow = ({
 // Compact, arrow-controlled view
 const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {}, onGameClick, isMobile = false }: { scheduleData: NBAScheduleData | null, logoMap: Record<string, string>, recordMap?: Record<string, string>, streakMap?: Record<string, { type: 'W' | 'L'; count: number }>, onGameClick?: (gameId: string) => void, isMobile?: boolean }) => {
   const navigate = useNavigate();
+  const mobileSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const mobileDayListRef = useRef<HTMLDivElement>(null);
+  const mobileDayAnimating = useRef(false);
+  const [mobileDayDirection, setMobileDayDirection] = useState(0);
   const location = useLocation();
   const pages = ['/nba', '/f1', '/nfl'] as const;
   const currentPageIdx = pages.findIndex(p => location.pathname.startsWith(p));
@@ -1401,6 +1430,112 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
   const calMonthLabel = calendarMonth
     ? new Date(calendarMonth.year, calendarMonth.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
     : '';
+
+  if (isMobile) return (
+    <div className="nba-mobile-scores">
+      <div className="nba-mobile-date">
+        <button aria-label="Previous game day" disabled={index <= 0} onClick={() => setIndex(i => clamp(i - 1))}><ChevronLeft /></button>
+        <span>{currentKey === todayKey ? `Today, ${new Date(`${currentKey}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : formatLabel(currentKey)}</span>
+        <button aria-label="Next game day" disabled={index >= dateKeys.length - 1} onClick={() => setIndex(i => clamp(i + 1))}><ChevronRight /></button>
+        <label className="nba-mobile-calendar" aria-label="Pick a game day">
+          <CalendarDays size={21} />
+          <select aria-label="Pick a game day" value={currentKey} onChange={e => setIndex(dateKeys.indexOf(e.target.value))}>
+            {dateKeys.map(key => <option key={key} value={key}>{formatLabel(key)}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="nba-mobile-day-swipe-area"
+        onTouchStart={e => {
+          if (e.touches.length !== 1) { mobileSwipeStart.current = null; return; }
+          mobileSwipeStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }}
+        onTouchMove={e => {
+          const start = mobileSwipeStart.current;
+          if (!start || e.touches.length !== 1) { mobileSwipeStart.current = null; return; }
+          if (Math.abs(e.touches[0].clientY - start.y) > 30) mobileSwipeStart.current = null;
+        }}
+        onTouchCancel={() => { mobileSwipeStart.current = null; }}
+        onTouchEnd={async e => {
+          const start = mobileSwipeStart.current;
+          mobileSwipeStart.current = null;
+          if (!start || !e.changedTouches.length) return;
+          const dx = e.changedTouches[0].clientX - start.x;
+          const dy = e.changedTouches[0].clientY - start.y;
+          if (Math.abs(dx) < 70 || Math.abs(dy) >= 30 || mobileDayAnimating.current) return;
+          const step = dx < 0 ? 1 : -1;
+          const nextIndex = clamp(index + step);
+          if (nextIndex === index) return;
+          mobileDayAnimating.current = true;
+          const list = mobileDayListRef.current;
+          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          try {
+            if (list && !reduceMotion) {
+              await list.animate([
+                { transform: 'translateX(0)', opacity: 1 },
+                { transform: `translateX(${-step * 36}px)`, opacity: 0 }
+              ], { duration: 100, easing: 'ease-in', fill: 'forwards' }).finished;
+            }
+            setMobileDayDirection(step);
+            setIndex(nextIndex);
+          } finally {
+            mobileDayAnimating.current = false;
+          }
+        }}
+      >
+      <div key={currentKey} ref={mobileDayListRef}
+        className={`nba-mobile-game-list ${mobileDayDirection > 0 ? 'nba-day-enter-next' : mobileDayDirection < 0 ? 'nba-day-enter-previous' : ''}`}
+
+      >
+        {games.map(g => {
+          const names = g.matchup?.split('@').map(name => name.trim()) || [];
+          const away = (g.away || teamAbbreviations[names[0]] || '').toUpperCase();
+          const home = (g.home || teamAbbreviations[names[1]] || '').toUpperCase();
+          const aScore = parseScore((g as any).away_score);
+          const hScore = parseScore((g as any).home_score);
+          const final = String((g as any).status || '').toLowerCase().includes('final') || Boolean((g as any).winner);
+          const live = /live|in progress/i.test(String((g as any).status || ''));
+          const upcoming = !final && !live;
+          const sourceBroadcasts: string[] = Array.isArray(g.tv_providers)
+            ? g.tv_providers.filter(Boolean)
+            : String(g.tv || '').split(',').map(provider => provider.trim()).filter(Boolean);
+          const broadcasts = [...new Set(sourceBroadcasts)];
+
+          return <div key={g.game_id} className={`nba-mobile-game ${live ? 'is-live' : ''} ${upcoming ? 'is-upcoming' : ''}`} >
+            {live && <div className="nba-mobile-status">{live && <i />}{final ? '' : live ? `${g.period && g.period > 4 ? 'OT' : `Q${g.period || 1}`} \u00b7 ${g.clock || g.time || 'Live'}` : g.time || 'Scheduled'}</div>}
+            {[{ abbr: away, name: names[0], score: aScore, other: hScore }, { abbr: home, name: names[1], score: hScore, other: aScore }].map((team, i) => <div className="nba-mobile-team" key={i}>
+              <img src={logoMap[team.abbr] || logos[team.abbr] || `https://a.espncdn.com/i/teamlogos/nba/500/${team.abbr.toLowerCase()}.png`} alt="" />
+              <span>{team.name || abbreviationToTeamName[team.abbr] || team.abbr}{upcoming && streakMap[team.abbr] && <span
+                className="nba-mobile-result-arrow"
+                style={{ color: streakMap[team.abbr].type === 'W' ? '#4ade80' : '#f87171' }}
+                aria-label={streakMap[team.abbr].type === 'W' ? 'Won last game' : 'Lost last game'}
+              >{streakMap[team.abbr].type === 'W' ? '\u2191' : '\u2193'}</span>}</span>
+              {!upcoming && <strong className={Number.isFinite(team.score) && team.score < team.other ? 'trailing' : ''}>{Number.isFinite(team.score) ? team.score : ''}</strong>}
+            </div>)}
+            {!final && <div className={`nba-mobile-game-meta ${upcoming ? 'is-upcoming' : 'is-live'}`}>
+              {upcoming && <div className="nba-mobile-tipoff">{g.time || 'TBD'}</div>}
+            {!final && broadcasts.length > 0 && <div className="nba-mobile-broadcasts" aria-label="Broadcast networks">
+              {broadcasts.map(provider => {
+                const network = provider.toLowerCase();
+                const colors = network.includes('prime') ? { backgroundColor: '#00A8E1', color: '#fff' }
+                  : network.includes('peacock') ? { backgroundColor: '#fff', color: '#000' }
+                  : network.includes('espn') ? { backgroundColor: '#C8102E', color: '#fff' }
+                  : network.includes('paramount') ? { backgroundColor: '#0064FF', color: '#fff' }
+                  : network.includes('cbs') ? { backgroundColor: '#003B70', color: '#fff' }
+                  : network.includes('nbc') ? { backgroundColor: '#6B3FA0', color: '#fff' }
+                  : network.includes('fox') ? { backgroundColor: '#002D72', color: '#fff' }
+                  : network.includes('abc') ? { backgroundColor: '#000', color: '#fff' }
+                  : undefined;
+                return <span key={provider} style={colors}>{provider}</span>;
+              })}
+            </div>}
+            </div>}
+          </div>;
+        })}
+        {!games.length && <p className="p-8 text-center text-white/50">No games on this date.</p>}
+      </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={isMobile ? 'flex flex-col flex-1 overflow-hidden' : 'space-y-4'}>
@@ -1662,7 +1797,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {awaySeriesWins} - {homeSeriesWins} )</span>
-                                {awayDisplayStreak && (
+                                {!isFinal && !isLiveGame && awayDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -1676,7 +1811,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {awayDisplayRecord.replace(/-/g, ' - ')} )</span>
-                                {awayDisplayStreak && (
+                                {!isFinal && !isLiveGame && awayDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: awayDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {awayDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -1755,7 +1890,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {homeSeriesWins} - {awaySeriesWins} )</span>
-                                {homeDisplayStreak && (
+                                {!isFinal && !isLiveGame && homeDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {homeDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -1769,7 +1904,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                                   </span>
                                 )}
                                 <span>( {homeDisplayRecord.replace(/-/g, ' - ')} )</span>
-                                {homeDisplayStreak && (
+                                {!isFinal && !isLiveGame && homeDisplayStreak && (
                                   <span className="absolute left-full pl-1" style={{ color: homeDisplayStreak.type === 'W' ? '#4ade80' : '#f87171', fontWeight: 800 }}>
                                     {homeDisplayStreak.type === 'W' ? '↑' : '↓'}
                                   </span>
@@ -3614,6 +3749,7 @@ const DarkModeToggle = () => {
 
 
 const NBA = () => {
+  const navigate = useNavigate();
   const [nbaSeasons, setNbaSeasons] = useState<NBASeasonOption[]>([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
   const [nbaPlayerData, setNbaPlayerData] = useState<Record<string, Player[]>>(() => _cachedPlayers ?? {});
@@ -3621,6 +3757,7 @@ const NBA = () => {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [nbaTeams, setNbaTeams] = useState<NBATeam[]>(() => _cachedTeams ?? []);
+  const [mobileSportsOpen, setMobileSportsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('schedule'); // Change this to: 'dashboard', 'all', 'top-scorers', or 'schedule'
   const [playoffsRevealKey, setPlayoffsRevealKey] = useState(0);
   const handleTabChange = useCallback((value: string) => {
@@ -3646,6 +3783,23 @@ const NBA = () => {
       window.removeEventListener('orientationchange', check);
     };
   }, []);
+  // Match Safari's surrounding surface only while the mobile NBA page is open.
+  useEffect(() => {
+    if (!isMobile) return;
+    document.documentElement.classList.add('nba-mobile-browser');
+    const existingMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const themeMeta = existingMeta || document.createElement('meta');
+    const previousColor = themeMeta.getAttribute('content');
+    themeMeta.name = 'theme-color';
+    themeMeta.content = '#080a0c';
+    if (!existingMeta) document.head.appendChild(themeMeta);
+    return () => {
+      document.documentElement.classList.remove('nba-mobile-browser');
+      if (!existingMeta) themeMeta.remove();
+      else if (previousColor === null) themeMeta.removeAttribute('content');
+      else themeMeta.content = previousColor;
+    };
+  }, [isMobile]);
   const [selectedTeam, setSelectedTeam] = useState<NBATeam | null>(null);
   // Separate selection for All Teams detail pane to avoid opening roster modal
   const [selectedTeamAll, setSelectedTeamAll] = useState<NBATeam | null>(null);
@@ -4311,6 +4465,7 @@ useEffect(() => {
   // ============================
   return (
     <PageLayout theme="nba">
+      <div className={isMobile ? "nba-mobile-page nba-mobile-scoreboard-page" : undefined}>
       <style>{`
         @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes playoffsReveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
@@ -4330,6 +4485,20 @@ useEffect(() => {
   {/* ========================
       Navigation Tab Bar — hidden on mobile (scoreboard-only on mobile)
   ======================== */}
+  {isMobile && <header className={`nba-mobile-header nba-mobile-header-reversed ${mobileSportsOpen ? 'sports-open' : ''}`}>
+    <button type="button" className="nba-mobile-title" aria-expanded={mobileSportsOpen} aria-controls="nba-mobile-sports" onClick={() => setMobileSportsOpen(open => !open)}>
+      <span>NBA</span><span className="nba-mobile-chevron"><ChevronRight size={22} /></span>
+    </button>
+    <MobileSeasonPicker seasons={nbaSeasons} selectedId={selectedSeasonId} onChange={setSelectedSeasonId} hidden={mobileSportsOpen} />
+    <div id="nba-mobile-sports" className={`nba-mobile-sports-reveal ${mobileSportsOpen ? 'is-open' : ''}`} aria-hidden={!mobileSportsOpen}>
+      <div className="nba-mobile-sports-clip">
+        <nav className="nba-mobile-sports-row" aria-label="Switch sport">
+          {[['/nfl', 'NFL']].map(([path, label]) => <button type="button" key={path} className="nba-mobile-sport-option" tabIndex={mobileSportsOpen ? 0 : -1} onClick={() => { setMobileSportsOpen(false); navigate(path); }}>{label}</button>)}
+        </nav>
+      </div>
+    </div>
+  </header>}
+  {isMobile && <div className="nba-mobile-section"><span>Scores</span><MobileNextEventIndicator /></div>}
   {!isMobile && (
     <PageNavbar
       tabs={[
@@ -4815,7 +4984,7 @@ useEffect(() => {
     - Live game dot indicator, TV provider badges
     - Click a game card to open ESPN box score in an iframe modal
 ======================== */}
-<TabsContent value="schedule" className={isMobile ? 'mt-0 h-[100dvh] flex flex-col overflow-hidden' : 'max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2'}>
+<TabsContent value="schedule" className={isMobile ? 'mt-0' : 'max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2'}>
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} streakMap={abbrToStreakMap} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
 </TabsContent>
 
@@ -5226,6 +5395,7 @@ useEffect(() => {
 
 
 
+      </div>
     </PageLayout>
   );
 };
