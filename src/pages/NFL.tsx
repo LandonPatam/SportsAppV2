@@ -2393,7 +2393,7 @@ const ScheduleNFLViewV2 = ({
           ))];
           if (broadcasts.some(provider => provider.toLowerCase() === 'cbs') && !broadcasts.some(provider => provider.toLowerCase() === 'paramount+')) broadcasts.push('Paramount+');
 
-          return <div key={g.game_id} className={`nba-mobile-game ${live ? 'is-live' : ''} ${upcoming ? 'is-upcoming' : ''}`} >
+          return <div key={g.game_id} className={`nba-mobile-game nfl-mobile-game ${live ? 'is-live' : ''} ${upcoming ? 'is-upcoming' : ''}`} >
             {live && <div className="nba-mobile-status">{live && <i />}{final ? '' : live ? `${g.period && g.period > 4 ? 'OT' : `Q${g.period || 1}`} \u00b7 ${g.clock || g.time || 'Live'}` : g.time || 'Scheduled'}</div>}
             {[{ abbr: away, name: names[0], score: aScore, other: hScore }, { abbr: home, name: names[1], score: hScore, other: aScore }].map((team, i) => <div className="nba-mobile-team" key={i}>
               <img src={logoMap[team.abbr] || `https://a.espncdn.com/i/teamlogos/nfl/500/${team.abbr.toLowerCase()}.png`} alt="" />
@@ -2412,6 +2412,7 @@ const ScheduleNFLViewV2 = ({
                 const colors = network.includes('prime') ? { backgroundColor: '#00A8E1', color: '#fff' }
                   : network.includes('peacock') ? { backgroundColor: '#fff', color: '#000' }
                   : network.includes('espn') ? { backgroundColor: '#C8102E', color: '#fff' }
+                  : network.includes('abc') ? { backgroundColor: '#FFFFFF', color: '#000000' }
                   : network.includes('paramount') ? { backgroundColor: '#0064FF', color: '#fff' }
                   : network.includes('cbs') ? { backgroundColor: '#003B70', color: '#fff' }
                   : network.includes('nbc') ? { backgroundColor: '#6B3FA0', color: '#fff' }
@@ -2582,6 +2583,9 @@ const ScheduleNFLViewV2 = ({
                       if (name.includes('prime')) style = { backgroundColor: '#00A8E1', color: '#ffffff' };
                       else if (name.includes('peacock')) style = { backgroundColor: '#FFFFFF', color: '#000000' };
                       else if (name.includes('espn')) style = { backgroundColor: '#C8102E', color: '#ffffff' };
+                      else if (name.includes('abc')) style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                      else if (name.includes('cbs')) style = { backgroundColor: '#003B70', color: '#ffffff' };
+                      else if (name.includes('nbc')) style = { backgroundColor: '#6B3FA0', color: '#ffffff' };
                       else if (name.includes('nfl') || name.includes('network')) style = { backgroundColor: '#013369', color: '#ffffff' };
                       return (
                         <Badge key={p} className="font-black tracking-wide" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>

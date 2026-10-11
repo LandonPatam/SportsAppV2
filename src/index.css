@@ -629,6 +629,34 @@ html.nba-mobile-browser .nba-mobile-day-swipe-area {
 }
 .nba-mobile-game-meta.is-live .nba-mobile-broadcasts { justify-content: flex-end; margin-top: 0; }
 .nba-mobile-game.is-live .nba-mobile-status { margin-bottom: 18px; }
+.nfl-mobile-game.is-live {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+}
+.nfl-mobile-game.is-live .nba-mobile-status {
+  grid-column: 2;
+  grid-row: 1;
+  margin-bottom: 8px;
+}
+.nfl-mobile-game.is-live .nba-mobile-team { grid-column: 1 / -1; }
+.nfl-mobile-game .nba-mobile-game-meta.is-live {
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  max-width: none;
+  margin-bottom: 8px;
+}
+.nfl-mobile-game .nba-mobile-game-meta.is-live .nba-mobile-broadcasts {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.nfl-mobile-game.is-live .nba-mobile-broadcasts span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .nba-mobile-broadcasts span {
   border-radius: 999px;
   padding: 2px 7px;

@@ -865,7 +865,9 @@ const DashboardTodaySchedule = ({
     if (p.includes('prime')) return `${base} bg-[#00A8E1] text-white`;
     if (p.includes('peacock')) return `${base} bg-white text-black`;
     if (p.includes('espn')) return `${base} bg-[#CC0000] text-white`;
-    if (p.includes('abc')) return `${base} bg-black text-white border border-white/20`;
+    if (p.includes('abc')) return `${base} bg-white text-black`;
+    if (p.includes('cbs')) return `${base} bg-[#003B70] text-white`;
+    if (p.includes('nbc')) return `${base} bg-[#6B3FA0] text-white`;
     if (p.includes('tnt')) return `${base} bg-black text-white border border-white/20`;
     if (p.includes('nba')) return `${base} bg-black text-white border border-white/20`;
     return 'bg-muted text-muted-foreground';
@@ -1523,7 +1525,7 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                   : network.includes('cbs') ? { backgroundColor: '#003B70', color: '#fff' }
                   : network.includes('nbc') ? { backgroundColor: '#6B3FA0', color: '#fff' }
                   : network.includes('fox') ? { backgroundColor: '#002D72', color: '#fff' }
-                  : network.includes('abc') ? { backgroundColor: '#000', color: '#fff' }
+                  : network.includes('abc') ? { backgroundColor: '#FFFFFF', color: '#000000' }
                   : undefined;
                 return <span key={provider} style={colors}>{provider}</span>;
               })}
@@ -1754,7 +1756,11 @@ const ScheduleViewV2 = ({ scheduleData, logoMap, recordMap = {}, streakMap = {},
                       } else if (name.includes('espn')) {
                         style = { backgroundColor: '#C8102E', color: '#ffffff' };
                       } else if (name.includes('abc')) {
-                        style = { backgroundColor: '#000000', color: '#ffffff' };
+                        style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                      } else if (name.includes('cbs')) {
+                        style = { backgroundColor: '#003B70', color: '#ffffff' };
+                      } else if (name.includes('nbc')) {
+                        style = { backgroundColor: '#6B3FA0', color: '#ffffff' };
                       }
                       return (
                         <Badge key={p} className="font-black tracking-wide" style={{ ...style, fontSize: "clamp(0.5rem, 1.8cqi, 0.6rem)", padding: "clamp(1px, 0.4cqi, 2px) clamp(3px, 1.2cqi, 6px)" }}>
@@ -3388,7 +3394,11 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                               } else if (name.includes('espn')) {
                                 style = { backgroundColor: '#C8102E', color: '#ffffff' };
                               } else if (name.includes('abc')) {
-                                style = { backgroundColor: '#000000', color: '#ffffff' };
+                                style = { backgroundColor: '#FFFFFF', color: '#000000' };
+                              } else if (name.includes('cbs')) {
+                                style = { backgroundColor: '#003B70', color: '#ffffff' };
+                              } else if (name.includes('nbc')) {
+                                style = { backgroundColor: '#6B3FA0', color: '#ffffff' };
                               }
                               return (
                                 <Badge key={p} className="text-[9px] font-semibold px-1.5 py-0.5" style={style}>

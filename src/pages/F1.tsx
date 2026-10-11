@@ -445,7 +445,7 @@ const ExtractedSvg = ({ svgString, className }: { svgString: string; className?:
 const TV_PROVIDER_STYLES: Record<string, React.CSSProperties> = {
   'apple tv': { backgroundColor: '#6e6e73', color: '#ffffff' },
   'espn':     { backgroundColor: '#C8102E', color: '#ffffff' },
-  'abc':      { backgroundColor: '#111111', color: '#ffffff' },
+  'abc':      { backgroundColor: '#FFFFFF', color: '#000000' },
   'nbc':      { backgroundColor: '#0057A8', color: '#ffffff' },
   'fox':      { backgroundColor: '#003366', color: '#ffffff' },
 };
