@@ -596,8 +596,9 @@ else:
 
         try:
             data = scoreboard_client.get_json(url, HEADERS)
-        except ScoreboardUnavailable:
-            raise
+        except ScoreboardUnavailable as exc:
+            print(f"[WARN] NBA score update deferred: {exc}")
+            break
         except Exception:
             continue
 

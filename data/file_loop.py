@@ -184,6 +184,7 @@ def main():
                 (NFL_SCHEDULE_SCRIPT, ACTIVE_INTERVAL if nfl["should_run"] else IDLE_INTERVAL, nfl["should_run"]),
                 (Path("data/local_nfl_broadcasts.py"), 24 * 60 * 60, False),
                 (NBA_DATA_SCRIPT, DATA_INTERVAL, False),
+                (Path("data/roster_NBA.py"), 24 * 60 * 60, False),
                 (NFL_DATA_SCRIPT, DATA_INTERVAL, False),
                 (F1_DATA_SCRIPT, F1_RACE_INTERVAL if f1["is_race_weekend"] else F1_IDLE_INTERVAL, False),
             ]

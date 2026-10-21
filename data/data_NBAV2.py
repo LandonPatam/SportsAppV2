@@ -10,6 +10,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 import pytz
 from scoreboard_client import ScoreboardClient, ScoreboardUnavailable
+from nba_data_helpers import complete_team_stats, merge_player_stats
 
 
 # ==========================================================
@@ -323,6 +324,7 @@ headers = {
   'Priority': 'u=4',}
 
 r = requests.get(url, headers=headers, timeout=10)
+r.raise_for_status()
 team_data = r.json()
 
 result = team_data.get("resultSets", [{}])[0]
@@ -352,6 +354,10 @@ for t in teams:
             team_dict[key] = value
     formatted_teams.append(team_dict)
 
+formatted_teams = complete_team_stats(
+    formatted_teams, load_json_or_default(SEASON_TEAM_STATS_JSON, [])
+)
+
 if formatted_teams:
     write_team_stats(formatted_teams)
 else:
@@ -369,6 +375,7 @@ url = nba_stats_url("leaguedashplayerstats", {
 })
 
 d = requests.get(url, headers=headers, timeout=10)
+d.raise_for_status()
 player_data = d.json()
 
 result = player_data.get("resultSets", [{}])[0]
@@ -386,8 +393,13 @@ for p in players:
 
     team_players[str(team_id)].append(format_player_stats_row(p))
 
+team_players = merge_player_stats(
+    dict(team_players),
+    load_json_or_default(SEASON_PLAYER_STATS_JSON, {}),
+    load_json_or_default(os.path.join(BASE_DIR, "public", "data", f"nba_roster_cache_{NBA_SEASON}.json"), {}),
+)
 if team_players:
-    write_player_stats(dict(team_players))
+    write_player_stats(team_players)
 else:
     existing_players = load_json_or_default(SEASON_PLAYER_STATS_JSON, {}) or load_json_or_default(PLAYER_STATS_JSON, {})
     if existing_players:

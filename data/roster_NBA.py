@@ -13,6 +13,7 @@ from pathlib import Path
 import requests
 
 from scoreboard_client import acquire_script_lock
+from nba_data_helpers import complete_team_stats
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -102,7 +103,7 @@ def main():
         season = season_string()
         cache_path = BASE_DIR / "public" / "data" / f"nba_roster_cache_{season}.json"
         previous = read_json(cache_path, {})
-        teams = read_json(TEAM_STATS_JSON, [])
+        teams = complete_team_stats([])
         if not isinstance(teams, list) or not teams:
             print("[WARN] NBA roster refresh skipped: no team stats are available yet.")
             return

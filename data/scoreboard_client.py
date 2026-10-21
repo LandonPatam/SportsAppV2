@@ -18,8 +18,10 @@ class ProcessLock:
         STATE_DIR.mkdir(exist_ok=True)
         self.file = (STATE_DIR / (name + ".lock")).open("a+b")
         try:
-            self.file.seek(0)
-            if not self.file.read(1):
+            # Windows denies reads of a byte locked by another process.
+            # Checking the length does not touch that locked byte.
+            self.file.seek(0, os.SEEK_END)
+            if self.file.tell() == 0:
                 self.file.write(b"0")
                 self.file.flush()
             self.file.seek(0)
