@@ -235,6 +235,7 @@ interface ScheduleGameAny {
   game_link?: string;
   period?: number;        // quarter/period number (1-4, or 5+ for OT)
   clock?: string;         // remaining time in period (e.g., "10.0")
+  is_preseason?: boolean;
   is_playoff?: boolean;
   series_note?: string;   // e.g., 'Eastern Conference First Round - Game 5'
   series_game_number?: number;
@@ -529,9 +530,8 @@ interface ResolvedGameTeams {
   awayName?: string;
 }
 
-// Compute current win/loss streak for each team from schedule results.
+// Compute current win/loss streaks from season results, excluding preseason.
 // Returns a map of abbr -> { type: 'W' | 'L', count: number }
-// Compute current win/loss streak for each team from schedule results.
 const computeStreakMap = (scheduleData: NBAScheduleData | null): Record<string, { type: 'W' | 'L'; count: number }> => {
   if (!scheduleData) return {};
   const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
@@ -539,6 +539,7 @@ const computeStreakMap = (scheduleData: NBAScheduleData | null): Record<string, 
     : (scheduleData.games || []);
 
   const finished = gamesArr.filter((g) => {
+    if (g.is_preseason) return false;
     const status = String((g as any).status || '').toLowerCase();
     const isFinal = status.includes('final') || Boolean((g as any).winner);
     const aScore = parseScore((g as any).away_score);
