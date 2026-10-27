@@ -2123,16 +2123,15 @@
     "location": "Fiserv Forum",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401909872/pacers-bucks",
-    "home_score": "108",
+    "home_score": "110",
     "away_score": "102",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": false,
     "series_note": null,
     "series_game_number": null,
-    "status": "live",
-    "period": 4,
-    "clock": "18.0"
+    "status": "final",
+    "winner": "Milwaukee Bucks"
   },
   {
     "game_id": "401909873",
@@ -2160,8 +2159,8 @@
     "location": "Toyota Center",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401909874/hawks-rockets",
-    "home_score": "95",
-    "away_score": "90",
+    "home_score": "106",
+    "away_score": "93",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": false,
@@ -2169,7 +2168,7 @@
     "series_game_number": null,
     "status": "live",
     "period": 4,
-    "clock": "9:49"
+    "clock": "7:47"
   },
   {
     "game_id": "401909875",
@@ -2179,16 +2178,16 @@
     "location": "Vivint Arena",
     "tv_providers": [],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401909875/grizzlies-jazz",
-    "home_score": "52",
-    "away_score": "58",
+    "home_score": "59",
+    "away_score": "63",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": false,
     "series_note": null,
     "series_game_number": null,
     "status": "live",
-    "period": 2,
-    "clock": "0.0"
+    "period": 3,
+    "clock": "8:57"
   },
   {
     "game_id": "401909876",
@@ -2200,8 +2199,8 @@
       "Peacock"
     ],
     "game_link": "https://www.espn.com/nba/game/_/gameId/401909876/warriors-nuggets",
-    "home_score": "21",
-    "away_score": "16",
+    "home_score": "32",
+    "away_score": "26",
     "is_nba_cup": false,
     "tournament": null,
     "is_playoff": false,
@@ -2209,7 +2208,7 @@
     "series_game_number": null,
     "status": "live",
     "period": 1,
-    "clock": "4:27"
+    "clock": "21.0"
   },
   {
     "game_id": "401909877",

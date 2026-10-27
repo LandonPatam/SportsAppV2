@@ -1,5 +1,5 @@
 import { pollSchedule } from '@/lib/pollSchedule';
-import { computeNBARecordMap } from '@/lib/nbaRecords';
+import { computeNBARecordMap, computeNBAStreakMap } from '@/lib/nbaRecords';
 // ============================
 // 🏀 NBA Dashboard
 // Displays NBA team standings and top player stats
@@ -530,59 +530,6 @@ interface ResolvedGameTeams {
   homeName?: string;
   awayName?: string;
 }
-
-// Compute current win/loss streaks from season results, excluding preseason.
-// Returns a map of abbr -> { type: 'W' | 'L', count: number }
-const computeStreakMap = (scheduleData: NBAScheduleData | null): Record<string, { type: 'W' | 'L'; count: number }> => {
-  if (!scheduleData) return {};
-  const gamesArr: ScheduleGameAny[] = Array.isArray(scheduleData)
-    ? (scheduleData as ScheduleGameAny[])
-    : (scheduleData.games || []);
-
-  const finished = gamesArr.filter((g) => {
-    if (g.is_preseason) return false;
-    const status = String((g as any).status || '').toLowerCase();
-    const isFinal = status.includes('final') || Boolean((g as any).winner);
-    const aScore = parseScore((g as any).away_score);
-    const hScore = parseScore((g as any).home_score);
-    return isFinal && Number.isFinite(aScore) && Number.isFinite(hScore);
-  });
-
-  finished.sort((a, b) => (String(a.date || '')).localeCompare(String(b.date || '')));
-
-  const teamResults: Record<string, ('W' | 'L')[]> = {};
-  for (const g of finished) {
-    let awayAbbr = (g as any).away as string | undefined;
-    let homeAbbr = (g as any).home as string | undefined;
-    if ((!awayAbbr || !homeAbbr) && g.matchup) {
-      const parts = g.matchup.split('@');
-      const an = parts[0]?.trim();
-      const hn = parts[1]?.trim();
-      if (an) awayAbbr = (teamAbbreviations as any)[an] ?? awayAbbr;
-      if (hn) homeAbbr = (teamAbbreviations as any)[hn] ?? homeAbbr;
-    }
-    if (!awayAbbr || !homeAbbr) continue;
-    const aScore = parseScore((g as any).away_score);
-    const hScore = parseScore((g as any).home_score);
-    const awayWon = aScore > hScore;
-    const awayKey = awayAbbr.toUpperCase();
-    const homeKey = homeAbbr.toUpperCase();
-    if (!teamResults[awayKey]) teamResults[awayKey] = [];
-    if (!teamResults[homeKey]) teamResults[homeKey] = [];
-    teamResults[awayKey].push(awayWon ? 'W' : 'L');
-    teamResults[homeKey].push(awayWon ? 'L' : 'W');
-  }
-
-  const streakMap: Record<string, { type: 'W' | 'L'; count: number }> = {};
-  for (const [abbr, results] of Object.entries(teamResults)) {
-    if (results.length === 0) continue;
-    const last = results[results.length - 1];
-    let count = 0;
-    for (let i = results.length - 1; i >= 0 && results[i] === last; i--) count++;
-    streakMap[abbr] = { type: last, count };
-  }
-  return streakMap;
-};
 
 const resolveMatchupTeams = (game: ScheduleGameAny): ResolvedGameTeams => {
   let awayAbbr = ((game as any).away || '').toString().trim().toUpperCase();
@@ -4267,8 +4214,11 @@ const abbrToRecord = React.useMemo(
   [nbaTeams, scheduleData],
 );
 
-// Map team abbreviation to current streak (computed from schedule results)
-const abbrToStreakMap = React.useMemo(() => computeStreakMap(scheduleData), [scheduleData]);
+// Reconcile streaks with the same official records and fresh finals.
+const abbrToStreakMap = React.useMemo(
+  () => computeNBAStreakMap(nbaTeams, scheduleData, teamAbbreviations),
+  [nbaTeams, scheduleData],
+);
 
 const abbrToTeamMap = React.useMemo(() => {
   const map: Record<string, NBATeam> = {};
