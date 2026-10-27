@@ -1,5 +1,6 @@
 import re
 from scoreboard_client import ScoreboardClient, ScoreboardUnavailable, acquire_script_lock
+from nba_broadcasts import get_nba_tv_providers
 import json
 import os
 import sys
@@ -23,7 +24,6 @@ if LIVE_ONLY:
 SAVE_PATH = "public/data/nba_schedule.json"
 TEMP_PATH = SAVE_PATH + ".tmp"  # Path for safe swapping
 SEASONS_MANIFEST_PATH = "public/data/nba_seasons.json"
-VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN", "ABC", "NBC"}
 SLEEP_BETWEEN_CALLS = float(os.getenv("NBA_SCHEDULE_SLEEP", "1.5"))
 MAX_EMPTY_DAYS = 20
 ENABLE_UPCOMING_SEASON_AUTO_DETECT = True
@@ -457,12 +457,7 @@ if FIND_SCHEDULE:
                 away_name = away_team.get("displayName", "")
                 home_name = home_team.get("displayName", "")
 
-                broadcasts = event.get("broadcasts", [])
-                tv_providers = [
-                    b.get("name")
-                    for b in broadcasts
-                    if b.get("name") in VALID_NETWORKS
-                ]
+                tv_providers = get_nba_tv_providers(event.get("broadcasts", []))
 
                 note_text = (event.get("note") or "").lower()
                 notes = event.get("notes", [])
@@ -616,6 +611,10 @@ else:
                 continue
 
             found_in_espn = True
+            # Broadcast assignments can change after the initial season crawl.
+            # Keep existing metadata when ESPN omits the field entirely.
+            if "broadcasts" in event:
+                game["tv_providers"] = get_nba_tv_providers(event["broadcasts"])
             status = event.get("status", "")
             fullStatus = event.get("fullStatus", {})
             status_type = fullStatus.get("type", {})

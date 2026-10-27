@@ -1,4 +1,5 @@
 import requests
+from nba_broadcasts import get_nba_tv_providers
 import json
 import os
 from datetime import datetime, timedelta
@@ -9,7 +10,6 @@ import time
 # ⚙️ CONFIGURATION - EDIT THESE
 # ==========================================================
 SAVE_PATH = "public/data/nba_schedule.json"
-VALID_NETWORKS = {"Prime Video", "Peacock", "ESPN", "ABC"}
 SLEEP_BETWEEN_CALLS = 1.5
 
 # >>> SET YOUR DATE RANGE HERE <<<
@@ -107,12 +107,7 @@ while current_date <= END_DATE:
             away_name = away_team.get("displayName", "")
             home_name = home_team.get("displayName", "")
             
-            broadcasts = event.get("broadcasts", [])
-            tv_providers = [
-                b.get("name")
-                for b in broadcasts
-                if b.get("name") in VALID_NETWORKS
-            ]
+            tv_providers = get_nba_tv_providers(event.get("broadcasts", []))
             
             # 🏆 Detect NBA Cup games (same logic as schedule_NBA.py)
             note_text = (event.get("note") or "").lower()

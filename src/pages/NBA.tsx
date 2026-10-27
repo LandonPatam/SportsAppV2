@@ -1,4 +1,5 @@
 import { pollSchedule } from '@/lib/pollSchedule';
+import { computeNBARecordMap } from '@/lib/nbaRecords';
 // ============================
 // 🏀 NBA Dashboard
 // Displays NBA team standings and top player stats
@@ -4260,15 +4261,11 @@ const abbrToLogo = React.useMemo(() => {
   return map;
 }, [nbaTeams]);
 
-// Map team abbreviation to record string (W-L)
-const abbrToRecord = React.useMemo(() => {
-  const map: Record<string, string> = {};
-  nbaTeams.forEach((t) => {
-    const abbr = teamAbbreviations[t.TEAM_NAME];
-    if (abbr) map[abbr] = `${t.W} - ${t.L}`;
-  });
-  return map;
-}, [nbaTeams]);
+// Final scores bridge any delay in the official team records.
+const abbrToRecord = React.useMemo(
+  () => computeNBARecordMap(nbaTeams, scheduleData, teamAbbreviations),
+  [nbaTeams, scheduleData],
+);
 
 // Map team abbreviation to current streak (computed from schedule results)
 const abbrToStreakMap = React.useMemo(() => computeStreakMap(scheduleData), [scheduleData]);
