@@ -9,6 +9,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallba
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageNavbar, MobileNextEventIndicator } from '@/components/layout/PageNavbar';
+import { PredictionsView, type TeamLook } from '@/components/nba/PredictionsView';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -4208,6 +4209,18 @@ const abbrToLogo = React.useMemo(() => {
   return map;
 }, [nbaTeams]);
 
+// Predictions tab: full team name (from the forecaster) -> site abbreviation, logo and colors.
+const resolvePredictionTeam = useCallback((name: string | null, espnAbbr: string): TeamLook => {
+  const abbr = (name && teamAbbreviations[name]) || espnAbbr;
+  const colors = teamColors[abbr];
+  return {
+    abbr,
+    logo: abbrToLogo[abbr] || `https://a.espncdn.com/i/teamlogos/nba/500/${espnAbbr.toLowerCase()}.png`,
+    primary: colors?.primary || '#4f46e5',
+    secondary: colors?.secondary || '#dc2626',
+  };
+}, [abbrToLogo]);
+
 // Final scores bridge any delay in the official team records.
 const abbrToRecord = React.useMemo(
   () => computeNBARecordMap(nbaTeams, scheduleData, teamAbbreviations),
@@ -4465,6 +4478,7 @@ useEffect(() => {
         { value: 'standings',   label: 'Standings'   },
         { value: 'all',         label: 'Teams'  },
         { value: 'top-scorers', label: 'Players' },
+        { value: 'predictions', label: 'Predictions' },
       ]}
       activeTab={activeTab}
       onTabChange={handleTabChange}
@@ -4944,6 +4958,10 @@ useEffect(() => {
 ======================== */}
 <TabsContent value="schedule" className={isMobile ? 'mt-0' : 'max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2'}>
   <ScheduleViewV2 scheduleData={scheduleData} logoMap={abbrToLogo} recordMap={abbrToRecord} streakMap={abbrToStreakMap} onGameClick={(gameId) => setEspnGameId(gameId)} isMobile={isMobile} />
+</TabsContent>
+
+<TabsContent value="predictions" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
+  {activeTab === 'predictions' && <PredictionsView resolveTeam={resolvePredictionTeam} />}
 </TabsContent>
 
 <TabsContent value="playoffs" className="mt-0">
