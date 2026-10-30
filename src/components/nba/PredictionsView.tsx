@@ -383,15 +383,6 @@ export const PredictionsView = ({ resolveTeam }: { resolveTeam: (name: string | 
   return (
     <div className="flex flex-col gap-4 px-2 pb-8">
       <DateNavigator dates={dates} current={currentDate} today={data.date} onChange={setSelectedDate} />
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-black uppercase tracking-wide text-white">Model predictions</h2>
-          <div className="text-xs text-white/60">
-            {fmtDate(currentDate)}{view?.issued_at ? ` · forecast issued ${fmtTime(view.issued_at)}` : ''} · win %, expected score and projected box scores
-          </div>
-        </div>
-        <div className="text-[11px] text-white/40">Market lines are shown for comparison only; they are not model inputs.</div>
-      </div>
       <RecordCard data={data} />
       {!view && <div className="rounded-2xl bg-white/5 px-5 py-6 text-center text-white/60">Loading…</div>}
       {view && view.games.length === 0 && (
