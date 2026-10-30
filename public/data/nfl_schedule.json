@@ -1711,11 +1711,10 @@
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401873009/cowboys-eagles",
     "home_score": "21",
-    "away_score": "28",
+    "away_score": "38",
     "ts_utc": 1793060100,
-    "status": "live",
-    "period": 4,
-    "clock": "15:00"
+    "status": "final",
+    "winner": "Dallas Cowboys"
   },
   {
     "game_id": "401873023",
@@ -1727,10 +1726,12 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401873023/panthers-packers",
-    "winner": null,
-    "home_score": null,
-    "away_score": null,
-    "ts_utc": 1793319300
+    "home_score": "13",
+    "away_score": "10",
+    "ts_utc": 1793319300,
+    "status": "live",
+    "period": 2,
+    "clock": "5:22"
   },
   {
     "game_id": "401873024",
