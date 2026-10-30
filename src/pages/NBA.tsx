@@ -9,7 +9,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallba
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageNavbar, MobileNextEventIndicator } from '@/components/layout/PageNavbar';
-import { PredictionsView, type TeamLook } from '@/components/nba/PredictionsView';
+import { PredictionsView, type TeamLook, type LiveScore } from '@/components/nba/PredictionsView';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -1145,6 +1145,7 @@ const StatRow = ({
   dense = false,
   bold = false,
   noProvider = false,
+  large = false,
 }: {
   label: string;
   value: string | number;
@@ -1152,6 +1153,8 @@ const StatRow = ({
   dense?: boolean;
   bold?: boolean;
   noProvider?: boolean;
+  // Text scales with the window height; label and value sit at the column's two edges.
+  large?: boolean;
 }) => {
   const colorClass =
     highlight === 'best'
@@ -1165,10 +1168,17 @@ const StatRow = ({
   const inner = (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className={`flex items-center text-sm cursor-help text-left ${dense ? 'gap-[4rem]' : 'gap-[0.5rem]'}`}>
-          <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left ${bold ? 'font-bold' : ''}`}>{label}</span>
-          <span className={`${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
-        </div>
+        {large ? (
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 cursor-help" style={{ fontSize: 'clamp(0.875rem, 1.6vh, 1.125rem)' }}>
+            <span className={`truncate text-muted-foreground ${bold ? 'font-bold' : ''}`}>{label}</span>
+            <span className={`tabular-nums ${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
+          </div>
+        ) : (
+          <div className={`flex items-center text-sm cursor-help text-left ${dense ? 'gap-[4rem]' : 'gap-[0.5rem]'}`}>
+            <span className={`text-muted-foreground ${dense ? 'w-[4.5rem]' : 'w-16'} text-left ${bold ? 'font-bold' : ''}`}>{label}</span>
+            <span className={`${colorClass} ${bold ? 'font-bold' : ''}`}>{value}</span>
+          </div>
+        )}
       </TooltipTrigger>
       <TooltipContent side="top" align="center">
         <p>{statDescriptions[label] || 'Stat description unavailable'}</p>
@@ -2800,9 +2810,9 @@ const formatTeamModalStatValue = (team: NBATeam, key: keyof NBATeam) => {
 
 type ModalTab = 'stats' | 'roster' | 'matchups';
 const MODAL_TAB_CONFIG: { key: ModalTab; label: string }[] = [
-  { key: 'stats', label: 'Full Stats' },
   { key: 'roster', label: 'Roster' },
   { key: 'matchups', label: 'Schedule' },
+  { key: 'stats', label: 'Full Stats' },
 ];
 
 // Displays a team's full roster in a modal
@@ -2831,6 +2841,16 @@ const getPlayerValueScore = (p: Player) => {
 
 
 
+// Season phase of a schedule game, for the team modal's schedule dividers.
+type SeasonPhase = 'preseason' | 'regular' | 'postseason';
+const SEASON_PHASE_LABELS: Record<SeasonPhase, string> = {
+  preseason: 'Preseason',
+  regular: 'Regular Season',
+  postseason: 'Postseason',
+};
+const seasonPhase = (game: ScheduleGameAny): SeasonPhase =>
+  game.is_preseason ? 'preseason' : game.is_playoff ? 'postseason' : 'regular';
+
 const PlayerModal = ({
   team,
   nbaPlayerData,
@@ -2839,6 +2859,7 @@ const PlayerModal = ({
   leagueAverages,
   allTeams,
   onClose,
+  onGameClick,
 }: {
   team: NBATeam;
   nbaPlayerData: Record<string, Player[]>;
@@ -2847,18 +2868,19 @@ const PlayerModal = ({
   leagueAverages: LeagueAverageMap | null;
   allTeams?: NBATeam[];
   onClose: () => void;
+  // Opens the ESPN game page modal (same as clicking a Scoreboard card); it layers above this modal.
+  onGameClick?: (gameId: string) => void;
 }) => {
   const players: Player[] = nbaPlayerData[team.TEAM_ID.toString()] || [];
   const sortedPlayers = React.useMemo(() => {
     return [...players].sort((a, b) => getPlayerValueScore(b) - getPlayerValueScore(a));
   }, [players]);
-  const [modalTab, setModalTab] = useState<ModalTab>('stats');
+  const [modalTab, setModalTab] = useState<ModalTab>('roster'); // first tab in MODAL_TAB_CONFIG
   const [highlightedMatchupId, setHighlightedMatchupId] = useState<string | null>(null);
   const teamAbbrRaw = teamAbbreviations[team.TEAM_NAME] || (team as any).TEAM_ABBREVIATION || 'UNK';
   const teamAbbr = (teamAbbrRaw || 'UNK').toUpperCase();
   const teamLogo = team.LOGO_URL || logoMap[teamAbbr];
   const navPrimary = teamColors[teamAbbr]?.primary || '#1e40af';
-  const navSecondary = teamColors[teamAbbr]?.secondary || '#b91c1c';
   const recordLabel = `${team.W}-${team.L}`;
   const bpiRankLabel = (team as any).bpirank ?? '—';
   const getGameTimestamp = (game: ScheduleGameAny) => {
@@ -2870,6 +2892,17 @@ const PlayerModal = ({
   };
 
   const modalTeams = allTeams && allTeams.length ? allTeams : ALL_TEAMS_CACHE;
+  // TeamCard look: team accent corner with the conference rank (same order as the Standings tab).
+  const accent = teamGradientColors[teamAbbr]?.start || navPrimary;
+  const conferenceRank = React.useMemo(() => {
+    const conference = teamConferences[team.TEAM_NAME]?.conference;
+    if (!conference) return null;
+    const index = modalTeams
+      .filter((t) => teamConferences[t.TEAM_NAME]?.conference === conference)
+      .sort((a, b) => b.W - a.W)
+      .findIndex((t) => t.TEAM_ID === team.TEAM_ID);
+    return index >= 0 ? index + 1 : null;
+  }, [modalTeams, team.TEAM_ID, team.TEAM_NAME]);
   const getModalStatHighlight = React.useCallback(
     (key: keyof NBATeam) => determineTeamStatHighlight(team, key, leagueAverages, modalTeams),
     [team, leagueAverages, modalTeams],
@@ -3064,59 +3097,69 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
       style={{ animation: 'fadeIn 0.2s ease-out' }}
     >
       <div
-        className="relative bg-background rounded-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden border"
+        className="relative flex h-[95vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 text-white"
         onClick={(e) => e.stopPropagation()}
-        style={{ animation: 'scaleIn 0.25s ease-out' }}
+        style={{
+          animation: 'scaleIn 0.25s ease-out',
+          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
+        }}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-background border-b p-3 flex flex-wrap items-center gap-4 z-10">
-          <div className="flex-1 min-h-0 flex items-center gap-3">
-            {teamLogo && (
-              <img
-                src={teamLogo}
-                alt={`${team.TEAM_NAME} logo`}
-                className="w-20 h-20 rounded-md object-contain"
-                loading="lazy"
-              />
-            )}
-            <h2 className="text-3xl font-bold">{team.TEAM_NAME}</h2>
-          </div>
-          <div className="flex items-center gap-6 ml-auto text-right text-white/90">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-white/60 font-bold">Record</p>
-              <p className="text-lg font-bold text-white">{recordLabel}</p>
+        {/* Header — same layout as the Teams tab TeamCard */}
+        {conferenceRank !== null && (
+          <>
+            <div
+              className="absolute left-0 top-0 h-[82px]"
+              style={{ width: 82, background: `linear-gradient(135deg, ${accent} 0%, ${accent} 56%, transparent 57%)` }}
+            />
+            <div
+              className="absolute font-black italic leading-none select-none"
+              style={{ left: 8, top: 4, color: 'rgba(255,255,255,0.92)', fontSize: 56, letterSpacing: 0 }}
+            >
+              {conferenceRank}
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-white/60 font-bold">BPI Rank</p>
-              <p className="text-lg font-bold text-white">{bpiRankLabel}</p>
+          </>
+        )}
+        <div className="relative z-10 shrink-0 border-b border-white/10 p-4 flex items-center gap-4 min-h-[82px]">
+          <div className="w-[48px] shrink-0" />
+          {teamLogo && (
+            <img
+              src={teamLogo}
+              alt={`${team.TEAM_NAME} logo`}
+              className="h-20 w-20 shrink-0 object-contain"
+              loading="lazy"
+            />
+          )}
+          <h2 className="min-w-0 flex-1 truncate text-2xl font-black uppercase leading-none text-white">{team.TEAM_NAME}</h2>
+          <div className="flex shrink-0 items-center gap-6">
+            {/* BPI rank stacked above the record */}
+            <div className="flex flex-col items-end gap-1.5">
+              <p className="text-xs font-black uppercase tracking-wide text-white/60">
+                BPI Rank <span className="text-white tabular-nums">{bpiRankLabel}</span>
+              </p>
+              <span className="text-4xl font-black leading-none text-white tabular-nums">{recordLabel}</span>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors">
+            <button onClick={onClose} className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white">
               <X className="w-6 h-6" />
             </button>
           </div>
         </div>
 
-        {/* Tabs Navigation - Sticky */}
-        <div className="sticky top-[88px] bg-background border-b px-6 py-3 z-10">
+        {/* Tabs Navigation */}
+        <div className="relative z-10 shrink-0 border-b border-white/10 px-6 py-3">
           <div className="w-full">
-            <div className="inline-flex w-full items-center justify-center rounded-full bg-muted/40 p-1 shadow-inner backdrop-blur-sm">
+            <div className="inline-flex w-full items-center justify-center rounded-full border border-white/10 p-1" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
               {MODAL_TAB_CONFIG.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
-                  className={`relative flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 ${
+                  className={`relative flex-1 rounded-full px-4 py-2 text-sm font-black uppercase tracking-wide transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                     modalTab === tab.key
                       ? 'text-white shadow-md'
-                      : 'text-muted-foreground hover:scale-[1.05] active:scale-95'
+                      : 'text-white/50 hover:text-white/80 active:scale-95'
                   }`}
                   onClick={() => setModalTab(tab.key)}
-                  style={
-                    modalTab === tab.key
-                      ? {
-                          backgroundImage: `linear-gradient(120deg, ${navSecondary}, ${navPrimary})`,
-                        }
-                      : undefined
-                  }
+                  style={modalTab === tab.key ? { backgroundColor: accent } : undefined}
                 >
                   <span>{tab.label}</span>
                   <span
@@ -3131,49 +3174,27 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
           </div>
         </div>
 
-        {/* Tab Content - Fixed height so modal doesn't resize between tabs */}
-        <div className="p-6 overflow-y-auto h-[calc(90vh-200px)] space-y-4">
+        {/* Tab Content - fills the rest of the fixed-height modal, so every tab is the same size.
+            The schedule tab scrolls only its game list, so its "Jump to latest game" bar stays pinned. */}
+        <div className={`min-h-0 flex-1 p-6 ${modalTab === 'matchups' ? 'flex flex-col gap-4 overflow-hidden' : 'overflow-y-auto space-y-4'}`}>
+          {/* Stats panel fills the tab area; the stats keep their normal spacing and sit centered in it. */}
           {modalTab === 'stats' && (
-            <div className="relative rounded-xl overflow-hidden">
-              <div
-                className="relative rounded-xl overflow-hidden"
-                style={{
-                  backgroundImage: `linear-gradient(300deg, ${
-                    teamGradientColors[teamAbbr]?.start || '#1e40af'
-                  }, ${teamGradientColors[teamAbbr]?.end || '#dc2626'})`,
-                  padding: '3px',
-                }}
-              >
-                <div
-                  className="absolute inset-1 rounded-xl"
-                  style={{ backgroundColor: '#1d1d1dff', opacity: 1 }}
-                  aria-hidden
-                />
-                <div className="relative z-10 p-4 text-white">
-                  <Card
-                    className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1"
-                    style={{ backgroundColor: '#0000004c', opacity: 1 }}
-                  >
-                    <CardContent className="pt-4 pb-4 max-h-[70vh] overflow-y-auto">
-                      <div className="grid grid-cols-4 gap-x-3 gap-y-8">
-                        {TEAM_MODAL_STAT_COLUMNS.map((column, colIndex) => (
-                          <div key={`modal-col-${colIndex}`} className="space-y-4">
-                            {column.map((stat) => (
-                              <StatRow
-                                key={`modal-${stat.key}`}
-                                label={stat.label ?? stat.key}
-                                value={formatTeamModalStatValue(team, stat.key)}
-                                highlight={getModalStatHighlight(stat.key)}
-                                dense
-                                bold
-                              />
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+            <div className="flex min-h-full flex-col justify-center rounded-xl border border-white/10 p-4 text-white" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
+              <div className="grid grid-cols-4 gap-x-10 px-2">
+                {TEAM_MODAL_STAT_COLUMNS.map((column, colIndex) => (
+                  <div key={`modal-col-${colIndex}`} className="flex flex-col" style={{ rowGap: 'clamp(1rem, 2.3vh, 1.75rem)' }}>
+                    {column.map((stat) => (
+                      <StatRow
+                        key={`modal-${stat.key}`}
+                        label={stat.label ?? stat.key}
+                        value={formatTeamModalStatValue(team, stat.key)}
+                        highlight={getModalStatHighlight(stat.key)}
+                        large
+                        bold
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -3183,74 +3204,83 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
               {sortedPlayers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {sortedPlayers.map((player, index) => {
+                    // Same card as the Players tab; rank is roster order (by value), colors vs teammates.
                     const primary = teamColors[player.TEAM_ABBREVIATION]?.primary || '#1e40af';
-                    const secondary = teamColors[player.TEAM_ABBREVIATION]?.secondary || '#b91c1c';
+                    const statColumns: [string, string, ReturnType<typeof getTeamHighlight> | undefined][][] = [
+                      [
+                        ['GP', player.GP.toFixed(0), undefined],
+                        ['MIN', player.MIN.toFixed(1), getTeamHighlight(player, 'MIN')],
+                        ['PPG', player.PTS.toFixed(1), getTeamHighlight(player, 'PTS')],
+                        ['REB', player.REB.toFixed(1), getTeamHighlight(player, 'REB')],
+                        ['AST', player.AST.toFixed(1), getTeamHighlight(player, 'AST')],
+                        ['STL', player.STL.toFixed(1), getTeamHighlight(player, 'STL')],
+                        ['BLK', player.BLK.toFixed(1), getTeamHighlight(player, 'BLK')],
+                      ],
+                      [
+                        ['TOV', player.TOV.toFixed(1), getTeamHighlight(player, 'TOV')],
+                        ['FGA', player.FGA.toFixed(1), getTeamHighlight(player, 'FGA')],
+                        ['FG%', (player.FG_PCT * 100).toFixed(1) + '%', getTeamHighlight(player, 'FG_PCT')],
+                        ['3PA', player.FG3A.toFixed(1), getTeamHighlight(player, 'FG3A')],
+                        ['3P%', (player.FG3_PCT * 100).toFixed(1) + '%', getTeamHighlight(player, 'FG3_PCT')],
+                        ['FTA', player.FTA.toFixed(1), getTeamHighlight(player, 'FTA')],
+                        ['FT%', (player.FT_PCT * 100).toFixed(1) + '%', getTeamHighlight(player, 'FT_PCT')],
+                      ],
+                    ];
                     return (
                       <div
                         key={player.PLAYER_ID}
-                        className="relative rounded-xl overflow-hidden"
+                        className="group relative overflow-hidden rounded-2xl border border-white/10 transition-all duration-200 hover:scale-[1.01]"
                         style={{
-                          backgroundImage: `linear-gradient(300deg, ${primary}, ${secondary})`,
-                          padding: '3px',
+                          background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+                          boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
                           animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
                         }}
                       >
                         <div
-                          className="absolute inset-1 rounded-xl"
-                          style={{ backgroundColor: '#141414', opacity: 1 }}
-                          aria-hidden
+                          className="absolute left-0 top-0 h-[70px]"
+                          style={{ width: 66, background: `linear-gradient(135deg, ${primary} 0%, ${primary} 56%, transparent 57%)` }}
                         />
-                        <div className="relative z-10 p-4 text-white">
-                          <div className="flex items-center gap-2 mb-4">
+                        <div
+                          className="absolute font-black italic leading-none select-none"
+                          style={{ left: 8, top: 3, color: 'rgba(255,255,255,0.92)', fontSize: 52, letterSpacing: 0 }}
+                        >
+                          {index + 1}
+                        </div>
+
+                        <div className="relative z-10 px-4 py-3 text-white">
+                          <div className="flex items-center gap-3 mb-3 min-h-[48px]">
+                            <div className="w-[58px] shrink-0" />
                             {logoMap[player.TEAM_ABBREVIATION] && (
                               <img
                                 src={logoMap[player.TEAM_ABBREVIATION]}
                                 alt={`${player.TEAM_ABBREVIATION} logo`}
-                                className="w-8 h-8 rounded-sm object-contain"
+                                className="h-11 w-11 shrink-0 object-contain"
                                 loading="lazy"
-                                width={32}
-                                height={32}
                               />
                             )}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-lg font-bold truncate">{player.PLAYER_NAME}</h3>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="truncate text-base font-black uppercase leading-none text-white">{player.PLAYER_NAME}</h3>
                             </div>
-                            <Badge
-                              className="ml-auto text-xs font-semibold mt-1 bg-white text-black hover:bg-white hover:text-black flex-shrink-0"
-                              style={{ letterSpacing: '0.3px', padding: '0.25rem 0.5rem' }}
-                            >
-                              Value {getPlayerValueScore(player).toFixed(1)}
-                            </Badge>
+                            <div className="flex shrink-0 flex-col items-end leading-none">
+                              <span className="text-3xl font-black text-white tabular-nums">{getPlayerValueScore(player).toFixed(1)}</span>
+                              <span className="mt-1 text-[9px] font-bold uppercase tracking-wide text-white/45">VALUE</span>
+                            </div>
                           </div>
 
-                          <Card
-                            className="overflow-hidden transition-all duration-300 bg-card/50 backdrop-blur-sm border-1 h-full"
-                            style={{ backgroundColor: '#0000004c', opacity: 1 }}
-                          >
-                            <CardHeader className="pb-0" />
-                            <CardContent>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <StatRow label="GP" value={player.GP.toFixed(0)} bold />
-                                  <StatRow label="MIN" value={player.MIN.toFixed(1)} highlight={getTeamHighlight(player, 'MIN')} bold />
-                                  <StatRow label="PPG" value={player.PTS.toFixed(1)} highlight={getTeamHighlight(player, 'PTS')} bold />
-                                  <StatRow label="REB" value={player.REB.toFixed(1)} highlight={getTeamHighlight(player, 'REB')} bold />
-                                  <StatRow label="AST" value={player.AST.toFixed(1)} highlight={getTeamHighlight(player, 'AST')} bold />
-                                  <StatRow label="STL" value={player.STL.toFixed(1)} highlight={getTeamHighlight(player, 'STL')} bold />
-                                  <StatRow label="BLK" value={player.BLK.toFixed(1)} highlight={getTeamHighlight(player, 'BLK')} bold />
+                          <div className="rounded-xl border border-white/10 p-3" style={{ backgroundColor: 'rgba(0,0,0,0.28)' }}>
+                            <div className="grid grid-cols-2 gap-x-4">
+                              {statColumns.map((column, columnIndex) => (
+                                <div key={columnIndex} className="space-y-1.5">
+                                  {column.map(([lbl, val, hl]) => (
+                                    <div key={lbl} className="flex items-center gap-8 text-sm">
+                                      <span className="text-white/40 w-10 font-bold">{lbl}</span>
+                                      <span className={hl === 'best' ? 'text-yellow-300 font-bold' : hl === 'high' ? 'text-green-400 font-bold' : hl === 'low' ? 'text-red-400 font-bold' : 'text-white font-bold'}>{val}</span>
+                                    </div>
+                                  ))}
                                 </div>
-                                <div className="space-y-2">
-                                  <StatRow label="TOV" value={player.TOV.toFixed(1)} highlight={getTeamHighlight(player, 'TOV')} bold />
-                                  <StatRow label="FGA" value={player.FGA.toFixed(1)} highlight={getTeamHighlight(player, 'FGA')} bold />
-                                  <StatRow label="FG%" value={`${(player.FG_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG_PCT')} bold />
-                                  <StatRow label="3PA" value={player.FG3A.toFixed(1)} highlight={getTeamHighlight(player, 'FG3A')} bold />
-                                  <StatRow label="3P%" value={`${(player.FG3_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FG3_PCT')} bold />
-                                  <StatRow label="FTA" value={player.FTA.toFixed(1)} highlight={getTeamHighlight(player, 'FTA')} bold />
-                                  <StatRow label="FT%" value={`${(player.FT_PCT * 100).toFixed(1)}%`} highlight={getTeamHighlight(player, 'FT_PCT')} bold />
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
@@ -3263,8 +3293,7 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
           )}
           {modalTab === 'matchups' && (
             <>
-              <div className="flex items-center justify-between mb-4 gap-4">
-
+              <div className="flex shrink-0 items-center justify-between gap-4">
                 {latestCompletedMatchupId && (
                   <Button
                     type="button"
@@ -3283,13 +3312,19 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                   </Button>
                 )}
               </div>
+              {/* p-1 leaves room for the latest game's highlight ring inside the scroll area */}
+              <div className="min-h-0 flex-1 overflow-y-auto p-1">
               {!scheduleData ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">Schedule data unavailable.</div>
               ) : teamMatchupsWithRecord.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">No games found for this team.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {teamMatchupsWithRecord.map((game) => {
+                  {teamMatchupsWithRecord.map((game, gameIndex) => {
+                    // Full-width divider where the season phase changes (preseason -> regular -> postseason).
+                    const phase = seasonPhase(game);
+                    const previous = teamMatchupsWithRecord[gameIndex - 1];
+                    const startsPhase = previous !== undefined && seasonPhase(previous) !== phase;
                     const cardId = `matchup-${game.game_id}`;
                     const homeAbbrResolved = (game as any).homeAbbr;
                     const awayAbbrResolved = (game as any).awayAbbr;
@@ -3324,12 +3359,24 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                     })();
                     const matchupLabel = `${awayAbbrResolved || 'Away'} @ ${homeAbbrResolved || 'Home'}`;
                     return (
+                      <React.Fragment key={`${game.game_id}-${matchupLabel}`}>
+                      {startsPhase && (
+                        <div className="col-span-full flex items-center gap-3 py-2">
+                          <div className="h-px flex-1 bg-white/15" />
+                          <span className="text-xs font-black uppercase tracking-wide text-white/60">{SEASON_PHASE_LABELS[phase]}</span>
+                          <div className="h-px flex-1 bg-white/15" />
+                        </div>
+                      )}
                       <Card
-                        key={`${game.game_id}-${matchupLabel}`}
                         id={cardId}
-                        className={`relative overflow-hidden transition-all duration-300 bg-card p-2 ${
-                          highlightedMatchupId === cardId ? 'ring-4 ring-white border-2 border-white shadow-[0_0_20px_rgba(255,255,255,0.6)]' : 'border'
-                        }`}
+                        className={`relative overflow-hidden rounded-2xl transition-all duration-300 p-2 ${
+                          highlightedMatchupId === cardId ? 'ring-4 ring-white border-2 border-white shadow-[0_0_20px_rgba(255,255,255,0.6)]' : 'border border-white/10'
+                        } ${onGameClick && game.game_id ? 'cursor-pointer hover:ring-2 hover:ring-white/20' : ''}`}
+                        style={{ background: 'linear-gradient(135deg, #1c1c1c 0%, #121212 100%)' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (game.game_id && onGameClick) onGameClick(String(game.game_id));
+                        }}
                       >
                         {/* TV badges */}
                         {providers.length > 0 && (
@@ -3429,10 +3476,12 @@ const getTeamHighlight = (player: Player, key: keyof Player) => {
                           </div>
                         </CardContent>
                       </Card>
+                      </React.Fragment>
                     );
                   })}
                 </div>
               )}
+              </div>
             </>
           )}
         </div>
@@ -4218,8 +4267,37 @@ const resolvePredictionTeam = useCallback((name: string | null, espnAbbr: string
     logo: abbrToLogo[abbr] || `https://a.espncdn.com/i/teamlogos/nba/500/${espnAbbr.toLowerCase()}.png`,
     primary: colors?.primary || '#4f46e5',
     secondary: colors?.secondary || '#dc2626',
+    gradient: teamGradientColors[abbr]?.start || colors?.primary || '#4f46e5',
   };
 }, [abbrToLogo]);
+
+// Predictions tab: live/final scores from the polled schedule, keyed by ESPN game id.
+const predictionLiveScores = React.useMemo(() => {
+  const games: ScheduleGameAny[] = Array.isArray(scheduleData) ? (scheduleData as ScheduleGameAny[]) : (scheduleData?.games || []);
+  const map: Record<string, LiveScore> = {};
+  for (const g of games) {
+    const away = parseScore((g as any).away_score);
+    const home = parseScore((g as any).home_score);
+    if (!g.game_id || !Number.isFinite(away) || !Number.isFinite(home)) continue;
+    const status = String((g as any).status || '').toLowerCase();
+    const final = status.includes('final') || Boolean((g as any).winner);
+    map[String(g.game_id)] = { away, home, final, period: g.period ? Number(g.period) : null, clock: g.clock ? String(g.clock) : null };
+  }
+  return map;
+}, [scheduleData]);
+
+// ESPN game modal header: the open game's team colors, as on its Scoreboard card.
+const espnGameHeader = React.useMemo(() => {
+  if (!espnGameId) return null;
+  const games: ScheduleGameAny[] = Array.isArray(scheduleData) ? (scheduleData as ScheduleGameAny[]) : (scheduleData?.games || []);
+  const game = games.find((g) => String(g.game_id) === String(espnGameId));
+  if (!game) return null;
+  const { awayAbbr, homeAbbr } = resolveMatchupTeams(game);
+  return {
+    awayColor: (awayAbbr && teamGradientColors[awayAbbr]?.start) || '#37fff5',
+    homeColor: (homeAbbr && teamGradientColors[homeAbbr]?.start) || '#4d20c7',
+  };
+}, [espnGameId, scheduleData]);
 
 // Final scores bridge any delay in the official team records.
 const abbrToRecord = React.useMemo(
@@ -4961,7 +5039,7 @@ useEffect(() => {
 </TabsContent>
 
 <TabsContent value="predictions" className="max-h-[100vh] overflow-y-auto no-scrollbar pb-16 pr-2">
-  {activeTab === 'predictions' && <PredictionsView resolveTeam={resolvePredictionTeam} />}
+  {activeTab === 'predictions' && <PredictionsView resolveTeam={resolvePredictionTeam} liveScores={predictionLiveScores} />}
 </TabsContent>
 
 <TabsContent value="playoffs" className="mt-0">
@@ -5294,46 +5372,64 @@ useEffect(() => {
     leagueAverages={leagueAverages}
     allTeams={nbaTeams}
     onClose={() => setSelectedTeam(null)}
+    onGameClick={(gameId) => setEspnGameId(gameId)}
   />
 )}
 
 {/* ESPN Game Iframe Modal — opened when a game card is clicked on the Scoreboard tab */}
 {espnGameId && (
-  <div 
-    className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+  <div
+    className="fixed inset-0 bg-black/50 backdrop-blur-md z-[9999] flex items-center justify-center p-4"
     onClick={() => setEspnGameId(null)}
-    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, animation: 'espnFadeIn 0.2s ease-out' }}
   >
-    <div 
-      className="relative bg-zinc-900 rounded-2xl w-full max-w-[95vw] h-[95vh] flex flex-col shadow-2xl border border-white/10"
+    <style>{`
+      @keyframes espnFadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes espnScaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    `}</style>
+    <div
+      className="relative w-full max-w-[95vw] h-[95vh] flex flex-col overflow-hidden rounded-2xl border border-white/10 text-white"
       onClick={(e) => e.stopPropagation()}
+      style={{
+        background: 'linear-gradient(135deg, #171717 0%, #0f0f0f 100%)',
+        boxShadow: '0 14px 34px rgba(0,0,0,0.24)',
+        animation: 'espnScaleIn 0.25s ease-out',
+      }}
     >
-      {/* Header Bar */}
-      <div className="flex items-center justify-end p-3 border-b border-white/10 bg-transparent">
-        {/* Controls */}
-        <div className="flex items-center gap-2">
-          {/* Open in new tab button */}
-          <button
-            onClick={() => window.open(`https://www.espn.com/nba/boxscore/_/gameId/${espnGameId}#gamepackage-box-score`, '_blank', 'noopener,noreferrer')}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-            title="Open in new tab"
-          >
-            Open in ESPN
-          </button>
-        
-          {/* Close button */}
-          <button
-            onClick={() => setEspnGameId(null)}
-            className="bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 transition-colors"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+      {/* Header Bar — Scoreboard card look: away-to-home team gradient under a dark scrim */}
+      <div className="relative shrink-0 overflow-hidden border-b border-white/10">
+        {espnGameHeader && (
+          <>
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to right, ${espnGameHeader.awayColor} 0%, ${espnGameHeader.awayColor} 20%, ${espnGameHeader.homeColor} 80%, ${espnGameHeader.homeColor} 100%)` }}
+            />
+            <div className="absolute inset-0 bg-black/40" />
+          </>
+        )}
+        <div className="relative z-10 flex items-center justify-end px-4 py-2 min-h-[64px]">
+          {/* Controls */}
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => window.open(`https://www.espn.com/nba/boxscore/_/gameId/${espnGameId}#gamepackage-box-score`, '_blank', 'noopener,noreferrer')}
+              className="rounded-full bg-black/30 px-4 py-2 text-sm font-black tracking-wide text-white transition-colors hover:bg-black/50"
+              title="Open in new tab"
+            >
+              Open in ESPN
+            </button>
+            <button
+              onClick={() => setEspnGameId(null)}
+              className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              title="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
-      
-      {/* Iframe Container */}
-      <div className="flex-1 overflow-hidden bg-white rounded-b-2xl">
+
+      {/* Iframe Container (ESPN's page renders its own white theme) */}
+      <div className="flex-1 overflow-hidden bg-white">
         <iframe
           ref={(iframe) => {
             if (iframe) {

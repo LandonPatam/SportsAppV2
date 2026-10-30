@@ -1726,12 +1726,12 @@
       "Prime Video"
     ],
     "game_link": "https://www.espn.com/nfl/game/_/gameId/401873023/panthers-packers",
-    "home_score": "13",
-    "away_score": "10",
+    "home_score": "27",
+    "away_score": "19",
     "ts_utc": 1793319300,
     "status": "live",
-    "period": 2,
-    "clock": "5:22"
+    "period": 4,
+    "clock": "5:37"
   },
   {
     "game_id": "401873024",

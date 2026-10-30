@@ -504,6 +504,24 @@ html.nba-mobile-browser body { background-color: #080a0c; }
   .nba-mobile-season-reveal, .nba-mobile-season-options, .nba-mobile-season-picker-trigger svg { transition: none; }
 }
 
+/* Predictions: projected box score reveal (same motion as the mobile season menu). */
+.nba-boxscore-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 480ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease, visibility 480ms;
+}
+.nba-boxscore-reveal.is-open { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
+.nba-boxscore-clip { min-height: 0; overflow: hidden; }
+.nba-boxscore-body { transform: translateY(-10px); transition: transform 480ms cubic-bezier(.22, 1, .36, 1); }
+.is-open .nba-boxscore-body { transform: translateY(0); }
+.nba-boxscore-chevron { transition: transform 480ms cubic-bezier(.22, 1, .36, 1); }
+.nba-boxscore-chevron.is-open { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .nba-boxscore-reveal, .nba-boxscore-body, .nba-boxscore-chevron { transition: none; }
+}
+
 
 .nba-mobile-header-reversed { flex-direction: row-reverse; }
 .nba-mobile-header-reversed .nba-mobile-season-picker { margin-left: 0; margin-right: auto; }

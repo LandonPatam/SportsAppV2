@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 // Data written by the NBA Forecaster (`nba_forecaster auto --export`), refreshed by data/nba_predictions.py.
 // The main file is today's forecast; past days are in /data/nba_predictions/<YYYYMMDD>.json.
@@ -40,7 +41,22 @@ type PredictionsData = {
                    vs?: { draftkings?: Comparison; espn_predictor?: Comparison } };
 };
 
-export type TeamLook = { abbr: string; logo?: string; primary: string; secondary: string };
+// `gradient` is the Scoreboard card's team color (teamGradientColors start).
+export type TeamLook = { abbr: string; logo?: string; primary: string; secondary: string; gradient: string };
+
+// Live or final score from the Scoreboard's polled schedule, keyed by ESPN game id (no "espn:" prefix).
+export type LiveScore = { away: number; home: number; final: boolean; period: number | null; clock: string | null };
+const liveKey = (gameId: string) => gameId.replace(/^espn:/, '');
+
+// Actual box scores, saved by data/nba_boxscores.py as soon as the schedule marks a game final.
+const boxscoreUrl = (gameId: string) => `/data/nba_boxscores/${liveKey(gameId)}.json`;
+const BOXSCORE_RETRY_MS = 20_000;
+type StatKey = 'min' | 'pts' | 'reb' | 'ast' | 'fg3m' | 'stl' | 'blk' | 'tov';
+type ActualLine = { id: string; name: string; starter: boolean; dnp: boolean } & Record<StatKey, number | null>;
+type BoxScore = { game_id: string; fetched_at: string; teams: { abbr: string; players: ActualLine[] }[] };
+
+// Neutral card surface shared with the Scoreboard's "No games" card.
+const PANEL = 'rounded-2xl border bg-card/60 backdrop-blur-sm';
 
 const pct = (p: number) => `${Math.round(p * 100)}%`;
 const fmtTime = (iso: string | null | undefined) =>
@@ -55,30 +71,50 @@ const TeamBlock = ({ side, look, align }: { side: TeamSide; look: TeamLook; alig
       ? <img src={look.logo} alt="" className="h-14 w-14 object-contain" loading="lazy" />
       : <span className="text-lg font-black text-white">{look.abbr}</span>}
     <div>
-      <div className="text-4xl font-black tabular-nums text-white leading-none">{pct(side.win_prob)}</div>
-      <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+      <div className="text-4xl font-black tracking-wide tabular-nums text-white leading-none">{pct(side.win_prob)}</div>
+      <div className="mt-1 text-xs font-black tracking-wide text-white/80">
         {side.name ?? look.abbr}{side.back_to_back ? ' · B2B' : ''}
       </div>
     </div>
   </div>
 );
 
-const ProbabilityBar = ({ game, away, home }: { game: PredictionGame; away: TeamLook; home: TeamLook }) => {
-  // DraftKings marks the top half and ESPN the bottom half, so both show even when they coincide.
-  const markers = [
+// One bar: the fill is the model's away/home win split. Market ticks sit at their own split point,
+// DraftKings on the top half and ESPN on the bottom half, so both show even when they coincide.
+// The final score sits underneath once the game is over (no live scores on this tab).
+const GameBar = ({ game, score, away, home }: { game: PredictionGame; score: LiveScore | null; away: TeamLook; home: TeamLook }) => {
+  const markets = [
     { label: 'DraftKings', color: DK_COLOR, p: game.market.draftkings?.home_win_prob, position: '-top-2' },
     { label: 'ESPN', color: ESPN_COLOR, p: game.market.espn?.home_win_prob, position: 'top-1.5' },
   ].filter((m): m is { label: string; color: string; p: number; position: string } => typeof m.p === 'number');
   return (
-    <div className="relative mt-4 h-3 w-full overflow-visible rounded-full bg-white/10">
-      <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: pct(game.away.win_prob), background: away.primary }} />
-      <div className="absolute inset-y-0 right-0 rounded-r-full" style={{ width: pct(game.home.win_prob), background: home.primary }} />
-      {markers.map((m) => (
-        // Market markers sit at the market's away/home split point (DraftKings green, ESPN red).
-        <div key={m.label} className={`absolute ${m.position} h-[14px] w-[3px] -translate-x-1/2 rounded-full`}
-             style={{ left: `${(1 - m.p) * 100}%`, background: m.color }} title={`${m.label}: ${home.abbr} ${pct(m.p)}`} />
-      ))}
+    <div className="mt-4">
+      <div className="relative h-3 w-full rounded-full bg-black/30 ring-1 ring-white/20">
+        <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: pct(game.away.win_prob), background: away.primary }} />
+        <div className="absolute inset-y-0 right-0 rounded-r-full" style={{ width: pct(game.home.win_prob), background: home.primary }} />
+        {markets.map((m) => (
+          <div key={m.label} className={`absolute ${m.position} z-10 h-[14px] w-[3px] -translate-x-1/2 rounded-full`}
+               style={{ left: `${(1 - m.p) * 100}%`, background: m.color }} title={`${m.label}: ${home.abbr} ${pct(m.p)}`} />
+        ))}
+      </div>
+      {score?.final && (
+        <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center text-xs font-black tracking-wide tabular-nums text-white">
+          <span className={score.away < score.home ? 'text-white/50' : ''}>{score.away}</span>
+          <span className="text-white/80">Final</span>
+          <span className={`text-right ${score.home < score.away ? 'text-white/50' : ''}`}>{score.home}</span>
+        </div>
+      )}
     </div>
+  );
+};
+
+// Final points minus the predicted score as displayed (rounded), so "110" and a final of 116 reads +6.
+const ScoreDiff = ({ predicted, actual }: { predicted: number; actual: number }) => {
+  const diff = actual - Math.round(predicted);
+  return (
+    <span className={`text-sm font-black ${diff === 0 ? 'text-white/40' : diff > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+      {diff === 0 ? '0' : `${diff > 0 ? '+' : '−'}${Math.abs(diff)}`}
+    </span>
   );
 };
 
@@ -185,73 +221,133 @@ const DateNavigator = ({ dates, current, today, onChange }: {
   );
 };
 
-const PlayerTable = ({ side, look }: { side: TeamSide; look: TeamLook }) => (
+// Stat columns: header, projected field, actual (box score) field.
+const STAT_COLUMNS: { label: string; projected: keyof PlayerProjection; actual: StatKey; strong?: boolean }[] = [
+  { label: 'Min', projected: 'minutes', actual: 'min' },
+  { label: 'Pts', projected: 'pts', actual: 'pts', strong: true },
+  { label: 'Reb', projected: 'reb', actual: 'reb' },
+  { label: 'Ast', projected: 'ast', actual: 'ast' },
+  { label: '3PM', projected: 'fg3m', actual: 'fg3m' },
+  { label: 'Stl', projected: 'stl', actual: 'stl' },
+  { label: 'Blk', projected: 'blk', actual: 'blk' },
+  { label: 'TO', projected: 'tov', actual: 'tov' },
+];
+
+// With a box score (`actuals`), each cell shows the projection followed by the actual-minus-projected
+// difference: green + when the player beat it, red - when he fell short.
+const PlayerTable = ({ side, look, actuals }: { side: TeamSide; look: TeamLook; actuals?: Map<string, ActualLine> }) => (
   <div className="min-w-0 flex-1">
     <div className="mb-2 flex items-center gap-2">
       {look.logo && <img src={look.logo} alt="" className="h-6 w-6 object-contain" />}
       <span className="text-sm font-black uppercase tracking-wide text-white">{side.name ?? look.abbr}</span>
     </div>
-    <table className="w-full text-xs text-white/90 tabular-nums">
+    <table className="w-full text-xs font-semibold text-white/90 tabular-nums">
       <thead className="text-[10px] uppercase tracking-wide text-white/50">
         <tr>
-          <th className="py-1 text-left font-semibold">Player</th>
-          <th className="py-1 text-right font-semibold">Play</th>
-          <th className="py-1 text-right font-semibold">Min</th>
-          <th className="py-1 text-right font-semibold">Pts (80%)</th>
-          <th className="py-1 text-right font-semibold">Reb</th>
-          <th className="py-1 text-right font-semibold">Ast</th>
-          <th className="py-1 text-right font-semibold">3PM</th>
-          <th className="py-1 text-right font-semibold">Stl</th>
-          <th className="py-1 text-right font-semibold">Blk</th>
-          <th className="py-1 text-right font-semibold">TO</th>
+          <th className="py-1 text-left font-black">Player</th>
+          <th className="py-1 text-right font-black">Play</th>
+          {/* With a box score each stat gets a second, unlabeled column for its difference,
+              so the header stays right over the projection. */}
+          {STAT_COLUMNS.map((c) => (
+            <React.Fragment key={c.label}>
+              <th className="py-1 text-right font-black">{c.label}</th>
+              {actuals && <th className="w-[3rem]" aria-hidden />}
+            </React.Fragment>
+          ))}
         </tr>
       </thead>
       <tbody>
-        {side.players.map((p) => (
-          <tr key={p.id} className="border-t border-white/5">
-            <td className="py-1 pr-2 text-left">
-              {p.name}
-              {p.status && !['unlisted', 'unknown'].includes(p.status) && (
-                <span className="ml-1 rounded bg-amber-400/20 px-1 text-[10px] font-bold text-amber-300">{p.status}</span>
-              )}
-            </td>
-            <td className="py-1 text-right">{pct(p.play_prob)}</td>
-            <td className="py-1 text-right">{p.minutes.toFixed(1)}</td>
-            <td className="py-1 text-right font-bold text-white">
-              {p.pts.toFixed(1)}
-              {p.range80.pts && <span className="ml-1 font-normal text-white/50">({p.range80.pts[0]}–{p.range80.pts[1]})</span>}
-            </td>
-            <td className="py-1 text-right">{p.reb.toFixed(1)}</td>
-            <td className="py-1 text-right">{p.ast.toFixed(1)}</td>
-            <td className="py-1 text-right">{p.fg3m.toFixed(1)}</td>
-            <td className="py-1 text-right">{p.stl.toFixed(1)}</td>
-            <td className="py-1 text-right">{p.blk.toFixed(1)}</td>
-            <td className="py-1 text-right">{p.tov.toFixed(1)}</td>
-          </tr>
-        ))}
+        {side.players.map((p) => {
+          const actual = actuals?.get(liveKey(p.id));
+          return (
+            <tr key={p.id} className="border-t border-white/5">
+              <td className="py-1 pr-2 text-left">
+                {p.name}
+                {actual?.dnp ? (
+                  <span className="ml-1 rounded bg-white/10 px-1 text-[10px] font-bold text-white/60">DNP</span>
+                ) : p.status && !['unlisted', 'unknown'].includes(p.status) && (
+                  <span className="ml-1 rounded bg-amber-400/20 px-1 text-[10px] font-bold text-amber-300">{p.status}</span>
+                )}
+              </td>
+              <td className="py-1 text-right">{pct(p.play_prob)}</td>
+              {STAT_COLUMNS.map((c) => {
+                const projected = p[c.projected] as number;
+                const value = actual && !actual.dnp ? actual[c.actual] : null;
+                const diff = value == null ? null : Math.round((value - projected) * 10) / 10;
+                return (
+                  <React.Fragment key={c.label}>
+                    <td className={`py-1 text-right whitespace-nowrap ${c.strong ? 'font-black text-white' : ''}`}>
+                      {projected.toFixed(1)}
+                    </td>
+                    {actuals && (
+                      <td className={`py-1 pl-1.5 text-left whitespace-nowrap text-[11px] font-black ${
+                        diff == null || diff === 0 ? 'text-white/40' : diff > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {diff == null ? '—' : diff === 0 ? '0.0' : `${diff > 0 ? '+' : '−'}${Math.abs(diff).toFixed(1)}`}
+                      </td>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tr>
+          );
+        })}
       </tbody>
     </table>
-    {side.out.length > 0 && <div className="mt-2 text-[11px] text-red-300/90">Out / doubtful: {side.out.join(', ')}</div>}
+    {side.out.length > 0 && <div className="mt-2 text-[11px] font-semibold text-red-300/90">Out / doubtful: {side.out.join(', ')}</div>}
   </div>
 );
 
-const GameCard = ({ game, lookup, index }: { game: PredictionGame; lookup: (s: TeamSide) => TeamLook; index: number }) => {
+const GameCard = ({ game, lookup, index, live }: {
+  game: PredictionGame; lookup: (s: TeamSide) => TeamLook; index: number; live?: LiveScore;
+}) => {
   const [open, setOpen] = useState(false);
   const away = lookup(game.away);
   const home = lookup(game.home);
+  // Schedule score while in progress; the forecaster's recorded result once the game is settled.
+  const score: LiveScore | null = live
+    ?? (game.result ? { away: game.result.away_score, home: game.result.home_score, final: true, period: null, clock: null } : null);
   const favorite = game.expected_margin >= 0 ? home : away;
+
+  // Once the game is final, load the saved box score; it can land a few seconds after the
+  // schedule flips to final, so retry until it is there.
+  const final = Boolean(score?.final);
+  const [box, setBox] = useState<BoxScore | null>(null);
+  useEffect(() => {
+    if (!final || box) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const resp = await fetch(boxscoreUrl(game.game_id), { cache: 'no-cache' });
+        const json = resp.ok ? ((await resp.json()) as BoxScore) : null;
+        if (!cancelled && json?.teams) setBox(json);
+      } catch {
+        // Not written yet (or the dev server answered with its HTML fallback); retry below.
+      }
+    };
+    load();
+    const timer = window.setInterval(load, BOXSCORE_RETRY_MS);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [final, box, game.game_id]);
+  const actuals = useMemo(
+    () => (box ? new Map(box.teams.flatMap((t) => t.players).map((pl) => [pl.id, pl] as const)) : undefined),
+    [box],
+  );
+
   const dk = game.market.draftkings;
   const espn = game.market.espn;
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur"
-      style={{
-        backgroundImage: `linear-gradient(90deg, ${away.primary}40 0%, transparent 35%, transparent 65%, ${home.primary}40 100%)`,
-        animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
-      }}
+    <Card
+      className="relative overflow-hidden rounded-2xl border transition-all duration-300"
+      style={{ animation: `slideUp 0.4s ease-out ${index * 0.05}s both` }}
     >
-      <div className="px-5 pt-4 pb-3">
-        <div className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-white/60">
+      {/* Scoreboard card background: away-to-home team gradient under a dark scrim. */}
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(to right, ${away.gradient} 0%, ${away.gradient} 20%, ${home.gradient} 80%, ${home.gradient} 100%)` }}
+      />
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 px-5 pt-4 pb-3">
+        <div className="mb-3 flex items-center justify-between text-xs font-black tracking-wide text-white/80">
           <span>{fmtTime(game.tip_utc)}</span>
           {game.result ? (
             <span className={game.result.model_correct ? 'text-emerald-300' : 'text-red-300'}>
@@ -267,44 +363,57 @@ const GameCard = ({ game, lookup, index }: { game: PredictionGame; lookup: (s: T
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
           <div className="justify-self-start"><TeamBlock side={game.away} look={away} align="left" /></div>
           <div className="text-center">
-            <div className="text-2xl font-black tabular-nums text-white whitespace-nowrap">
-              {game.away.expected_score.toFixed(0)} – {game.home.expected_score.toFixed(0)}
+            <div className="flex items-center justify-center gap-2 text-2xl font-black tracking-wide tabular-nums text-white whitespace-nowrap">
+              {score?.final && <ScoreDiff predicted={game.away.expected_score} actual={score.away} />}
+              <span>{game.away.expected_score.toFixed(0)} – {game.home.expected_score.toFixed(0)}</span>
+              {score?.final && <ScoreDiff predicted={game.home.expected_score} actual={score.home} />}
             </div>
-            <div className="text-xs font-semibold text-white/60">
+            <div className="text-xs font-black tracking-wide text-white/80">
               {favorite.abbr} by {Math.abs(game.expected_margin).toFixed(1)}
             </div>
           </div>
           <div className="justify-self-end"><TeamBlock side={game.home} look={home} align="right" /></div>
         </div>
-        <ProbabilityBar game={game} away={away} home={home} />
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+        <GameBar game={game} score={score} away={away} home={home} />
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-black tracking-wide">
           {dk && (
-            <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/80">
+            <span className="rounded-full bg-black/30 px-3 py-1 text-white/90">
               <Dot color={DK_COLOR} />DraftKings: {home.abbr} {pct(dk.home_win_prob)}
               {typeof dk.spread === 'number' && ` · ${home.abbr} ${dk.spread > 0 ? '+' : ''}${dk.spread}`}
               {typeof dk.over_under === 'number' && ` · O/U ${dk.over_under}`}
             </span>
           )}
           {espn && (
-            <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/80"><Dot color={ESPN_COLOR} />ESPN: {home.abbr} {pct(espn.home_win_prob)}</span>
+            <span className="rounded-full bg-black/30 px-3 py-1 text-white/90"><Dot color={ESPN_COLOR} />ESPN: {home.abbr} {pct(espn.home_win_prob)}</span>
           )}
-          {!dk && !espn && <span className="text-white/40">No market lines captured</span>}
+          {!dk && !espn && <span className="text-white/60">No market lines captured</span>}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="ml-auto inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 font-semibold text-white hover:bg-white/20"
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-black/30 px-3 py-1 text-white transition-colors hover:bg-black/50"
           >
-            Projected box score <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+            {actuals ? 'Box score' : 'Projected box score'} <ChevronDown size={14} className={`nba-boxscore-chevron ${open ? 'is-open' : ''}`} />
           </button>
         </div>
       </div>
-      {open && (
-        <div className="flex gap-6 border-t border-white/10 bg-black/20 px-5 py-4">
-          <PlayerTable side={game.away} look={away} />
-          <PlayerTable side={game.home} look={home} />
+      {/* Grid-rows reveal, same motion as the mobile season menu (styles in index.css). */}
+      <div className={`nba-boxscore-reveal relative z-10 ${open ? 'is-open' : ''}`} aria-hidden={!open}>
+        <div className="nba-boxscore-clip">
+          <div className="nba-boxscore-body border-t border-white/10 bg-black/40 px-5 py-4">
+            {actuals && (
+              <div className="mb-3 text-[11px] font-black tracking-wide text-white/60">
+                Projection <span className="text-white/40">· difference from final stats</span>
+              </div>
+            )}
+            {/* Final games stack the teams so each row has room for the differences. */}
+            <div className={actuals ? 'flex flex-col gap-5' : 'flex gap-6'}>
+              <PlayerTable side={game.away} look={away} actuals={actuals} />
+              <PlayerTable side={game.home} look={home} actuals={actuals} />
+            </div>
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </Card>
   );
 };
 
@@ -316,12 +425,12 @@ const RecordCard = ({ data }: { data: PredictionsData }) => {
   const Stat = ({ label, value }: { label: string; value: string }) => (
     <div>
       <div className="text-2xl font-black tabular-nums text-white">{value}</div>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-white/50">{label}</div>
+      <div className="text-[11px] font-black tracking-wide text-white/60">{label}</div>
     </div>
   );
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/60">Live record since {fmtDate(record.since)}</div>
+    <Card className={`${PANEL} px-5 py-4`}>
+      <div className="mb-3 text-xs font-black tracking-wide text-white/80">Live record since {fmtDate(record.since)}</div>
       <div className="flex flex-wrap gap-8">
         <Stat label="Games" value={String(record.games)} />
         <Stat label="Winners picked" value={pct(record.model.accuracy)} />
@@ -330,11 +439,13 @@ const RecordCard = ({ data }: { data: PredictionsData }) => {
         {espn && <Stat label={`ESPN log loss (${espn.games} g)`} value={espn.theirs.log_loss.toFixed(3)} />}
         {dk && <Stat label="Disagreed with DK, we were right" value={`${dk.ours_right_in_disagreements}/${dk.disagreements}`} />}
       </div>
-    </div>
+    </Card>
   );
 };
 
-export const PredictionsView = ({ resolveTeam }: { resolveTeam: (name: string | null, espnAbbr: string) => TeamLook }) => {
+export const PredictionsView = ({ resolveTeam, liveScores = {} }: {
+  resolveTeam: (name: string | null, espnAbbr: string) => TeamLook; liveScores?: Record<string, LiveScore>;
+}) => {
   const [data, setData] = useState<PredictionsData | null>(null);
   const [error, setError] = useState(false);
 
@@ -374,7 +485,7 @@ export const PredictionsView = ({ resolveTeam }: { resolveTeam: (name: string | 
 
   if (!data || !currentDate) {
     return (
-      <div className="px-4 py-10 text-center text-white/60">
+      <div className="px-4 py-10 text-center text-sm font-black tracking-wide text-muted-foreground">
         {error ? 'Predictions are not available yet. The forecaster writes /data/nba_predictions.json.' : 'Loading predictions…'}
       </div>
     );
@@ -384,17 +495,17 @@ export const PredictionsView = ({ resolveTeam }: { resolveTeam: (name: string | 
     <div className="flex flex-col gap-4 px-2 pb-8">
       <DateNavigator dates={dates} current={currentDate} today={data.date} onChange={setSelectedDate} />
       <RecordCard data={data} />
-      {!view && <div className="rounded-2xl bg-white/5 px-5 py-6 text-center text-white/60">Loading…</div>}
+      {!view && <Card className={`${PANEL} py-8 text-center text-sm font-black tracking-wide text-muted-foreground`}>Loading…</Card>}
       {view && view.games.length === 0 && (
-        <div className="rounded-2xl bg-white/5 px-5 py-6 text-center text-white/60">No games forecast for this day.</div>
+        <Card className={`${PANEL} py-8 text-center text-sm font-black tracking-wide text-muted-foreground`}>No games forecast for this day.</Card>
       )}
-      {view?.games.map((game, index) => <GameCard key={game.game_id} game={game} lookup={lookup} index={index} />)}
+      {view?.games.map((game, index) => <GameCard key={game.game_id} game={game} lookup={lookup} index={index} live={liveScores[liveKey(game.game_id)]} />)}
       {data.recent_results.length > 0 && (
         <div className="mt-4">
-          <h3 className="mb-2 text-sm font-black uppercase tracking-wide text-white/80">Recent results</h3>
-          <div className="overflow-hidden rounded-2xl border border-white/10">
-            <table className="w-full text-xs text-white/80 tabular-nums">
-              <thead className="bg-white/5 text-[10px] uppercase tracking-wide text-white/50">
+          <h3 className="mb-2 text-lg font-black tracking-wide text-white">Recent results</h3>
+          <Card className={`${PANEL} overflow-hidden`}>
+            <table className="w-full text-xs font-semibold text-white/80 tabular-nums">
+              <thead className="bg-black/20 text-[10px] font-black uppercase tracking-wide text-white/50">
                 <tr>
                   <th className="px-3 py-2 text-left">Game</th>
                   <th className="px-3 py-2 text-right">Model (home)</th>
@@ -423,7 +534,7 @@ export const PredictionsView = ({ resolveTeam }: { resolveTeam: (name: string | 
                 })}
               </tbody>
             </table>
-          </div>
+          </Card>
         </div>
       )}
     </div>

@@ -22,10 +22,14 @@ NBA_DATA_SCRIPT     = Path("data/data_NBAV2.py")
 NFL_DATA_SCRIPT     = Path("data/data_NFLV2.py")
 F1_DATA_SCRIPT      = Path("data/data_F1.py")      # race results + driver standings
 NBA_PREDICTIONS_SCRIPT = Path("data/nba_predictions.py")  # NBA Forecaster -> nba_predictions.json
+NBA_BOXSCORES_SCRIPT = Path("data/nba_boxscores.py")      # final games -> nba_boxscores/<game_id>.json
 # F1_CALENDAR_SCRIPT removed — run manually at the start of a new season
 
 # NBA Forecaster check interval (seconds); it only forecasts when something is due
 PREDICTIONS_INTERVAL = 10 * 60
+# Box score check: fixed and short so the last game of the night is caught even after the
+# schedule drops to its idle cadence; exits immediately when no final game is missing one.
+BOXSCORES_INTERVAL = 20
 
 # NBA/NFL intervals (seconds)
 ACTIVE_INTERVAL = 15     # when games are live/upcoming today
@@ -193,6 +197,7 @@ def main():
                 (F1_DATA_SCRIPT, F1_RACE_INTERVAL if f1["is_race_weekend"] else F1_IDLE_INTERVAL, False),
                 # NBA Forecaster: decides itself what is due; usually exits in seconds.
                 (NBA_PREDICTIONS_SCRIPT, PREDICTIONS_INTERVAL, False),
+                (NBA_BOXSCORES_SCRIPT, BOXSCORES_INTERVAL, False),
             ]
             for script, interval, live_only in jobs:
                 child = running.get(script)
