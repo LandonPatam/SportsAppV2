@@ -64,18 +64,19 @@ const TeamBlock = ({ side, look, align }: { side: TeamSide; look: TeamLook; alig
 );
 
 const ProbabilityBar = ({ game, away, home }: { game: PredictionGame; away: TeamLook; home: TeamLook }) => {
+  // DraftKings marks the top half and ESPN the bottom half, so both show even when they coincide.
   const markers = [
-    { label: 'DraftKings', color: DK_COLOR, p: game.market.draftkings?.home_win_prob },
-    { label: 'ESPN', color: ESPN_COLOR, p: game.market.espn?.home_win_prob },
-  ].filter((m): m is { label: string; color: string; p: number } => typeof m.p === 'number');
+    { label: 'DraftKings', color: DK_COLOR, p: game.market.draftkings?.home_win_prob, position: '-top-2' },
+    { label: 'ESPN', color: ESPN_COLOR, p: game.market.espn?.home_win_prob, position: 'top-1.5' },
+  ].filter((m): m is { label: string; color: string; p: number; position: string } => typeof m.p === 'number');
   return (
     <div className="relative mt-4 h-3 w-full overflow-visible rounded-full bg-white/10">
       <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: pct(game.away.win_prob), background: away.primary }} />
       <div className="absolute inset-y-0 right-0 rounded-r-full" style={{ width: pct(game.home.win_prob), background: home.primary }} />
       {markers.map((m) => (
         // Market markers sit at the market's away/home split point (DraftKings green, ESPN red).
-        <div key={m.label} className="absolute -top-1 h-5 w-0.5 rounded-full"
-             style={{ left: pct(1 - m.p), background: m.color }} title={`${m.label}: ${home.abbr} ${pct(m.p)}`} />
+        <div key={m.label} className={`absolute ${m.position} h-[14px] w-[3px] -translate-x-1/2 rounded-full`}
+             style={{ left: `${(1 - m.p) * 100}%`, background: m.color }} title={`${m.label}: ${home.abbr} ${pct(m.p)}`} />
       ))}
     </div>
   );
