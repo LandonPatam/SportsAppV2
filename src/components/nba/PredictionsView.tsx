@@ -1,8 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Data written by the NBA Forecaster (`nba_forecaster auto --export`), refreshed by data/nba_predictions.py.
+// The main file is today's forecast; past days are in /data/nba_predictions/<YYYYMMDD>.json.
 const PREDICTIONS_URL = '/data/nba_predictions.json';
+const dayUrl = (yyyymmdd: string) => `/data/nba_predictions/${yyyymmdd}.json`;
+const DK_COLOR = '#22c55e';
+const ESPN_COLOR = '#ef4444';
 const POLL_MS = 60_000;
 
 type Range = [number, number] | null;
@@ -27,8 +32,9 @@ type Comparison = {
   games: number; ours: { log_loss: number; accuracy: number }; theirs: { log_loss: number; accuracy: number };
   disagreements: number; ours_right_in_disagreements: number;
 };
+type DayData = { date: string; issued_at: string | null; games: PredictionGame[] };
 type PredictionsData = {
-  date: string; issued_at: string | null; generated_at: string;
+  date: string; issued_at: string | null; generated_at: string; available_dates?: string[];
   games: PredictionGame[]; recent_results: PredictionGame[];
   season_record: { since: string; games: number; model?: { accuracy: number; log_loss: number; margin_mae: number };
                    vs?: { draftkings?: Comparison; espn_predictor?: Comparison } };
@@ -59,19 +65,121 @@ const TeamBlock = ({ side, look, align }: { side: TeamSide; look: TeamLook; alig
 
 const ProbabilityBar = ({ game, away, home }: { game: PredictionGame; away: TeamLook; home: TeamLook }) => {
   const markers = [
-    { label: 'DK', p: game.market.draftkings?.home_win_prob },
-    { label: 'ESPN', p: game.market.espn?.home_win_prob },
-  ].filter((m): m is { label: string; p: number } => typeof m.p === 'number');
+    { label: 'DraftKings', color: DK_COLOR, p: game.market.draftkings?.home_win_prob },
+    { label: 'ESPN', color: ESPN_COLOR, p: game.market.espn?.home_win_prob },
+  ].filter((m): m is { label: string; color: string; p: number } => typeof m.p === 'number');
   return (
     <div className="relative mt-4 h-3 w-full overflow-visible rounded-full bg-white/10">
       <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: pct(game.away.win_prob), background: away.primary }} />
       <div className="absolute inset-y-0 right-0 rounded-r-full" style={{ width: pct(game.home.win_prob), background: home.primary }} />
       {markers.map((m) => (
-        // Market markers sit at the market's away/home split point.
-        <div key={m.label} className="absolute -top-1 h-5 w-0.5 bg-white" style={{ left: pct(1 - m.p) }} title={`${m.label}: home ${pct(m.p)}`}>
-          <span className="absolute -top-5 -translate-x-1/2 text-[10px] font-bold text-white/80">{m.label}</span>
-        </div>
+        // Market markers sit at the market's away/home split point (DraftKings green, ESPN red).
+        <div key={m.label} className="absolute -top-1 h-5 w-0.5 rounded-full"
+             style={{ left: pct(1 - m.p), background: m.color }} title={`${m.label}: ${home.abbr} ${pct(m.p)}`} />
       ))}
+    </div>
+  );
+};
+
+const Dot = ({ color }: { color: string }) => (
+  <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color }} />
+);
+
+const isoKey = (yyyymmdd: string) => `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6)}`;
+
+const DateNavigator = ({ dates, current, today, onChange }: {
+  dates: string[]; current: string; today: string; onChange: (d: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState(() => ({ year: Number(current.slice(0, 4)), month: Number(current.slice(4, 6)) }));
+  const [position, setPosition] = useState({ top: 0, right: 0 });
+  const ref = useRef<HTMLDivElement | null>(null);
+  const index = dates.indexOf(current);
+  const available = useMemo(() => new Set(dates), [dates]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const openCalendar = () => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (rect) setPosition({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    setMonth({ year: Number(current.slice(0, 4)), month: Number(current.slice(4, 6)) });
+    setOpen(true);
+  };
+  const firstDay = new Date(month.year, month.month - 1, 1).getDay();
+  const daysInMonth = new Date(month.year, month.month, 0).getDate();
+  const cells: (string | null)[] = [...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => `${month.year}${String(month.month).padStart(2, '0')}${String(i + 1).padStart(2, '0')}`)];
+  const label = new Date(isoKey(current) + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const monthLabel = new Date(month.year, month.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const shiftMonth = (delta: number) => setMonth(({ year, month: m }) => {
+    const d = new Date(year, m - 1 + delta, 1);
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  });
+
+  return (
+    <div className="relative flex items-center justify-center gap-3">
+      <Button variant="ghost" size="icon" onClick={() => onChange(dates[index - 1])} disabled={index <= 0} className="rounded-full hover:bg-white/10">
+        <ChevronLeft className="h-5 w-5" />
+      </Button>
+      <div className="text-lg font-black tracking-wide text-white">{label}</div>
+      <Button variant="ghost" size="icon" onClick={() => onChange(dates[index + 1])} disabled={index < 0 || index >= dates.length - 1} className="rounded-full hover:bg-white/10">
+        <ChevronRight className="h-5 w-5" />
+      </Button>
+      <div className="absolute right-0" ref={ref}>
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-transparent" onClick={openCalendar} aria-label="Pick a date">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        </Button>
+        {open && (
+          <div className="fixed z-50 w-72 rounded-xl border border-white/10 p-4 shadow-2xl"
+               style={{ backgroundColor: '#1a1a1a', top: position.top, right: position.right }}>
+            <div className="mb-3 flex items-center justify-between">
+              <button className="rounded-full p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white" onClick={() => shiftMonth(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-black tracking-wide text-white">{monthLabel}</span>
+              <button className="rounded-full p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white" onClick={() => shiftMonth(1)}>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mb-0.5 grid grid-cols-7">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+                <div key={d} className="py-0.5 text-center text-[10px] font-black tracking-wide text-white/30">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {cells.map((key, i) => {
+                if (!key) return <div key={`empty-${i}`} />;
+                const has = available.has(key);
+                const selected = key === current;
+                return (
+                  <button
+                    key={key}
+                    disabled={!has}
+                    onClick={() => { onChange(key); setOpen(false); }}
+                    className={`relative flex h-[32px] w-full items-center justify-center rounded-lg text-xs font-black tabular-nums transition-all duration-150 ${
+                      selected ? 'bg-white text-black shadow-lg' : has ? 'cursor-pointer text-white hover:bg-white/15' : 'cursor-default text-white/20'}`}
+                  >
+                    {Number(key.slice(6))}
+                    {key === today && (
+                      <span className={`absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${selected ? 'bg-black' : 'bg-white/70'}`} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -154,29 +262,30 @@ const GameCard = ({ game, lookup, index }: { game: PredictionGame; lookup: (s: T
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <TeamBlock side={game.away} look={away} align="left" />
+        {/* Equal side columns keep the predicted score centered regardless of team name widths. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <div className="justify-self-start"><TeamBlock side={game.away} look={away} align="left" /></div>
           <div className="text-center">
-            <div className="text-2xl font-black tabular-nums text-white">
-              {game.away.expected_score.toFixed(0)}–{game.home.expected_score.toFixed(0)}
+            <div className="text-2xl font-black tabular-nums text-white whitespace-nowrap">
+              {game.away.expected_score.toFixed(0)} – {game.home.expected_score.toFixed(0)}
             </div>
             <div className="text-xs font-semibold text-white/60">
               {favorite.abbr} by {Math.abs(game.expected_margin).toFixed(1)}
             </div>
           </div>
-          <TeamBlock side={game.home} look={home} align="right" />
+          <div className="justify-self-end"><TeamBlock side={game.home} look={home} align="right" /></div>
         </div>
         <ProbabilityBar game={game} away={away} home={home} />
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
           {dk && (
             <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/80">
-              DraftKings: {home.abbr} {pct(dk.home_win_prob)}
+              <Dot color={DK_COLOR} />DraftKings: {home.abbr} {pct(dk.home_win_prob)}
               {typeof dk.spread === 'number' && ` · ${home.abbr} ${dk.spread > 0 ? '+' : ''}${dk.spread}`}
               {typeof dk.over_under === 'number' && ` · O/U ${dk.over_under}`}
             </span>
           )}
           {espn && (
-            <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/80">ESPN: {home.abbr} {pct(espn.home_win_prob)}</span>
+            <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/80"><Dot color={ESPN_COLOR} />ESPN: {home.abbr} {pct(espn.home_win_prob)}</span>
           )}
           {!dk && !espn && <span className="text-white/40">No market lines captured</span>}
           <button
@@ -202,9 +311,7 @@ const RecordCard = ({ data }: { data: PredictionsData }) => {
   const record = data.season_record;
   const dk = record.vs?.draftkings;
   const espn = record.vs?.espn_predictor;
-  if (!record.model) {
-    return <div className="rounded-2xl bg-white/5 px-5 py-4 text-sm text-white/60">Live record starts once the first predicted games are final.</div>;
-  }
+  if (!record.model) return null;
   const Stat = ({ label, value }: { label: string; value: string }) => (
     <div>
       <div className="text-2xl font-black tabular-nums text-white">{value}</div>
@@ -249,27 +356,47 @@ export const PredictionsView = ({ resolveTeam }: { resolveTeam: (name: string | 
 
   const lookup = useMemo(() => (side: TeamSide) => resolveTeam(side.name, side.abbr), [resolveTeam]);
 
-  if (!data) {
+  // Selected day: today (the main file) unless the user picks another forecast date.
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [dayData, setDayData] = useState<DayData | null>(null);
+  const currentDate = selectedDate ?? data?.date ?? null;
+  const dates = useMemo(() => data?.available_dates?.length ? data.available_dates : (data ? [data.date] : []), [data]);
+  useEffect(() => {
+    if (!data || !currentDate || currentDate === data.date) { setDayData(null); return; }
+    let cancelled = false;
+    fetch(dayUrl(currentDate), { cache: 'no-cache' })
+      .then((resp) => (resp.ok ? resp.json() : null))
+      .then((json) => { if (!cancelled) setDayData(json as DayData | null); })
+      .catch(() => { if (!cancelled) setDayData(null); });
+    return () => { cancelled = true; };
+  }, [currentDate, data]);
+
+  if (!data || !currentDate) {
     return (
       <div className="px-4 py-10 text-center text-white/60">
         {error ? 'Predictions are not available yet. The forecaster writes /data/nba_predictions.json.' : 'Loading predictions…'}
       </div>
     );
   }
+  const view: DayData | null = currentDate === data.date ? data : dayData;
   return (
     <div className="flex flex-col gap-4 px-2 pb-8">
+      <DateNavigator dates={dates} current={currentDate} today={data.date} onChange={setSelectedDate} />
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-xl font-black uppercase tracking-wide text-white">Model predictions</h2>
           <div className="text-xs text-white/60">
-            {fmtDate(data.date)} · forecast issued {fmtTime(data.issued_at)} · win %, expected score and projected box scores
+            {fmtDate(currentDate)}{view?.issued_at ? ` · forecast issued ${fmtTime(view.issued_at)}` : ''} · win %, expected score and projected box scores
           </div>
         </div>
         <div className="text-[11px] text-white/40">Market lines are shown for comparison only; they are not model inputs.</div>
       </div>
       <RecordCard data={data} />
-      {data.games.length === 0 && <div className="rounded-2xl bg-white/5 px-5 py-6 text-center text-white/60">No games forecast for today yet.</div>}
-      {data.games.map((game, index) => <GameCard key={game.game_id} game={game} lookup={lookup} index={index} />)}
+      {!view && <div className="rounded-2xl bg-white/5 px-5 py-6 text-center text-white/60">Loading…</div>}
+      {view && view.games.length === 0 && (
+        <div className="rounded-2xl bg-white/5 px-5 py-6 text-center text-white/60">No games forecast for this day.</div>
+      )}
+      {view?.games.map((game, index) => <GameCard key={game.game_id} game={game} lookup={lookup} index={index} />)}
       {data.recent_results.length > 0 && (
         <div className="mt-4">
           <h3 className="mb-2 text-sm font-black uppercase tracking-wide text-white/80">Recent results</h3>
