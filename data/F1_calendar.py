@@ -6,6 +6,7 @@ import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 url_schedule = "https://www.espn.com/f1/schedule"
 headers = {
@@ -18,7 +19,7 @@ headers = {
 }
 
 CALENDAR_PATH = "public/data/f1_calendar.json"
-PST_OFFSET = timedelta(hours=-7)  # UTC-7 (PDT) — change to -8 during PST (Nov-Mar)
+PACIFIC_TZ = ZoneInfo("America/Los_Angeles")  # handles PST/PDT (daylight saving) automatically
 
 MONTH_MAP = {
     "january": 1, "february": 2, "march": 3,    "april": 4,
@@ -276,12 +277,12 @@ def weekend_has_started(date_str: str) -> bool:
     return datetime.now() >= (race_end - timedelta(days=3))
 
 def utc_iso_to_pst_str(utc_iso: str) -> str:
-    """Convert '2026-03-15T07:00Z' -> 'March 15 at 12:00 AM PST'."""
+    """Convert '2026-03-15T07:00Z' -> 'March 15 at 12:00 AM PDT' (PST or PDT depending on DST)."""
     try:
         dt_utc = datetime.strptime(utc_iso, "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)
-        dt_pst = dt_utc + PST_OFFSET
-        hour = dt_pst.strftime("%I").lstrip("0") or "12"
-        return f"{dt_pst.strftime('%B %d')} at {hour}{dt_pst.strftime(':%M %p')} PST"
+        dt_pt = dt_utc.astimezone(PACIFIC_TZ)
+        hour = dt_pt.strftime("%I").lstrip("0") or "12"
+        return f"{dt_pt.strftime('%B %d')} at {hour}{dt_pt.strftime(':%M %p')} {dt_pt.tzname()}"
     except:
         return "TBD"
 
@@ -424,8 +425,10 @@ for block in event_blocks:
     try:
         dt_est     = datetime.strptime(clean_time, "%a, %B %d at %I:%M %p")
         dt_pst     = dt_est - timedelta(hours=3)
-        date_range = f"{dt_pst.strftime('%B')} {dt_pst.day - 2} - {dt_pst.day}"
-        start_time = f"{dt_pst.strftime('%B %d')} at {dt_pst.strftime('%I:%M %p').lower().lstrip('0')} PST"
+        dt_start   = dt_pst - timedelta(days=2)
+        date_range = f"{dt_start.strftime('%B')} {dt_start.day} - {dt_pst.day}"
+        tz_label   = dt_pst.replace(year=datetime.now().year, tzinfo=PACIFIC_TZ).tzname()
+        start_time = f"{dt_pst.strftime('%B %d')} at {dt_pst.strftime('%I:%M %p').lower().lstrip('0')} {tz_label}"
     except:
         date_range, start_time = "TBD", "TBD"
 

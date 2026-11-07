@@ -148,18 +148,26 @@ function getWeekendRange(race: { session_times?: Record<string, string>; date: s
   return `${fmt(first)} – ${fmt(last)}`;
 }
 
-// Parse "March 15 at 12:00 AM PDT" -> Date object (treated as local time)
+// Parse "March 15 at 12:00 AM PDT" -> absolute Date, honoring the PST (UTC-8) / PDT (UTC-7) suffix
 function parseSessionTime(timeStr: string): Date | null {
   try {
     if (timeStr === 'Canceled') return null;
-    // Strip timezone suffix e.g. " PDT", " PST"
-    const clean = timeStr.replace(/\s+P[SD]T$/, '').trim();
+    const tz = timeStr.match(/\s+(P[SD]T)$/i)?.[1]?.toUpperCase();
+    const clean = timeStr.replace(/\s+P[SD]T$/i, '').trim();
     // clean = "March 15 at 12:00 AM", "March 15 at 12:00AM", or "March 15 at 12:00"
-    const m = clean.match(/^([A-Za-z]+ \d+) at (\d+):(\d+)\s*([AP]M)?$/);
+    const m = clean.match(/^([A-Za-z]+) (\d+) at (\d+):(\d+)\s*([AP]M)?$/i);
     if (!m) return null;
+    const month = MONTH_MAP[m[1].toLowerCase()];
+    if (month === undefined) return null;
     const year = new Date().getFullYear();
-    const meridiem = m[4] ? ` ${m[4]}` : '';
-    const d = new Date(`${m[1]} ${year} ${m[2]}:${m[3]}${meridiem}`);
+    let hour = Number(m[3]);
+    if (m[5]) hour = hour % 12 + (m[5].toUpperCase() === 'PM' ? 12 : 0);
+    if (!tz) {
+      const d = new Date(year, month, Number(m[2]), hour, Number(m[4]));
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const offsetHours = tz === 'PDT' ? 7 : 8;
+    const d = new Date(Date.UTC(year, month, Number(m[2]), hour + offsetHours, Number(m[4])));
     return isNaN(d.getTime()) ? null : d;
   } catch { return null; }
 }
@@ -2279,7 +2287,8 @@ const F1 = () => {
               {[...calendarData]
                 .sort((a, b) => a.race_number - b.race_number)
                 .map((race, index) => {
-                  const todayKey = new Date().toISOString().slice(0, 10);
+                  const now = new Date();
+                  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                   const raceKey = parseRaceEndDate(race.date);
                   const hasDate = !!race.date && race.date.trim().length > 0 && race.date.trim().toUpperCase() !== 'TBD';
                   const isCanceled = race.start_time_west === 'Canceled';

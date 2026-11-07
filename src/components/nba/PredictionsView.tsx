@@ -468,11 +468,16 @@ export const PredictionsView = ({ resolveTeam, liveScores = {} }: {
 
   const lookup = useMemo(() => (side: TeamSide) => resolveTeam(side.name, side.abbr), [resolveTeam]);
 
-  // Selected day: today (the main file) unless the user picks another forecast date.
+  // Selected day: the viewer's local "today" unless the user picks another forecast date.
+  // The forecaster rolls its main file over at midnight US Eastern, so a viewer further west
+  // (e.g. 9 PM-midnight Pacific) should still land on their own date when it has a forecast.
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dayData, setDayData] = useState<DayData | null>(null);
-  const currentDate = selectedDate ?? data?.date ?? null;
   const dates = useMemo(() => data?.available_dates?.length ? data.available_dates : (data ? [data.date] : []), [data]);
+  const now = new Date();
+  const localToday = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const todayKey = data ? (dates.includes(localToday) ? localToday : data.date) : null;
+  const currentDate = selectedDate ?? todayKey;
   useEffect(() => {
     if (!data || !currentDate || currentDate === data.date) { setDayData(null); return; }
     let cancelled = false;
@@ -493,7 +498,7 @@ export const PredictionsView = ({ resolveTeam, liveScores = {} }: {
   const view: DayData | null = currentDate === data.date ? data : dayData;
   return (
     <div className="flex flex-col gap-4 px-2 pb-8">
-      <DateNavigator dates={dates} current={currentDate} today={data.date} onChange={setSelectedDate} />
+      <DateNavigator dates={dates} current={currentDate} today={todayKey ?? data.date} onChange={setSelectedDate} />
       <RecordCard data={data} />
       {!view && <Card className={`${PANEL} py-8 text-center text-sm font-black tracking-wide text-muted-foreground`}>Loading…</Card>}
       {view && view.games.length === 0 && (
